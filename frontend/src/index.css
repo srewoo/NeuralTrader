@@ -1,0 +1,191 @@
+@import '@fontsource/chivo/400.css';
+@import '@fontsource/chivo/700.css';
+@import '@fontsource/chivo/900.css';
+@import '@fontsource/manrope/400.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 7%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 0 0% 7%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 100% 50%;
+    --chart-3: 0 100% 59%;
+    --chart-4: 263 70% 66%;
+    --chart-5: 40 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 7%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 0 0% 7%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 100% 50%;
+    --chart-3: 0 100% 59%;
+    --chart-4: 263 70% 66%;
+    --chart-5: 40 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-body;
+    background-color: #050505;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+
+  code, pre, .font-mono {
+    @apply font-data;
+  }
+}
+
+@layer components {
+  .card-surface {
+    @apply bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 rounded-md font-medium px-4 py-2 shadow-glow-primary transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-[#1F1F1F] text-text-primary hover:bg-[#1F1F1F] rounded-md px-4 py-2 transition-all duration-200;
+  }
+
+  .btn-buy {
+    @apply bg-success text-black font-bold hover:bg-success/90 shadow-glow-success rounded-md px-4 py-2 transition-all duration-200;
+  }
+
+  .btn-sell {
+    @apply bg-danger text-white font-bold hover:bg-danger/90 shadow-glow-danger rounded-md px-4 py-2 transition-all duration-200;
+  }
+
+  .input-field {
+    @apply bg-[#121212] border border-[#1F1F1F] focus:border-primary focus:ring-1 focus:ring-primary rounded-md text-text-primary placeholder:text-text-secondary;
+  }
+
+  .glass-header {
+    @apply backdrop-blur-md bg-black/70 border-b border-white/5;
+  }
+
+  .signal-badge-buy {
+    @apply bg-success-dim text-success px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .signal-badge-sell {
+    @apply bg-danger-dim text-danger px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .signal-badge-hold {
+    @apply bg-[#1F1F1F] text-text-secondary px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .agent-step {
+    @apply flex items-start gap-3 p-3 rounded-lg border border-[#1F1F1F] bg-[#0A0A0A];
+  }
+
+  .terminal-log {
+    @apply font-data text-sm bg-[#0A0A0A] p-4 rounded-lg border border-[#1F1F1F] overflow-auto;
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-ai-accent;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1F1F1F #050505;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #050505;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #1F1F1F;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #2F2F2F;
+  }
+}
+
+/* Number animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count {
+  animation: countUp 0.5s ease-out;
+}
+
+/* Noise texture overlay */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 0;
+}

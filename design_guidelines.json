@@ -1,0 +1,149 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "The Anti-AI Designer",
+    "mission": "Create a 'Quant's Cockpit' - a high-density, professional trading interface that feels like a futuristic terminal, not a generic SaaS dashboard."
+  },
+  "design_philosophy": {
+    "theme": "The Quant's Cockpit",
+    "core_principles": [
+      "Density is Information: Use tight spacing for data, generous spacing for hierarchy.",
+      "Neon on Void: Pure black backgrounds with sharp neon accents for signals.",
+      "The AI is Alive: Visualize the reasoning process, don't just show the result.",
+      "Swiss Precision: Typography must be objective and legible."
+    ],
+    "emotional_tone": "Precision, Authority, Speed, Intelligence"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Chivo, sans-serif",
+      "weights": ["700", "900"],
+      "usage": "Page titles, Section headers, Stock Symbols",
+      "tracking": "tracking-tight"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "General text, descriptions, reasoning logs"
+    },
+    "data": {
+      "font_family": "JetBrains Mono, monospace",
+      "weights": ["400", "500"],
+      "usage": "Prices, Percentages, Technical Indicators, Code Snippets"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#050505",
+      "surface": "#0A0A0A",
+      "surface_highlight": "#121212",
+      "border": "#1F1F1F",
+      "primary": "#3B82F6",
+      "primary_glow": "rgba(59, 130, 246, 0.5)",
+      "success": "#00FF94",
+      "success_dim": "rgba(0, 255, 148, 0.1)",
+      "danger": "#FF2E2E",
+      "danger_dim": "rgba(255, 46, 46, 0.1)",
+      "text_primary": "#EDEDED",
+      "text_secondary": "#A1A1AA",
+      "ai_accent": "#8B5CF6"
+    },
+    "usage_rules": [
+      "Never use pure white text on black; use #EDEDED.",
+      "Use 'dim' colors for backgrounds of badges/chips (e.g., bg-success_dim text-success).",
+      "Borders should be subtle (1px solid #1F1F1F).",
+      "Gradients are forbidden for backgrounds, allowed only for 'glow' effects on active elements."
+    ]
+  },
+  "layout_strategy": {
+    "dashboard": {
+      "type": "Bento Grid",
+      "grid_cols": "grid-cols-1 md:grid-cols-4 lg:grid-cols-12",
+      "gap": "gap-4",
+      "modules": [
+        { "name": "Market Overview", "span": "col-span-full lg:col-span-8 row-span-2" },
+        { "name": "Top Signals", "span": "col-span-full lg:col-span-4 row-span-2" },
+        { "name": "AI Insight", "span": "col-span-full lg:col-span-4" },
+        { "name": "Watchlist", "span": "col-span-full lg:col-span-4" }
+      ]
+    },
+    "stock_detail": {
+      "type": "Control Room",
+      "structure": "Sidebar (Search/History) | Main Content (Chart + Analysis) | Right Panel (Order Book/Signals)",
+      "density": "High"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "Flat, 1px border, no shadow (unless hovering).",
+      "classes": "bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg"
+    },
+    "buttons": {
+      "primary": "bg-primary text-white hover:bg-primary/90 rounded-md font-medium px-4 py-2 shadow-[0_0_15px_rgba(59,130,246,0.3)]",
+      "secondary": "bg-transparent border border-[#1F1F1F] text-text_primary hover:bg-[#1F1F1F] rounded-md px-4 py-2",
+      "buy": "bg-success text-black font-bold hover:bg-success/90 shadow-[0_0_15px_rgba(0,255,148,0.4)]",
+      "sell": "bg-danger text-white font-bold hover:bg-danger/90 shadow-[0_0_15px_rgba(255,46,46,0.4)]"
+    },
+    "inputs": {
+      "style": "bg-[#121212] border border-[#1F1F1F] focus:border-primary focus:ring-1 focus:ring-primary rounded-md text-text_primary placeholder:text-text_secondary"
+    },
+    "charts": {
+      "library": "Recharts (via Shadcn Charts)",
+      "theme": "Dark mode optimized. Grid lines: #1F1F1F. Tooltip: bg-[#0A0A0A] border-[#1F1F1F]."
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "Use sparingly. Only for sticky headers or floating overlays. backdrop-blur-md bg-black/70 border-b border-white/5.",
+    "textures": "Use a subtle noise texture overlay on the main background to reduce digital flatness.",
+    "motion": {
+      "library": "framer-motion",
+      "effects": [
+        "Staggered entrance for list items.",
+        "Number counting animation for prices.",
+        "Typewriter effect for AI reasoning logs."
+      ]
+    }
+  },
+  "image_urls": [
+    {
+      "category": "Hero Background",
+      "url": "https://images.unsplash.com/photo-1746415808822-d7b661b4d8ba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMG5ldXJhbCUyMG5ldHdvcmslMjBibHVlJTIwbmVvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc2NTc5NTUyM3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract blue swirls, use for Login/Landing page background with overlay."
+    },
+    {
+      "category": "Data Texture",
+      "url": "https://images.unsplash.com/photo-1707332287886-84315bbb04bb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHw0fHxmdXR1cmlzdGljJTIwZmluYW5jaWFsJTIwZGF0YSUyMHZpc3VhbGl6YXRpb24lMjBhYnN0cmFjdCUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc2NTc5NTUwNnww&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract squares, use as a subtle pattern in the 'AI Analysis' card background."
+    },
+    {
+      "category": "Bull Mascot",
+      "url": "https://images.unsplash.com/photo-1655494215364-b1abfaa089cb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1hcmtldCUyMGJ1bGwlMjBhbmQlMjBiZWFyJTIwYWJzdHJhY3QlMjBhcnR8ZW58MHx8fHwxNzY1Nzk1NTA5fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Statue of a bull, use for 'Market Sentiment' section or empty states."
+    }
+  ],
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add '@fontsource/chivo', '@fontsource/manrope', and '@fontsource/jetbrains-mono' to package.json.",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js to use the specific colors defined in the 'colors' section. Extend the font family theme.",
+    "3. OVERRIDE SHADCN: Modify /src/index.css to replace the default zinc colors with the 'Void Black' palette.",
+    "4. BUILD LAYOUTS: Use the 'Bento Grid' strategy for the Dashboard. Do not use standard columns.",
+    "5. AI VISUALIZATION: When displaying AI reasoning, use a 'Terminal/Log' style component with a monospaced font and a typing animation.",
+    "6. CHARTS: Ensure all charts use the custom neon colors (Success/Danger) for candles/lines.",
+    "7. DATA-TESTID: Add data-testid to all interactive elements (buttons, inputs, chart toggles)."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) sparingly.",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations.",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Components MUST use named exports.",
+    "Pages MUST use default exports.",
+    "Use 'sonner' for toasts."
+  ]
+}

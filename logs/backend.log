@@ -1,0 +1,76 @@
+INFO:     Will watch for changes in these directories: ['/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [36952] using WatchFiles
+INFO:     Started server process [36961]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59911 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59948 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59913 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59948 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59923 - "OPTIONS /api/backtest/run HTTP/1.1" 200 OK
+2025-12-15 19:13:07,693 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-15 19:13:07,694 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
+2025-12-15 19:13:07,696 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-15 19:13:08,724 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-15 19:13:08,727 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
+2025-12-15 19:13:08,727 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
+INFO:     127.0.0.1:59923 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59923 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60174 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59923 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60176 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+2025-12-15 19:13:23,842 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
+2025-12-15 19:13:23,844 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-15 19:13:23,882 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-15 19:13:23,884 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
+2025-12-15 19:13:23,884 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
+INFO:     127.0.0.1:60275 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
+2025-12-15 19:13:34,507 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
+2025-12-15 19:13:34,510 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-15 19:13:34,546 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-15 19:13:34,549 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
+2025-12-15 19:13:34,549 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
+INFO:     127.0.0.1:60388 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
+2025-12-15 19:13:55,541 - backtesting.engine - INFO - Running backtest for TCS with Mean Reversion
+2025-12-15 19:13:55,542 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-15 19:13:55,780 - backtesting.price_cache - INFO - Cached 490 records for TCS
+2025-12-15 19:13:55,784 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
+2025-12-15 19:13:55,784 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
+INFO:     127.0.0.1:60695 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'backtesting/price_cache.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36961]
+INFO:     Started server process [39186]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backtesting/price_cache.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39186]
+INFO:     Started server process [39469]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2025-12-15 19:15:08,436 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-15 19:15:08,436 - backtesting.engine - INFO - Running backtest for TCS with Mean Reversion
+2025-12-15 19:15:08,449 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-15 19:15:09,641 - backtesting.price_cache - INFO - Cached 490 records for TCS
+2025-12-15 19:15:09,654 - backtesting.engine - INFO - Backtest complete: 12.22% return, 2 trades
+INFO:     127.0.0.1:61544 - "POST /api/backtest/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61907 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61908 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61907 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61911 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+2025-12-15 19:15:45,365 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
+2025-12-15 19:15:45,368 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-15 19:15:45,634 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-15 19:15:45,645 - backtesting.engine - INFO - Backtest complete: -6.36% return, 3 trades
+INFO:     127.0.0.1:61911 - "POST /api/backtest/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61911 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61912 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62332 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62336 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62335 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
