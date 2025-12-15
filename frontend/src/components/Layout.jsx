@@ -1,12 +1,13 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  TrendingUp, 
-  Settings, 
-  History, 
+import {
+  TrendingUp,
+  Settings,
+  History,
   BarChart3,
   Zap,
-  LineChart
+  LineChart,
+  Brain
 } from "lucide-react";
 
 export const Layout = () => {
@@ -14,6 +15,7 @@ export const Layout = () => {
 
   const navItems = [
     { path: "/", icon: BarChart3, label: "Dashboard" },
+    { path: "/ai-recommends", icon: Brain, label: "AI Picks" },
     { path: "/history", icon: History, label: "History" },
     { path: "/backtesting", icon: LineChart, label: "Backtest" },
     { path: "/settings", icon: Settings, label: "Settings" },

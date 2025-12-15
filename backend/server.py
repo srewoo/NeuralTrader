@@ -587,36 +587,349 @@ async def save_settings(settings: SettingsCreate):
     
     return {"message": "Settings saved successfully"}
 
+# Top 100 NSE/BSE Stocks
+NIFTY_100_STOCKS = [
+    {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "sector": "Energy"},
+    {"symbol": "TCS", "name": "Tata Consultancy Services", "sector": "IT"},
+    {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "sector": "Banking"},
+    {"symbol": "INFY", "name": "Infosys Ltd", "sector": "IT"},
+    {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "sector": "Banking"},
+    {"symbol": "HINDUNILVR", "name": "Hindustan Unilever Ltd", "sector": "FMCG"},
+    {"symbol": "SBIN", "name": "State Bank of India", "sector": "Banking"},
+    {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "sector": "Telecom"},
+    {"symbol": "ITC", "name": "ITC Ltd", "sector": "FMCG"},
+    {"symbol": "KOTAKBANK", "name": "Kotak Mahindra Bank", "sector": "Banking"},
+    {"symbol": "LT", "name": "Larsen & Toubro Ltd", "sector": "Infrastructure"},
+    {"symbol": "AXISBANK", "name": "Axis Bank Ltd", "sector": "Banking"},
+    {"symbol": "WIPRO", "name": "Wipro Ltd", "sector": "IT"},
+    {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "sector": "Finance"},
+    {"symbol": "MARUTI", "name": "Maruti Suzuki India Ltd", "sector": "Auto"},
+    {"symbol": "ASIANPAINT", "name": "Asian Paints Ltd", "sector": "Paints"},
+    {"symbol": "HCLTECH", "name": "HCL Technologies Ltd", "sector": "IT"},
+    {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "sector": "Auto"},
+    {"symbol": "SUNPHARMA", "name": "Sun Pharmaceutical", "sector": "Pharma"},
+    {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "sector": "Metals"},
+    {"symbol": "NTPC", "name": "NTPC Ltd", "sector": "Power"},
+    {"symbol": "POWERGRID", "name": "Power Grid Corporation", "sector": "Power"},
+    {"symbol": "ULTRACEMCO", "name": "UltraTech Cement Ltd", "sector": "Cement"},
+    {"symbol": "TITAN", "name": "Titan Company Ltd", "sector": "Consumer"},
+    {"symbol": "NESTLEIND", "name": "Nestle India Ltd", "sector": "FMCG"},
+    {"symbol": "TECHM", "name": "Tech Mahindra Ltd", "sector": "IT"},
+    {"symbol": "BAJAJFINSV", "name": "Bajaj Finserv Ltd", "sector": "Finance"},
+    {"symbol": "ONGC", "name": "Oil & Natural Gas Corp", "sector": "Energy"},
+    {"symbol": "JSWSTEEL", "name": "JSW Steel Ltd", "sector": "Metals"},
+    {"symbol": "M&M", "name": "Mahindra & Mahindra Ltd", "sector": "Auto"},
+    {"symbol": "COALINDIA", "name": "Coal India Ltd", "sector": "Mining"},
+    {"symbol": "ADANIENT", "name": "Adani Enterprises Ltd", "sector": "Conglomerate"},
+    {"symbol": "ADANIPORTS", "name": "Adani Ports & SEZ Ltd", "sector": "Infrastructure"},
+    {"symbol": "GRASIM", "name": "Grasim Industries Ltd", "sector": "Cement"},
+    {"symbol": "HINDALCO", "name": "Hindalco Industries Ltd", "sector": "Metals"},
+    {"symbol": "DIVISLAB", "name": "Divi's Laboratories Ltd", "sector": "Pharma"},
+    {"symbol": "DRREDDY", "name": "Dr. Reddy's Laboratories", "sector": "Pharma"},
+    {"symbol": "CIPLA", "name": "Cipla Ltd", "sector": "Pharma"},
+    {"symbol": "APOLLOHOSP", "name": "Apollo Hospitals", "sector": "Healthcare"},
+    {"symbol": "BRITANNIA", "name": "Britannia Industries Ltd", "sector": "FMCG"},
+    {"symbol": "EICHERMOT", "name": "Eicher Motors Ltd", "sector": "Auto"},
+    {"symbol": "INDUSINDBK", "name": "IndusInd Bank Ltd", "sector": "Banking"},
+    {"symbol": "HEROMOTOCO", "name": "Hero MotoCorp Ltd", "sector": "Auto"},
+    {"symbol": "BPCL", "name": "Bharat Petroleum Corp", "sector": "Energy"},
+    {"symbol": "TATACONSUM", "name": "Tata Consumer Products", "sector": "FMCG"},
+    {"symbol": "SBILIFE", "name": "SBI Life Insurance", "sector": "Insurance"},
+    {"symbol": "HDFCLIFE", "name": "HDFC Life Insurance", "sector": "Insurance"},
+    {"symbol": "BAJAJ-AUTO", "name": "Bajaj Auto Ltd", "sector": "Auto"},
+    {"symbol": "SHREECEM", "name": "Shree Cement Ltd", "sector": "Cement"},
+    {"symbol": "VEDL", "name": "Vedanta Ltd", "sector": "Metals"},
+    {"symbol": "HAVELLS", "name": "Havells India Ltd", "sector": "Consumer"},
+    {"symbol": "PIDILITIND", "name": "Pidilite Industries Ltd", "sector": "Chemicals"},
+    {"symbol": "DABUR", "name": "Dabur India Ltd", "sector": "FMCG"},
+    {"symbol": "GODREJCP", "name": "Godrej Consumer Products", "sector": "FMCG"},
+    {"symbol": "SIEMENS", "name": "Siemens Ltd", "sector": "Capital Goods"},
+    {"symbol": "DLF", "name": "DLF Ltd", "sector": "Real Estate"},
+    {"symbol": "ICICIPRULI", "name": "ICICI Prudential Life", "sector": "Insurance"},
+    {"symbol": "ICICIGI", "name": "ICICI Lombard General", "sector": "Insurance"},
+    {"symbol": "AMBUJACEM", "name": "Ambuja Cements Ltd", "sector": "Cement"},
+    {"symbol": "BANKBARODA", "name": "Bank of Baroda", "sector": "Banking"},
+    {"symbol": "PNB", "name": "Punjab National Bank", "sector": "Banking"},
+    {"symbol": "TATAPOWER", "name": "Tata Power Company Ltd", "sector": "Power"},
+    {"symbol": "INDIGO", "name": "InterGlobe Aviation Ltd", "sector": "Aviation"},
+    {"symbol": "ZOMATO", "name": "Zomato Ltd", "sector": "Internet"},
+    {"symbol": "PAYTM", "name": "One97 Communications", "sector": "Fintech"},
+    {"symbol": "NYKAA", "name": "FSN E-Commerce (Nykaa)", "sector": "E-Commerce"},
+    {"symbol": "JUBLFOOD", "name": "Jubilant FoodWorks Ltd", "sector": "QSR"},
+    {"symbol": "BERGEPAINT", "name": "Berger Paints India Ltd", "sector": "Paints"},
+    {"symbol": "COLPAL", "name": "Colgate-Palmolive India", "sector": "FMCG"},
+    {"symbol": "MARICO", "name": "Marico Ltd", "sector": "FMCG"},
+    {"symbol": "MCDOWELL-N", "name": "United Spirits Ltd", "sector": "Beverages"},
+    {"symbol": "TRENT", "name": "Trent Ltd", "sector": "Retail"},
+    {"symbol": "PIIND", "name": "PI Industries Ltd", "sector": "Chemicals"},
+    {"symbol": "BIOCON", "name": "Biocon Ltd", "sector": "Pharma"},
+    {"symbol": "LUPIN", "name": "Lupin Ltd", "sector": "Pharma"},
+    {"symbol": "TORNTPHARM", "name": "Torrent Pharmaceuticals", "sector": "Pharma"},
+    {"symbol": "AUROPHARMA", "name": "Aurobindo Pharma Ltd", "sector": "Pharma"},
+    {"symbol": "GAIL", "name": "GAIL India Ltd", "sector": "Energy"},
+    {"symbol": "IOC", "name": "Indian Oil Corporation", "sector": "Energy"},
+    {"symbol": "HINDPETRO", "name": "Hindustan Petroleum", "sector": "Energy"},
+    {"symbol": "SBICARD", "name": "SBI Cards & Payment", "sector": "Finance"},
+    {"symbol": "CHOLAFIN", "name": "Cholamandalam Investment", "sector": "Finance"},
+    {"symbol": "MUTHOOTFIN", "name": "Muthoot Finance Ltd", "sector": "Finance"},
+    {"symbol": "PEL", "name": "Piramal Enterprises Ltd", "sector": "Diversified"},
+    {"symbol": "RECLTD", "name": "REC Ltd", "sector": "Finance"},
+    {"symbol": "PFC", "name": "Power Finance Corp", "sector": "Finance"},
+    {"symbol": "IRCTC", "name": "IRCTC Ltd", "sector": "Travel"},
+    {"symbol": "SAIL", "name": "Steel Authority of India", "sector": "Metals"},
+    {"symbol": "NMDC", "name": "NMDC Ltd", "sector": "Mining"},
+    {"symbol": "BHEL", "name": "Bharat Heavy Electricals", "sector": "Capital Goods"},
+    {"symbol": "HAL", "name": "Hindustan Aeronautics", "sector": "Defence"},
+    {"symbol": "BEL", "name": "Bharat Electronics Ltd", "sector": "Defence"},
+    {"symbol": "LTIM", "name": "LTIMindtree Ltd", "sector": "IT"},
+    {"symbol": "PERSISTENT", "name": "Persistent Systems Ltd", "sector": "IT"},
+    {"symbol": "COFORGE", "name": "Coforge Ltd", "sector": "IT"},
+    {"symbol": "MPHASIS", "name": "Mphasis Ltd", "sector": "IT"},
+    {"symbol": "CANBK", "name": "Canara Bank", "sector": "Banking"},
+    {"symbol": "IDFCFIRSTB", "name": "IDFC First Bank Ltd", "sector": "Banking"},
+    {"symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "sector": "Banking"},
+    {"symbol": "ABCAPITAL", "name": "Aditya Birla Capital", "sector": "Finance"},
+]
+
+
+async def analyze_stock_for_recommendation(symbol: str, stock_info: dict) -> Optional[dict]:
+    """Analyze a single stock and return recommendation if significant"""
+    try:
+        ticker_symbol = get_indian_stock_suffix(symbol)
+        ticker = yf.Ticker(ticker_symbol)
+        hist = ticker.history(period="3mo")
+
+        if len(hist) < 50:
+            return None
+
+        close = hist['Close']
+        high = hist['High']
+        low = hist['Low']
+        volume = hist['Volume']
+
+        # Calculate indicators
+        rsi = ta.momentum.RSIIndicator(close, window=14).rsi().iloc[-1]
+        macd_indicator = ta.trend.MACD(close)
+        macd = macd_indicator.macd().iloc[-1]
+        macd_signal = macd_indicator.macd_signal().iloc[-1]
+        macd_hist = macd_indicator.macd_diff().iloc[-1]
+
+        sma_20 = ta.trend.SMAIndicator(close, window=20).sma_indicator().iloc[-1]
+        sma_50 = ta.trend.SMAIndicator(close, window=50).sma_indicator().iloc[-1]
+
+        bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
+        bb_upper = bb.bollinger_hband().iloc[-1]
+        bb_lower = bb.bollinger_lband().iloc[-1]
+
+        stoch = ta.momentum.StochasticOscillator(high, low, close, window=14, smooth_window=3)
+        stoch_k = stoch.stoch().iloc[-1]
+
+        adx = ta.trend.ADXIndicator(high, low, close, window=14).adx().iloc[-1]
+
+        current_price = float(close.iloc[-1])
+        prev_close = float(close.iloc[-2])
+        change_pct = ((current_price - prev_close) / prev_close) * 100
+
+        # Volume analysis
+        avg_volume = volume.rolling(20).mean().iloc[-1]
+        current_volume = volume.iloc[-1]
+        volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1
+
+        # Scoring system
+        buy_score = 0
+        sell_score = 0
+        signals = []
+
+        # RSI signals
+        if rsi < 30:
+            buy_score += 3
+            signals.append("RSI oversold (<30)")
+        elif rsi < 40:
+            buy_score += 1
+            signals.append("RSI approaching oversold")
+        elif rsi > 70:
+            sell_score += 3
+            signals.append("RSI overbought (>70)")
+        elif rsi > 60:
+            sell_score += 1
+            signals.append("RSI approaching overbought")
+
+        # MACD signals
+        if macd > macd_signal and macd_hist > 0:
+            buy_score += 2
+            signals.append("MACD bullish crossover")
+        elif macd < macd_signal and macd_hist < 0:
+            sell_score += 2
+            signals.append("MACD bearish crossover")
+
+        # Moving average signals
+        if current_price > sma_20 > sma_50:
+            buy_score += 2
+            signals.append("Price above SMA20 & SMA50 (uptrend)")
+        elif current_price < sma_20 < sma_50:
+            sell_score += 2
+            signals.append("Price below SMA20 & SMA50 (downtrend)")
+
+        # Bollinger Band signals
+        if current_price < bb_lower:
+            buy_score += 2
+            signals.append("Price below lower Bollinger Band")
+        elif current_price > bb_upper:
+            sell_score += 2
+            signals.append("Price above upper Bollinger Band")
+
+        # Stochastic signals
+        if stoch_k < 20:
+            buy_score += 1
+            signals.append("Stochastic oversold")
+        elif stoch_k > 80:
+            sell_score += 1
+            signals.append("Stochastic overbought")
+
+        # ADX trend strength
+        if adx > 25:
+            signals.append(f"Strong trend (ADX: {adx:.1f})")
+
+        # Volume confirmation
+        if volume_ratio > 1.5:
+            signals.append(f"High volume ({volume_ratio:.1f}x avg)")
+
+        # Determine recommendation
+        if buy_score >= 4 and buy_score > sell_score:
+            recommendation = "BUY"
+            confidence = min(95, 50 + buy_score * 8)
+        elif sell_score >= 4 and sell_score > buy_score:
+            recommendation = "SELL"
+            confidence = min(95, 50 + sell_score * 8)
+        else:
+            return None  # No strong signal
+
+        return {
+            "symbol": symbol,
+            "name": stock_info.get("name", symbol),
+            "sector": stock_info.get("sector", "N/A"),
+            "recommendation": recommendation,
+            "confidence": confidence,
+            "current_price": round(current_price, 2),
+            "change_pct": round(change_pct, 2),
+            "signals": signals,
+            "indicators": {
+                "rsi": round(float(rsi), 2) if not pd.isna(rsi) else None,
+                "macd": round(float(macd), 4) if not pd.isna(macd) else None,
+                "macd_signal": round(float(macd_signal), 4) if not pd.isna(macd_signal) else None,
+                "sma_20": round(float(sma_20), 2) if not pd.isna(sma_20) else None,
+                "sma_50": round(float(sma_50), 2) if not pd.isna(sma_50) else None,
+                "stochastic": round(float(stoch_k), 2) if not pd.isna(stoch_k) else None,
+                "adx": round(float(adx), 2) if not pd.isna(adx) else None,
+            },
+            "volume_ratio": round(volume_ratio, 2),
+            "buy_score": buy_score,
+            "sell_score": sell_score,
+        }
+
+    except Exception as e:
+        logger.error(f"Error analyzing {symbol}: {e}")
+        return None
+
+
+@api_router.get("/recommendations")
+async def get_ai_recommendations(limit: int = 50):
+    """
+    Get AI-powered stock recommendations based on technical analysis.
+    Scans top NSE/BSE stocks and returns buy/sell signals.
+    """
+    try:
+        logger.info(f"Generating AI recommendations for {len(NIFTY_100_STOCKS)} stocks")
+
+        buy_recommendations = []
+        sell_recommendations = []
+
+        # Analyze stocks (limit concurrent requests to avoid rate limiting)
+        stock_dict = {s["symbol"]: s for s in NIFTY_100_STOCKS}
+
+        # Process in batches
+        batch_size = 10
+        for i in range(0, len(NIFTY_100_STOCKS), batch_size):
+            batch = NIFTY_100_STOCKS[i:i + batch_size]
+            tasks = [
+                analyze_stock_for_recommendation(stock["symbol"], stock)
+                for stock in batch
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for result in results:
+                if isinstance(result, dict):
+                    if result["recommendation"] == "BUY":
+                        buy_recommendations.append(result)
+                    elif result["recommendation"] == "SELL":
+                        sell_recommendations.append(result)
+
+            # Small delay between batches to avoid rate limiting
+            await asyncio.sleep(0.5)
+
+        # Sort by confidence
+        buy_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
+        sell_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
+
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "total_stocks_analyzed": len(NIFTY_100_STOCKS),
+            "buy_recommendations": buy_recommendations[:limit],
+            "sell_recommendations": sell_recommendations[:limit],
+            "summary": {
+                "total_buy_signals": len(buy_recommendations),
+                "total_sell_signals": len(sell_recommendations),
+                "market_sentiment": "Bullish" if len(buy_recommendations) > len(sell_recommendations) else "Bearish" if len(sell_recommendations) > len(buy_recommendations) else "Neutral"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Recommendations failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/recommendations/stock/{symbol}")
+async def get_stock_recommendation(symbol: str):
+    """Get AI recommendation for a specific stock"""
+    try:
+        stock_info = next((s for s in NIFTY_100_STOCKS if s["symbol"].upper() == symbol.upper()), None)
+        if not stock_info:
+            stock_info = {"symbol": symbol.upper(), "name": symbol.upper(), "sector": "N/A"}
+
+        result = await analyze_stock_for_recommendation(symbol.upper(), stock_info)
+
+        if not result:
+            # Return hold recommendation if no strong signals
+            ticker_symbol = get_indian_stock_suffix(symbol)
+            ticker = yf.Ticker(ticker_symbol)
+            hist = ticker.history(period="1d")
+            current_price = float(hist['Close'].iloc[-1]) if not hist.empty else 0
+
+            return {
+                "symbol": symbol.upper(),
+                "name": stock_info.get("name", symbol),
+                "sector": stock_info.get("sector", "N/A"),
+                "recommendation": "HOLD",
+                "confidence": 50,
+                "current_price": round(current_price, 2),
+                "signals": ["No strong buy or sell signals detected"],
+                "message": "Technical indicators are neutral. Consider holding or waiting for clearer signals."
+            }
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Stock recommendation failed for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Stock search
 @api_router.get("/stocks/search")
 async def search_stocks(q: str):
     """Search for stocks"""
-    popular_indian_stocks = [
-        {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "exchange": "NSE"},
-        {"symbol": "TCS", "name": "Tata Consultancy Services", "exchange": "NSE"},
-        {"symbol": "INFY", "name": "Infosys Ltd", "exchange": "NSE"},
-        {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "exchange": "NSE"},
-        {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "exchange": "NSE"},
-        {"symbol": "HINDUNILVR", "name": "Hindustan Unilever Ltd", "exchange": "NSE"},
-        {"symbol": "SBIN", "name": "State Bank of India", "exchange": "NSE"},
-        {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "exchange": "NSE"},
-        {"symbol": "ITC", "name": "ITC Ltd", "exchange": "NSE"},
-        {"symbol": "KOTAKBANK", "name": "Kotak Mahindra Bank", "exchange": "NSE"},
-        {"symbol": "LT", "name": "Larsen & Toubro Ltd", "exchange": "NSE"},
-        {"symbol": "WIPRO", "name": "Wipro Ltd", "exchange": "NSE"},
-        {"symbol": "AXISBANK", "name": "Axis Bank Ltd", "exchange": "NSE"},
-        {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "exchange": "NSE"},
-        {"symbol": "MARUTI", "name": "Maruti Suzuki India Ltd", "exchange": "NSE"},
-        {"symbol": "ASIANPAINT", "name": "Asian Paints Ltd", "exchange": "NSE"},
-        {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "exchange": "NSE"},
-        {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "exchange": "NSE"},
-        {"symbol": "SUNPHARMA", "name": "Sun Pharmaceutical", "exchange": "NSE"},
-        {"symbol": "HCLTECH", "name": "HCL Technologies Ltd", "exchange": "NSE"},
-    ]
-    
     query = q.upper()
-    results = [s for s in popular_indian_stocks if query in s['symbol'] or query in s['name'].upper()]
-    return results[:10]
+    results = [s for s in NIFTY_100_STOCKS if query in s['symbol'] or query in s['name'].upper()]
+    return [{"symbol": s["symbol"], "name": s["name"], "exchange": "NSE"} for s in results[:10]]
 
 # Stock data endpoints
 @api_router.get("/stocks/{symbol}")

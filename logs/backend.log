@@ -74,3 +74,42 @@ INFO:     127.0.0.1:61912 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62332 - "GET /api/watchlist HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62336 - "GET /api/watchlist HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62335 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39469]
+INFO:     Started server process [50800]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:50729 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50730 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50729 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50736 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-15 19:27:24,626 - server - INFO - Generating AI recommendations for 100 stocks
+INFO:     127.0.0.1:51015 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51015 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51018 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51018 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51015 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51018 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-15 19:27:47,101 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:27:50,486 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:51211 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51212 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51211 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51220 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-15 19:27:55,268 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:27:56,884 - server - INFO - Generating AI recommendations for 100 stocks
+INFO:     127.0.0.1:50910 - "GET /api/recommendations HTTP/1.1" 200 OK
+2025-12-15 19:28:11,958 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:28:13,806 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:28:15,187 - server - INFO - Generating AI recommendations for 100 stocks
+2025-12-15 19:28:17,693 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:51220 - "GET /api/recommendations HTTP/1.1" 200 OK
+2025-12-15 19:28:30,295 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:28:32,147 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-15 19:28:34,874 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:51396 - "GET /api/recommendations HTTP/1.1" 200 OK
