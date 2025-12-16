@@ -18,7 +18,9 @@ import {
   ChevronRight,
   Sparkles,
   Target,
-  Activity
+  Activity,
+  Zap,
+  Play
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,39 +40,104 @@ export default function AIRecommends() {
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [selectedSector, setSelectedSector] = useState("all");
-  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    fetchRecommendations();
+    loadCachedRecommendations();
   }, []);
 
-  const fetchRecommendations = async () => {
+  // Load cached recommendations from database
+  const loadCachedRecommendations = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await axios.get(`${API_URL}/recommendations`);
       setRecommendations(response.data);
-      setLastUpdated(new Date());
-      toast.success(`Analyzed ${response.data.total_stocks_analyzed} stocks`);
     } catch (err) {
-      console.error("Error fetching recommendations:", err);
-      setError(err.response?.data?.detail || "Failed to fetch recommendations");
-      toast.error("Failed to load recommendations");
+      console.error("Error loading recommendations:", err);
+      setError(err.response?.data?.detail || "Failed to load recommendations");
     } finally {
       setLoading(false);
     }
   };
 
+  // Generate fresh recommendations
+  const generateRecommendations = async () => {
+    setGenerating(true);
+    setError(null);
+
+    try {
+      toast.info("Analyzing 100 stocks... This may take a minute.");
+      const response = await axios.post(`${API_URL}/recommendations/generate`);
+      setRecommendations(response.data);
+      toast.success(`Analysis complete! Found ${response.data.summary.total_buy_signals} buy and ${response.data.summary.total_sell_signals} sell signals.`);
+    } catch (err) {
+      console.error("Error generating recommendations:", err);
+      setError(err.response?.data?.detail || "Failed to generate recommendations");
+      toast.error("Failed to generate recommendations");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Format the generated date
+  const formatGeneratedDate = (dateStr) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+
+  // Available sectors in Indian markets
+  const INDIAN_MARKET_SECTORS = [
+    "Banking",
+    "IT",
+    "Energy",
+    "Automotive",
+    "Pharma",
+    "FMCG",
+    "Telecom",
+    "Metals",
+    "Infrastructure",
+    "Cement",
+    "Financial Services",
+    "Insurance",
+    "Chemicals",
+    "Consumer Durables",
+    "Media",
+    "Real Estate",
+    "Healthcare",
+    "Power",
+    "Capital Goods",
+    "Retail"
+  ];
+
   const getSectors = () => {
-    if (!recommendations) return [];
-    const sectors = new Set();
-    [...(recommendations.buy_recommendations || []), ...(recommendations.sell_recommendations || [])].forEach(r => {
-      if (r.sector) sectors.add(r.sector);
+    // Get sectors from recommendations
+    const recommendedSectors = new Set();
+    [...(recommendations?.buy_recommendations || []), ...(recommendations?.sell_recommendations || [])].forEach(r => {
+      if (r.sector && r.sector !== "N/A") recommendedSectors.add(r.sector);
     });
-    return Array.from(sectors).sort();
+
+    // If recommendations have sectors, use those; otherwise show all available sectors
+    if (recommendedSectors.size > 0) {
+      return Array.from(recommendedSectors).sort();
+    }
+
+    // Return default sectors if no recommendations yet
+    return INDIAN_MARKET_SECTORS;
   };
 
   const filterBySector = (items) => {
@@ -95,7 +162,39 @@ export default function AIRecommends() {
                 AI Recommendations
               </h1>
               <p className="text-text-secondary">
-                Analyzing top 100 NSE/BSE stocks...
+                Loading recommendations...
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Card className="card-surface">
+          <CardContent className="py-24">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Loader2 className="w-12 h-12 animate-spin text-ai-accent" />
+              <p className="text-text-secondary">Loading cached recommendations...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show generating state overlay
+  if (generating) {
+    return (
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-lg bg-ai-accent/10 flex items-center justify-center">
+              <Brain className="w-6 h-6 text-ai-accent" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-heading font-bold text-text-primary">
+                AI Recommendations
+              </h1>
+              <p className="text-text-secondary">
+                Generating fresh analysis...
               </p>
             </div>
           </div>
@@ -110,13 +209,14 @@ export default function AIRecommends() {
               </div>
               <div className="text-center">
                 <p className="text-lg font-medium text-text-primary mb-2">
-                  AI is analyzing stocks...
+                  AI is analyzing 100 stocks...
                 </p>
                 <p className="text-sm text-text-secondary">
-                  Scanning technical indicators across 100 stocks
+                  Scanning RSI, MACD, Moving Averages, Bollinger Bands & more
                 </p>
               </div>
               <Loader2 className="w-8 h-8 animate-spin text-ai-accent mt-4" />
+              <p className="text-xs text-text-secondary mt-2">This may take 30-60 seconds</p>
             </div>
           </CardContent>
         </Card>
@@ -132,7 +232,7 @@ export default function AIRecommends() {
             <div className="text-center">
               <AlertCircle className="w-12 h-12 mx-auto text-danger mb-4" />
               <p className="text-text-primary mb-4">{error}</p>
-              <Button onClick={fetchRecommendations}>
+              <Button onClick={loadCachedRecommendations}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
               </Button>
@@ -145,6 +245,7 @@ export default function AIRecommends() {
 
   const buyRecs = filterBySector(recommendations?.buy_recommendations || []);
   const sellRecs = filterBySector(recommendations?.sell_recommendations || []);
+  const hasRecommendations = recommendations?.generated_at && (buyRecs.length > 0 || sellRecs.length > 0);
 
   return (
     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -178,24 +279,90 @@ export default function AIRecommends() {
               </SelectContent>
             </Select>
             <Button
-              variant="outline"
-              onClick={fetchRecommendations}
-              disabled={loading}
+              onClick={generateRecommendations}
+              disabled={generating}
+              className="bg-ai-accent hover:bg-ai-accent/90"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Generate New
+                </>
+              )}
             </Button>
           </div>
         </div>
 
-        {lastUpdated && (
+        {recommendations?.generated_at && (
           <div className="flex items-center gap-2 mt-4 text-sm text-text-secondary">
             <Clock className="w-4 h-4" />
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            Last analyzed: {formatGeneratedDate(recommendations.generated_at)}
           </div>
         )}
       </div>
 
+      {/* Show empty state if no recommendations */}
+      {!hasRecommendations && !recommendations?.message && (
+        <Card className="card-surface mb-8">
+          <CardContent className="py-16">
+            <div className="text-center">
+              <div className="relative inline-block mb-4">
+                <Brain className="w-16 h-16 text-ai-accent/50" />
+                <Sparkles className="w-6 h-6 text-yellow-500/50 absolute -top-1 -right-1" />
+              </div>
+              <h3 className="text-lg font-medium text-text-primary mb-2">
+                No Recommendations Yet
+              </h3>
+              <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                Click the "Generate New" button to analyze 100 top NSE/BSE stocks
+                and get AI-powered buy/sell recommendations based on technical indicators.
+              </p>
+              <Button
+                onClick={generateRecommendations}
+                disabled={generating}
+                className="bg-ai-accent hover:bg-ai-accent/90"
+                size="lg"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Generate Recommendations
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {recommendations?.message && !hasRecommendations && (
+        <Card className="card-surface mb-8">
+          <CardContent className="py-16">
+            <div className="text-center">
+              <div className="relative inline-block mb-4">
+                <Brain className="w-16 h-16 text-ai-accent/50" />
+                <Sparkles className="w-6 h-6 text-yellow-500/50 absolute -top-1 -right-1" />
+              </div>
+              <h3 className="text-lg font-medium text-text-primary mb-2">
+                {recommendations.message}
+              </h3>
+              <Button
+                onClick={generateRecommendations}
+                disabled={generating}
+                className="bg-ai-accent hover:bg-ai-accent/90 mt-4"
+                size="lg"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Generate Recommendations
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasRecommendations && (
+        <>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card className="card-surface">
@@ -482,6 +649,8 @@ export default function AIRecommends() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

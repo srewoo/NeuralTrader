@@ -34,6 +34,12 @@ from news.sentiment import get_sentiment_analyzer
 # Import pattern detection
 from patterns.candlestick import get_pattern_detector
 
+# Import enhanced analysis system
+from analysis.enhanced_analyzer import get_enhanced_analyzer
+
+# Import LLM features
+from llm_features import get_llm_features
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -692,151 +698,299 @@ NIFTY_100_STOCKS = [
 ]
 
 
-async def analyze_stock_for_recommendation(symbol: str, stock_info: dict) -> Optional[dict]:
-    """Analyze a single stock and return recommendation if significant"""
+async def analyze_stock_for_recommendation(symbol: str, stock_info: dict, use_enhanced: bool = True) -> Optional[dict]:
+    """
+    Analyze a single stock and return recommendation if significant.
+    Uses enhanced analyzer with market regime detection, multi-timeframe analysis,
+    weighted indicator scoring, and Bayesian confidence.
+    """
     try:
-        ticker_symbol = get_indian_stock_suffix(symbol)
-        ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="3mo")
+        if use_enhanced:
+            # Use enhanced analyzer for more accurate recommendations
+            enhanced_analyzer = get_enhanced_analyzer()
+            result = await enhanced_analyzer.analyze_stock(
+                symbol,
+                include_patterns=True,
+                include_sentiment=False,  # Skip sentiment for batch processing
+                include_backtest_validation=False  # Skip for speed
+            )
 
-        if len(hist) < 50:
-            return None
+            if result.get('error'):
+                logger.warning(f"Enhanced analysis failed for {symbol}: {result.get('error')}")
+                return None
 
-        close = hist['Close']
-        high = hist['High']
-        low = hist['Low']
-        volume = hist['Volume']
+            recommendation = result.get('recommendation', 'HOLD')
+            confidence = result.get('confidence', 0)
 
-        # Calculate indicators
-        rsi = ta.momentum.RSIIndicator(close, window=14).rsi().iloc[-1]
-        macd_indicator = ta.trend.MACD(close)
-        macd = macd_indicator.macd().iloc[-1]
-        macd_signal = macd_indicator.macd_signal().iloc[-1]
-        macd_hist = macd_indicator.macd_diff().iloc[-1]
+            # Only return if strong signal
+            if recommendation in ['HOLD'] or confidence < 55:
+                return None
 
-        sma_20 = ta.trend.SMAIndicator(close, window=20).sma_indicator().iloc[-1]
-        sma_50 = ta.trend.SMAIndicator(close, window=50).sma_indicator().iloc[-1]
+            # Extract signals from the detailed analysis
+            signals = []
+            for signal in result.get('signals', []):
+                signals.append(signal.get('description', signal.get('indicator', '')))
 
-        bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
-        bb_upper = bb.bollinger_hband().iloc[-1]
-        bb_lower = bb.bollinger_lband().iloc[-1]
+            # Add regime info to signals
+            regime = result.get('market_regime', {})
+            if regime.get('primary_regime') in ['strong_bull', 'bull']:
+                signals.insert(0, f"Market regime: {regime.get('primary_regime').replace('_', ' ').title()}")
+            elif regime.get('primary_regime') in ['strong_bear', 'bear']:
+                signals.insert(0, f"Market regime: {regime.get('primary_regime').replace('_', ' ').title()}")
 
-        stoch = ta.momentum.StochasticOscillator(high, low, close, window=14, smooth_window=3)
-        stoch_k = stoch.stoch().iloc[-1]
+            # Add multi-timeframe alignment
+            mtf = result.get('multi_timeframe', {}).get('alignment', {})
+            if mtf.get('direction') in ['bullish', 'bearish']:
+                signals.append(f"Multi-timeframe: {mtf.get('direction')} ({mtf.get('score', 0)}/3)")
 
-        adx = ta.trend.ADXIndicator(high, low, close, window=14).adx().iloc[-1]
+            # Add confluence info
+            confluence = result.get('confluence', {})
+            if confluence.get('strength') in ['strong', 'moderate']:
+                signals.append(f"Signal confluence: {confluence.get('strength')} ({confluence.get('agreement', 0):.0f}%)")
 
-        current_price = float(close.iloc[-1])
-        prev_close = float(close.iloc[-2])
-        change_pct = ((current_price - prev_close) / prev_close) * 100
+            price_targets = result.get('price_targets', {})
+            indicators = result.get('indicators', {})
+            scores = result.get('signal_scores', {})
 
-        # Volume analysis
-        avg_volume = volume.rolling(20).mean().iloc[-1]
-        current_volume = volume.iloc[-1]
-        volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1
+            return {
+                "symbol": symbol,
+                "name": stock_info.get("name", symbol),
+                "sector": stock_info.get("sector", "N/A"),
+                "recommendation": recommendation,
+                "confidence": round(confidence, 1),
+                "current_price": result.get('current_price', 0),
+                "change_pct": round(((result.get('current_price', 0) - indicators.get('sma_20', result.get('current_price', 0))) / indicators.get('sma_20', 1)) * 100, 2) if indicators.get('sma_20') else 0,
+                "signals": signals[:8],  # Limit to 8 signals
+                "indicators": {
+                    "rsi": indicators.get('rsi'),
+                    "macd": indicators.get('macd'),
+                    "macd_signal": indicators.get('macd_signal'),
+                    "sma_20": indicators.get('sma_20'),
+                    "sma_50": indicators.get('sma_50'),
+                    "stochastic": indicators.get('stoch_k'),
+                    "adx": indicators.get('adx'),
+                    "ichimoku_position": indicators.get('ichimoku_position'),
+                },
+                "volume_ratio": indicators.get('volume_ratio', 1),
+                "buy_score": scores.get('weighted_buy', 0),
+                "sell_score": scores.get('weighted_sell', 0),
+                "market_regime": regime.get('primary_regime', 'unknown'),
+                "volatility_regime": regime.get('volatility_regime', 'normal'),
+                "confluence": confluence.get('agreement', 0),
+                "target_price": price_targets.get('target'),
+                "stop_loss": price_targets.get('stop_loss'),
+                "target_range": price_targets.get('target_range'),
+                "risk_reward": result.get('risk_reward', {}).get('ratio'),
+                "data_quality": result.get('data_quality', {}),
+            }
 
-        # Scoring system
-        buy_score = 0
-        sell_score = 0
-        signals = []
-
-        # RSI signals
-        if rsi < 30:
-            buy_score += 3
-            signals.append("RSI oversold (<30)")
-        elif rsi < 40:
-            buy_score += 1
-            signals.append("RSI approaching oversold")
-        elif rsi > 70:
-            sell_score += 3
-            signals.append("RSI overbought (>70)")
-        elif rsi > 60:
-            sell_score += 1
-            signals.append("RSI approaching overbought")
-
-        # MACD signals
-        if macd > macd_signal and macd_hist > 0:
-            buy_score += 2
-            signals.append("MACD bullish crossover")
-        elif macd < macd_signal and macd_hist < 0:
-            sell_score += 2
-            signals.append("MACD bearish crossover")
-
-        # Moving average signals
-        if current_price > sma_20 > sma_50:
-            buy_score += 2
-            signals.append("Price above SMA20 & SMA50 (uptrend)")
-        elif current_price < sma_20 < sma_50:
-            sell_score += 2
-            signals.append("Price below SMA20 & SMA50 (downtrend)")
-
-        # Bollinger Band signals
-        if current_price < bb_lower:
-            buy_score += 2
-            signals.append("Price below lower Bollinger Band")
-        elif current_price > bb_upper:
-            sell_score += 2
-            signals.append("Price above upper Bollinger Band")
-
-        # Stochastic signals
-        if stoch_k < 20:
-            buy_score += 1
-            signals.append("Stochastic oversold")
-        elif stoch_k > 80:
-            sell_score += 1
-            signals.append("Stochastic overbought")
-
-        # ADX trend strength
-        if adx > 25:
-            signals.append(f"Strong trend (ADX: {adx:.1f})")
-
-        # Volume confirmation
-        if volume_ratio > 1.5:
-            signals.append(f"High volume ({volume_ratio:.1f}x avg)")
-
-        # Determine recommendation
-        if buy_score >= 4 and buy_score > sell_score:
-            recommendation = "BUY"
-            confidence = min(95, 50 + buy_score * 8)
-        elif sell_score >= 4 and sell_score > buy_score:
-            recommendation = "SELL"
-            confidence = min(95, 50 + sell_score * 8)
         else:
-            return None  # No strong signal
+            # Fallback to simple analysis
+            ticker_symbol = get_indian_stock_suffix(symbol)
+            ticker = yf.Ticker(ticker_symbol)
+            hist = ticker.history(period="3mo")
 
-        return {
-            "symbol": symbol,
-            "name": stock_info.get("name", symbol),
-            "sector": stock_info.get("sector", "N/A"),
-            "recommendation": recommendation,
-            "confidence": confidence,
-            "current_price": round(current_price, 2),
-            "change_pct": round(change_pct, 2),
-            "signals": signals,
-            "indicators": {
-                "rsi": round(float(rsi), 2) if not pd.isna(rsi) else None,
-                "macd": round(float(macd), 4) if not pd.isna(macd) else None,
-                "macd_signal": round(float(macd_signal), 4) if not pd.isna(macd_signal) else None,
-                "sma_20": round(float(sma_20), 2) if not pd.isna(sma_20) else None,
-                "sma_50": round(float(sma_50), 2) if not pd.isna(sma_50) else None,
-                "stochastic": round(float(stoch_k), 2) if not pd.isna(stoch_k) else None,
-                "adx": round(float(adx), 2) if not pd.isna(adx) else None,
-            },
-            "volume_ratio": round(volume_ratio, 2),
-            "buy_score": buy_score,
-            "sell_score": sell_score,
-        }
+            if len(hist) < 50:
+                return None
+
+            close = hist['Close']
+            high = hist['High']
+            low = hist['Low']
+            volume = hist['Volume']
+
+            # Calculate indicators
+            rsi = ta.momentum.RSIIndicator(close, window=14).rsi().iloc[-1]
+            macd_indicator = ta.trend.MACD(close)
+            macd = macd_indicator.macd().iloc[-1]
+            macd_signal = macd_indicator.macd_signal().iloc[-1]
+            macd_hist = macd_indicator.macd_diff().iloc[-1]
+
+            sma_20 = ta.trend.SMAIndicator(close, window=20).sma_indicator().iloc[-1]
+            sma_50 = ta.trend.SMAIndicator(close, window=50).sma_indicator().iloc[-1]
+
+            bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
+            bb_upper = bb.bollinger_hband().iloc[-1]
+            bb_lower = bb.bollinger_lband().iloc[-1]
+
+            stoch = ta.momentum.StochasticOscillator(high, low, close, window=14, smooth_window=3)
+            stoch_k = stoch.stoch().iloc[-1]
+
+            adx = ta.trend.ADXIndicator(high, low, close, window=14).adx().iloc[-1]
+
+            current_price = float(close.iloc[-1])
+            prev_close = float(close.iloc[-2])
+            change_pct = ((current_price - prev_close) / prev_close) * 100
+
+            # Volume analysis
+            avg_volume = volume.rolling(20).mean().iloc[-1]
+            current_volume = volume.iloc[-1]
+            volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1
+
+            # Scoring system
+            buy_score = 0
+            sell_score = 0
+            signals = []
+
+            # RSI signals
+            if rsi < 30:
+                buy_score += 3
+                signals.append("RSI oversold (<30)")
+            elif rsi < 40:
+                buy_score += 1
+                signals.append("RSI approaching oversold")
+            elif rsi > 70:
+                sell_score += 3
+                signals.append("RSI overbought (>70)")
+            elif rsi > 60:
+                sell_score += 1
+                signals.append("RSI approaching overbought")
+
+            # MACD signals
+            if macd > macd_signal and macd_hist > 0:
+                buy_score += 2
+                signals.append("MACD bullish crossover")
+            elif macd < macd_signal and macd_hist < 0:
+                sell_score += 2
+                signals.append("MACD bearish crossover")
+
+            # Moving average signals
+            if current_price > sma_20 > sma_50:
+                buy_score += 2
+                signals.append("Price above SMA20 & SMA50 (uptrend)")
+            elif current_price < sma_20 < sma_50:
+                sell_score += 2
+                signals.append("Price below SMA20 & SMA50 (downtrend)")
+
+            # Bollinger Band signals
+            if current_price < bb_lower:
+                buy_score += 2
+                signals.append("Price below lower Bollinger Band")
+            elif current_price > bb_upper:
+                sell_score += 2
+                signals.append("Price above upper Bollinger Band")
+
+            # Stochastic signals
+            if stoch_k < 20:
+                buy_score += 1
+                signals.append("Stochastic oversold")
+            elif stoch_k > 80:
+                sell_score += 1
+                signals.append("Stochastic overbought")
+
+            # ADX trend strength
+            if adx > 25:
+                signals.append(f"Strong trend (ADX: {adx:.1f})")
+
+            # Volume confirmation
+            if volume_ratio > 1.5:
+                signals.append(f"High volume ({volume_ratio:.1f}x avg)")
+
+            # Determine recommendation
+            if buy_score >= 4 and buy_score > sell_score:
+                recommendation = "BUY"
+                confidence = min(95, 50 + buy_score * 8)
+            elif sell_score >= 4 and sell_score > buy_score:
+                recommendation = "SELL"
+                confidence = min(95, 50 + sell_score * 8)
+            else:
+                return None  # No strong signal
+
+            return {
+                "symbol": symbol,
+                "name": stock_info.get("name", symbol),
+                "sector": stock_info.get("sector", "N/A"),
+                "recommendation": recommendation,
+                "confidence": confidence,
+                "current_price": round(current_price, 2),
+                "change_pct": round(change_pct, 2),
+                "signals": signals,
+                "indicators": {
+                    "rsi": round(float(rsi), 2) if not pd.isna(rsi) else None,
+                    "macd": round(float(macd), 4) if not pd.isna(macd) else None,
+                    "macd_signal": round(float(macd_signal), 4) if not pd.isna(macd_signal) else None,
+                    "sma_20": round(float(sma_20), 2) if not pd.isna(sma_20) else None,
+                    "sma_50": round(float(sma_50), 2) if not pd.isna(sma_50) else None,
+                    "stochastic": round(float(stoch_k), 2) if not pd.isna(stoch_k) else None,
+                    "adx": round(float(adx), 2) if not pd.isna(adx) else None,
+                },
+                "volume_ratio": round(volume_ratio, 2),
+                "buy_score": buy_score,
+                "sell_score": sell_score,
+            }
 
     except Exception as e:
         logger.error(f"Error analyzing {symbol}: {e}")
         return None
 
 
-@api_router.get("/recommendations")
-async def get_ai_recommendations(limit: int = 50):
+@api_router.get("/analyze/enhanced/{symbol}")
+async def get_enhanced_analysis(symbol: str):
     """
-    Get AI-powered stock recommendations based on technical analysis.
-    Scans top NSE/BSE stocks and returns buy/sell signals.
+    Get enhanced analysis for a single stock.
+    Includes market regime detection, multi-timeframe analysis,
+    weighted indicator scoring, Bayesian confidence, and more.
+    """
+    try:
+        enhanced_analyzer = get_enhanced_analyzer()
+        result = await enhanced_analyzer.analyze_stock(
+            symbol,
+            include_patterns=True,
+            include_sentiment=True,
+            include_backtest_validation=True
+        )
+
+        if result.get('error'):
+            raise HTTPException(status_code=500, detail=result.get('error'))
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Enhanced analysis failed for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/recommendations")
+async def get_cached_recommendations():
+    """
+    Get cached AI recommendations from database.
+    Returns the most recent saved recommendations.
+    """
+    try:
+        # Get the most recent recommendations from database
+        cached = await db.recommendations.find_one(
+            {},
+            sort=[("generated_at", -1)]
+        )
+
+        if cached:
+            # Remove MongoDB _id field
+            cached.pop("_id", None)
+            return cached
+
+        # No cached recommendations found
+        return {
+            "generated_at": None,
+            "total_stocks_analyzed": 0,
+            "buy_recommendations": [],
+            "sell_recommendations": [],
+            "summary": {
+                "total_buy_signals": 0,
+                "total_sell_signals": 0,
+                "market_sentiment": "Neutral"
+            },
+            "message": "No recommendations available. Click 'Generate' to analyze stocks."
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get cached recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/recommendations/generate")
+async def generate_ai_recommendations(limit: int = 50):
+    """
+    Generate fresh AI-powered stock recommendations based on technical analysis.
+    Scans top NSE/BSE stocks and saves results to database.
     """
     try:
         logger.info(f"Generating AI recommendations for {len(NIFTY_100_STOCKS)} stocks")
@@ -871,7 +1025,7 @@ async def get_ai_recommendations(limit: int = 50):
         buy_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
         sell_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
 
-        return {
+        recommendations_data = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "total_stocks_analyzed": len(NIFTY_100_STOCKS),
             "buy_recommendations": buy_recommendations[:limit],
@@ -883,8 +1037,45 @@ async def get_ai_recommendations(limit: int = 50):
             }
         }
 
+        # Save to database (keep only last 10 recommendation sets)
+        await db.recommendations.insert_one(recommendations_data.copy())
+
+        # Clean up old recommendations (keep last 10)
+        count = await db.recommendations.count_documents({})
+        if count > 10:
+            oldest = await db.recommendations.find({}, sort=[("generated_at", 1)]).limit(count - 10).to_list(length=count - 10)
+            if oldest:
+                old_ids = [doc["_id"] for doc in oldest]
+                await db.recommendations.delete_many({"_id": {"$in": old_ids}})
+
+        logger.info(f"Generated recommendations: {len(buy_recommendations)} buy, {len(sell_recommendations)} sell")
+
+        return recommendations_data
+
     except Exception as e:
-        logger.error(f"Recommendations failed: {e}")
+        logger.error(f"Recommendations generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/recommendations/history")
+async def get_recommendations_history(limit: int = 10):
+    """Get history of recommendation generations"""
+    try:
+        cursor = db.recommendations.find(
+            {},
+            {"buy_recommendations": 0, "sell_recommendations": 0}  # Exclude large arrays
+        ).sort("generated_at", -1).limit(limit)
+
+        history = await cursor.to_list(length=limit)
+
+        # Remove MongoDB _id field
+        for item in history:
+            item.pop("_id", None)
+
+        return history
+
+    except Exception as e:
+        logger.error(f"Failed to get recommendations history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1396,13 +1587,13 @@ async def get_recent_patterns(symbol: str, days: int = 5):
         ticker_symbol = get_indian_stock_suffix(symbol)
         ticker = yf.Ticker(ticker_symbol)
         data = ticker.history(period="60d")  # Get more data for context
-        
+
         if data.empty:
             raise HTTPException(status_code=404, detail=f"No data available for {symbol}")
-        
+
         detector = get_pattern_detector()
         recent_patterns = detector.get_recent_patterns(data, days=days)
-        
+
         return {
             "symbol": symbol,
             "days": days,
@@ -1412,6 +1603,1030 @@ async def get_recent_patterns(symbol: str, days: int = 5):
     except Exception as e:
         logger.error(f"Recent pattern detection failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============ LLM FEATURES ENDPOINTS ============
+
+class LLMQueryRequest(BaseModel):
+    """Request model for natural language stock queries"""
+    question: str
+    symbol: Optional[str] = None
+
+class LLMNewsSummaryRequest(BaseModel):
+    """Request model for news summarization"""
+    symbol: str
+    articles: Optional[List[Dict[str, Any]]] = None
+
+class LLMPortfolioRequest(BaseModel):
+    """Request model for portfolio analysis"""
+    holdings: List[Dict[str, Any]]  # [{"symbol": "TCS", "quantity": 10, "avg_price": 3500}, ...]
+    investment_goal: Optional[str] = "growth"
+
+class LLMPatternExplainRequest(BaseModel):
+    """Request model for pattern explanation"""
+    symbol: str
+    pattern_name: str
+    pattern_data: Optional[Dict[str, Any]] = None
+
+class LLMCompareRequest(BaseModel):
+    """Request model for stock comparison"""
+    symbols: List[str]
+    criteria: Optional[List[str]] = None  # ["value", "growth", "momentum", "risk"]
+
+
+@api_router.post("/llm/ask")
+async def llm_ask_about_stock(request: LLMQueryRequest):
+    """
+    Natural language interface for stock queries.
+    Ask questions like "Is RELIANCE a good buy?" or "What's the trend for TCS?"
+    """
+    try:
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        llm_features = get_llm_features()
+        result = await llm_features.ask_about_stock(
+            question=request.question,
+            symbol=request.symbol,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"LLM query failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/llm/summarize-news")
+async def llm_summarize_news(request: LLMNewsSummaryRequest):
+    """
+    Get LLM-powered summary of news for a stock.
+    Analyzes sentiment and extracts key insights.
+    """
+    try:
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        # If no articles provided, fetch them
+        articles = request.articles
+        if not articles:
+            news_aggregator = get_news_aggregator()
+            articles = news_aggregator.fetch_latest_news(symbol=request.symbol, limit=10)
+
+        llm_features = get_llm_features()
+        result = await llm_features.summarize_news(
+            symbol=request.symbol,
+            articles=articles,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"News summarization failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/llm/analyze-portfolio")
+async def llm_analyze_portfolio(request: LLMPortfolioRequest):
+    """
+    Get AI-powered portfolio analysis with diversification insights,
+    risk assessment, and rebalancing suggestions.
+    """
+    try:
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        llm_features = get_llm_features()
+        result = await llm_features.analyze_portfolio(
+            holdings=request.holdings,
+            investment_goal=request.investment_goal,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Portfolio analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/llm/explain-pattern")
+async def llm_explain_pattern(request: LLMPatternExplainRequest):
+    """
+    Get plain English explanation of a candlestick pattern.
+    Explains what the pattern means and its trading implications.
+    """
+    try:
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        llm_features = get_llm_features()
+        result = await llm_features.explain_pattern(
+            symbol=request.symbol,
+            pattern_name=request.pattern_name,
+            pattern_data=request.pattern_data,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Pattern explanation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/llm/market-commentary")
+async def llm_market_commentary():
+    """
+    Get AI-generated daily market commentary.
+    Summarizes market trends, sector movements, and key insights.
+    """
+    try:
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        # Get market data for commentary
+        # Fetch NIFTY 50 data as market proxy
+        ticker = yf.Ticker("^NSEI")
+        nifty_hist = ticker.history(period="5d")
+
+        market_data = {
+            "nifty_current": float(nifty_hist['Close'].iloc[-1]) if not nifty_hist.empty else None,
+            "nifty_change": float(nifty_hist['Close'].iloc[-1] - nifty_hist['Close'].iloc[-2]) if len(nifty_hist) >= 2 else None,
+            "nifty_change_pct": float((nifty_hist['Close'].iloc[-1] - nifty_hist['Close'].iloc[-2]) / nifty_hist['Close'].iloc[-2] * 100) if len(nifty_hist) >= 2 else None,
+        }
+
+        # Get latest news
+        news_aggregator = get_news_aggregator()
+        latest_news = news_aggregator.fetch_latest_news(limit=5)
+
+        llm_features = get_llm_features()
+        result = await llm_features.generate_market_commentary(
+            market_data=market_data,
+            news=latest_news,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Market commentary generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/llm/compare-stocks")
+async def llm_compare_stocks(request: LLMCompareRequest):
+    """
+    Get AI-powered comparison of multiple stocks.
+    Analyzes and compares based on various criteria.
+    """
+    try:
+        if len(request.symbols) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 symbols required for comparison")
+        if len(request.symbols) > 5:
+            raise HTTPException(status_code=400, detail="Maximum 5 symbols allowed for comparison")
+
+        # Get API key
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=400, detail="Please configure API keys in Settings")
+
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get(f'{provider}_api_key')
+        model = settings.get('selected_model', 'gpt-4.1')
+
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"Please configure your {provider} API key")
+
+        # Fetch data for all symbols
+        stocks_data = []
+        for symbol in request.symbols:
+            try:
+                stock_data = await fetch_stock_data(symbol)
+                indicators = await calculate_technical_indicators(symbol)
+                stocks_data.append({
+                    "stock_data": stock_data,
+                    "indicators": indicators
+                })
+            except Exception as e:
+                logger.warning(f"Failed to fetch data for {symbol}: {e}")
+                stocks_data.append({
+                    "stock_data": {"symbol": symbol, "error": str(e)},
+                    "indicators": {}
+                })
+
+        llm_features = get_llm_features()
+        result = await llm_features.compare_stocks(
+            symbols=request.symbols,
+            stocks_data=stocks_data,
+            criteria=request.criteria,
+            api_key=api_key,
+            provider=provider,
+            model=model
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Stock comparison failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ FUNDAMENTAL SCREENER ENDPOINTS ============
+
+from analysis.fundamental_screener import get_fundamental_screener
+
+class ScreenerRequest(BaseModel):
+    """Request for stock screening"""
+    symbols: Optional[List[str]] = None  # If None, use NIFTY_100_STOCKS
+    filters: List[Dict[str, Any]]
+    sort_by: Optional[str] = None
+    sort_order: str = "desc"
+    limit: int = 50
+
+
+@api_router.get("/screener/fundamentals/{symbol}")
+async def get_stock_fundamentals(symbol: str):
+    """Get complete fundamental data for a single stock"""
+    try:
+        screener = get_fundamental_screener()
+        data = await screener.get_stock_fundamentals(symbol)
+
+        if 'error' in data:
+            raise HTTPException(status_code=404, detail=data['error'])
+
+        return data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get fundamentals for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/screener/screen")
+async def screen_stocks(request: ScreenerRequest):
+    """
+    Screen stocks based on fundamental criteria.
+    Example filters: [{"metric": "pe_ratio", "operator": "lt", "value": 20}]
+    """
+    try:
+        screener = get_fundamental_screener()
+
+        # Use provided symbols or default to NIFTY 100
+        symbols = request.symbols or [s['symbol'] for s in NIFTY_100_STOCKS]
+
+        result = await screener.screen_stocks(
+            symbols=symbols,
+            filters=request.filters,
+            sort_by=request.sort_by,
+            sort_order=request.sort_order,
+            limit=request.limit
+        )
+
+        if 'error' in result:
+            raise HTTPException(status_code=500, detail=result['error'])
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Screening failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/screener/presets")
+async def get_screener_presets():
+    """Get predefined screening presets"""
+    screener = get_fundamental_screener()
+    return {"presets": screener.get_preset_screens()}
+
+
+@api_router.post("/screener/run-preset/{preset_name}")
+async def run_preset_screen(preset_name: str):
+    """Run a predefined screening preset"""
+    try:
+        screener = get_fundamental_screener()
+        presets = screener.get_preset_screens()
+
+        preset = next((p for p in presets if p['name'].lower().replace(' ', '_') == preset_name.lower()), None)
+
+        if not preset:
+            raise HTTPException(status_code=404, detail=f"Preset '{preset_name}' not found")
+
+        symbols = [s['symbol'] for s in NIFTY_100_STOCKS]
+
+        result = await screener.screen_stocks(
+            symbols=symbols,
+            filters=preset['filters'],
+            sort_by=preset.get('sort_by'),
+            sort_order=preset.get('sort_order', 'desc'),
+            limit=50
+        )
+
+        result['preset_name'] = preset['name']
+        result['preset_description'] = preset['description']
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Preset screening failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ FII/DII TRACKING ENDPOINTS ============
+
+from market_data.fii_dii_tracker import get_fii_dii_tracker, get_bulk_block_tracker
+
+
+@api_router.get("/market/fii-dii")
+async def get_fii_dii_data():
+    """Get today's FII/DII flow data"""
+    try:
+        tracker = get_fii_dii_tracker()
+        data = await tracker.fetch_daily_fii_dii()
+        return data
+
+    except Exception as e:
+        logger.error(f"Failed to fetch FII/DII data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/bulk-deals")
+async def get_bulk_deals():
+    """Get today's bulk deals"""
+    try:
+        tracker = get_bulk_block_tracker()
+        data = await tracker.fetch_bulk_deals()
+        return data
+
+    except Exception as e:
+        logger.error(f"Failed to fetch bulk deals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/block-deals")
+async def get_block_deals():
+    """Get today's block deals"""
+    try:
+        tracker = get_bulk_block_tracker()
+        data = await tracker.fetch_block_deals()
+        return data
+
+    except Exception as e:
+        logger.error(f"Failed to fetch block deals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/institutional-activity")
+async def get_institutional_activity():
+    """Get combined institutional activity (FII/DII + Bulk/Block deals)"""
+    try:
+        fii_tracker = get_fii_dii_tracker()
+        deals_tracker = get_bulk_block_tracker()
+
+        fii_dii = await fii_tracker.fetch_daily_fii_dii()
+        bulk = await deals_tracker.fetch_bulk_deals()
+        block = await deals_tracker.fetch_block_deals()
+
+        return {
+            "fii_dii": fii_dii,
+            "bulk_deals": bulk,
+            "block_deals": block,
+            "market_bias": fii_dii.get('interpretation', {}).get('overall_bias', 'Unknown')
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to fetch institutional activity: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ WALK-FORWARD BACKTESTING ENDPOINTS ============
+
+from backtesting.walk_forward import get_walk_forward_engine, IndianMarketCosts
+
+
+class WalkForwardRequest(BaseModel):
+    """Request for walk-forward backtest"""
+    symbol: str
+    strategy: str
+    start_date: str
+    end_date: str
+    train_pct: float = 0.7
+    n_splits: int = 5
+    anchored: bool = False
+    initial_capital: float = 100000
+    strategy_params: Optional[Dict[str, Any]] = None
+
+
+@api_router.post("/backtest/walk-forward")
+async def run_walk_forward_backtest(request: WalkForwardRequest):
+    """
+    Run walk-forward backtest with realistic Indian market costs.
+    Walk-forward testing uses rolling train/test splits for realistic performance estimates.
+    """
+    try:
+        # Get strategy
+        strategy = StrategyRegistry.get_strategy(
+            request.strategy,
+            request.strategy_params
+        )
+
+        engine = get_walk_forward_engine(
+            initial_capital=request.initial_capital,
+            is_intraday=False
+        )
+
+        result = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: asyncio.run(engine.run_walk_forward(
+                symbol=request.symbol,
+                strategy=strategy,
+                start_date=request.start_date,
+                end_date=request.end_date,
+                train_pct=request.train_pct,
+                n_splits=request.n_splits,
+                anchored=request.anchored
+            ))
+        )
+
+        # Save to database
+        backtest_record = {
+            "id": str(uuid.uuid4()),
+            "type": "walk_forward",
+            "symbol": request.symbol.upper(),
+            "strategy": request.strategy,
+            "aggregated_metrics": result.get('aggregated_metrics', {}),
+            "robustness_score": result.get('robustness_score', {}),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        await db.backtests.insert_one(backtest_record)
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Walk-forward backtest failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/backtest/costs")
+async def get_transaction_costs():
+    """Get Indian market transaction costs breakdown"""
+    costs = IndianMarketCosts()
+
+    # Calculate example for ₹1 lakh trade
+    example_value = 100000
+
+    return {
+        "description": "Realistic Indian equity market transaction costs",
+        "components": {
+            "brokerage": f"{costs.brokerage_rate * 100:.3f}% (max ₹{costs.brokerage_max})",
+            "stt_delivery": f"{costs.stt_sell * 100:.2f}% on sell",
+            "stt_intraday": f"{costs.stt_intraday_sell * 100:.4f}% on sell",
+            "exchange_charges": f"{costs.nse_charge * 100:.5f}%",
+            "gst": f"{costs.gst_rate * 100:.0f}% on brokerage",
+            "sebi_charges": f"₹10 per crore",
+            "stamp_duty": f"{costs.stamp_duty_buy * 100:.3f}% on buy",
+            "dp_charges": f"₹{costs.dp_charges} per scrip (delivery)"
+        },
+        "example_1_lakh_roundtrip": costs.calculate_roundtrip_cost(example_value),
+        "note": "Costs vary by broker. These are estimates based on discount brokers."
+    }
+
+
+# ============ MONTE CARLO SIMULATION ENDPOINTS ============
+
+from backtesting.monte_carlo import get_monte_carlo_simulator, MonteCarloConfig
+
+
+class MonteCarloRequest(BaseModel):
+    """Request model for Monte Carlo simulation"""
+    symbol: str
+    strategy: str = "momentum"
+    start_date: str = "2022-01-01"
+    end_date: str = "2024-01-01"
+    n_simulations: int = 1000
+    initial_capital: float = 100000
+    randomize_trades: bool = True
+    seed: Optional[int] = None
+
+
+@api_router.post("/backtest/monte-carlo")
+async def run_monte_carlo_simulation(request: MonteCarloRequest):
+    """
+    Run Monte Carlo simulation on strategy trades.
+    Randomizes trade sequences to assess robustness.
+    """
+    try:
+        from backtesting.strategies import StrategyRegistry
+        from backtesting.walk_forward import get_walk_forward_engine
+
+        # Get strategy
+        registry = StrategyRegistry()
+        strategies = registry.get_available_strategies()
+        strategy_class = next((s for s in strategies if s['name'] == request.strategy), None)
+
+        if not strategy_class:
+            raise HTTPException(status_code=400, detail=f"Unknown strategy: {request.strategy}")
+
+        strategy = registry.create_strategy(request.strategy)
+
+        # First run a backtest to get trades
+        engine = get_walk_forward_engine()
+        backtest_result = engine._run_single_backtest(
+            symbol=request.symbol.upper(),
+            strategy=strategy,
+            start_date=request.start_date,
+            end_date=request.end_date
+        )
+
+        trades = backtest_result.get('trades', [])
+
+        if not trades:
+            return {"error": "No trades generated by strategy"}
+
+        # Run Monte Carlo
+        config = MonteCarloConfig(
+            n_simulations=request.n_simulations,
+            randomize_trades=request.randomize_trades,
+            seed=request.seed
+        )
+        simulator = get_monte_carlo_simulator(config)
+        result = simulator.run_simulation(trades, request.initial_capital)
+
+        result['symbol'] = request.symbol.upper()
+        result['strategy'] = request.strategy
+        result['period'] = f"{request.start_date} to {request.end_date}"
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Monte Carlo simulation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ PORTFOLIO BACKTESTING ENDPOINTS ============
+
+from backtesting.portfolio import get_portfolio_backtester, get_correlation_analyzer
+
+
+class PortfolioBacktestRequest(BaseModel):
+    """Request model for portfolio backtest"""
+    symbols: List[str]
+    strategy: str = "momentum"
+    start_date: str = "2022-01-01"
+    end_date: str = "2024-01-01"
+    initial_capital: float = 100000
+    weighting: str = "equal"  # equal, market_cap, inverse_volatility
+
+
+@api_router.post("/backtest/portfolio")
+async def run_portfolio_backtest(request: PortfolioBacktestRequest):
+    """
+    Run portfolio-level backtest across multiple stocks.
+    Tests diversification and correlation effects.
+    """
+    try:
+        from backtesting.strategies import StrategyRegistry
+
+        registry = StrategyRegistry()
+        strategy = registry.create_strategy(request.strategy)
+
+        backtester = get_portfolio_backtester()
+        result = backtester.run_portfolio_backtest(
+            symbols=[s.upper() for s in request.symbols],
+            strategy=strategy,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            initial_capital=request.initial_capital,
+            weighting=request.weighting
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Portfolio backtest failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CorrelationRequest(BaseModel):
+    """Request model for correlation analysis"""
+    symbols: List[str]
+    start_date: str = "2023-01-01"
+    end_date: str = "2024-01-01"
+
+
+@api_router.post("/analysis/correlation")
+async def analyze_correlation(request: CorrelationRequest):
+    """
+    Analyze correlation between multiple stocks.
+    Returns correlation matrix and diversification score.
+    """
+    try:
+        analyzer = get_correlation_analyzer()
+        result = analyzer.calculate_correlation_matrix(
+            symbols=[s.upper() for s in request.symbols],
+            start_date=request.start_date,
+            end_date=request.end_date
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Correlation analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/analysis/beta/{symbol}")
+async def get_stock_beta(symbol: str, benchmark: str = "^NSEI", start_date: str = "2023-01-01", end_date: str = "2024-01-01"):
+    """
+    Calculate beta of a stock relative to benchmark.
+    Default benchmark is Nifty 50.
+    """
+    try:
+        analyzer = get_correlation_analyzer()
+        result = analyzer.calculate_beta(
+            symbol=symbol.upper(),
+            benchmark=benchmark,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Beta calculation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ REGIME TESTING ENDPOINTS ============
+
+from backtesting.regime_tester import get_regime_tester
+
+
+class RegimeTestRequest(BaseModel):
+    """Request model for regime testing"""
+    symbol: str
+    strategy: str = "momentum"
+    start_date: str = "2020-01-01"
+    end_date: str = "2024-01-01"
+    initial_capital: float = 100000
+
+
+@api_router.post("/backtest/regime")
+async def test_strategy_by_regime(request: RegimeTestRequest):
+    """
+    Test strategy performance across different market regimes.
+    Breaks down performance in bull/bear/sideways markets.
+    """
+    try:
+        from backtesting.strategies import StrategyRegistry
+
+        registry = StrategyRegistry()
+        strategy = registry.create_strategy(request.strategy)
+
+        tester = get_regime_tester()
+        result = tester.test_strategy_by_regime(
+            symbol=request.symbol.upper(),
+            strategy=strategy,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            initial_capital=request.initial_capital
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Regime testing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ CUSTOM INDICATOR ENDPOINTS ============
+
+from backtesting.custom_indicators import get_indicator_builder
+
+
+@api_router.get("/indicators/available")
+async def get_available_indicators():
+    """Get list of available technical indicators"""
+    builder = get_indicator_builder()
+    return {
+        "indicators": builder.get_available_indicators(),
+        "examples": builder.get_formula_examples()
+    }
+
+
+class CustomIndicatorRequest(BaseModel):
+    """Request model for custom indicator calculation"""
+    symbol: str
+    indicator: str  # e.g., "sma", "rsi", "macd"
+    params: Dict[str, Any] = {}
+    start_date: str = "2023-01-01"
+    end_date: str = "2024-01-01"
+
+
+@api_router.post("/indicators/calculate")
+async def calculate_custom_indicator(request: CustomIndicatorRequest):
+    """
+    Calculate a technical indicator for a symbol.
+    """
+    try:
+        from backtesting.price_cache import get_price_cache
+
+        price_cache = get_price_cache()
+        data = price_cache.get_prices(
+            request.symbol.upper(),
+            request.start_date,
+            request.end_date
+        )
+
+        if data.empty:
+            raise HTTPException(status_code=404, detail="No price data found")
+
+        builder = get_indicator_builder()
+        result = builder.calculate_indicator(data, request.indicator, request.params)
+
+        # Convert to serializable format
+        if isinstance(result, dict):
+            output = {k: v.dropna().tail(20).to_dict() for k, v in result.items()}
+        else:
+            output = {"values": result.dropna().tail(20).to_dict()}
+
+        return {
+            "symbol": request.symbol.upper(),
+            "indicator": request.indicator,
+            "params": request.params,
+            "data": output
+        }
+
+    except Exception as e:
+        logger.error(f"Indicator calculation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CustomFormulaRequest(BaseModel):
+    """Request model for custom formula indicator"""
+    symbol: str
+    formula: str  # e.g., "sma(20) - sma(50)"
+    start_date: str = "2023-01-01"
+    end_date: str = "2024-01-01"
+
+
+@api_router.post("/indicators/formula")
+async def calculate_formula_indicator(request: CustomFormulaRequest):
+    """
+    Calculate a custom formula indicator.
+    Examples:
+    - "sma(20) - sma(50)" for MA crossover
+    - "rsi(14) > 70" for overbought condition
+    """
+    try:
+        from backtesting.price_cache import get_price_cache
+
+        price_cache = get_price_cache()
+        data = price_cache.get_prices(
+            request.symbol.upper(),
+            request.start_date,
+            request.end_date
+        )
+
+        if data.empty:
+            raise HTTPException(status_code=404, detail="No price data found")
+
+        builder = get_indicator_builder()
+        result = builder.build_custom_indicator(data, request.formula)
+
+        # Convert to serializable format
+        output = result.dropna().tail(30).to_dict()
+
+        return {
+            "symbol": request.symbol.upper(),
+            "formula": request.formula,
+            "data": output
+        }
+
+    except Exception as e:
+        logger.error(f"Formula calculation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ PARAMETER OPTIMIZATION ENDPOINT ============
+
+from backtesting.monte_carlo import ParameterOptimizer
+
+
+class OptimizationRequest(BaseModel):
+    """Request model for parameter optimization"""
+    symbol: str
+    strategy: str = "momentum"
+    param_ranges: Dict[str, List[float]]  # e.g., {"fast_period": [5, 20], "slow_period": [20, 50]}
+    start_date: str = "2022-01-01"
+    end_date: str = "2024-01-01"
+    n_iterations: int = 100
+    optimization_metric: str = "sharpe"  # sharpe, return, sortino
+
+
+@api_router.post("/backtest/optimize")
+async def optimize_strategy_parameters(request: OptimizationRequest):
+    """
+    Optimize strategy parameters using walk-forward validation.
+    Tests different parameter combinations and validates out-of-sample.
+    """
+    try:
+        from backtesting.price_cache import get_price_cache
+        from backtesting.strategies import StrategyRegistry
+
+        registry = StrategyRegistry()
+
+        # Get price data
+        price_cache = get_price_cache()
+        data = price_cache.get_prices(
+            request.symbol.upper(),
+            request.start_date,
+            request.end_date
+        )
+
+        if data.empty or len(data) < 100:
+            raise HTTPException(status_code=400, detail="Insufficient data for optimization")
+
+        # Convert param_ranges to tuples
+        param_tuples = {k: tuple(v) for k, v in request.param_ranges.items()}
+
+        # Run optimization
+        optimizer = ParameterOptimizer(
+            n_iterations=request.n_iterations,
+            optimization_metric=request.optimization_metric
+        )
+
+        # Get strategy class
+        strategy_info = next(
+            (s for s in registry.get_available_strategies() if s['name'] == request.strategy),
+            None
+        )
+
+        if not strategy_info:
+            raise HTTPException(status_code=400, detail=f"Unknown strategy: {request.strategy}")
+
+        # Create a strategy factory
+        def create_strategy(params):
+            return registry.create_strategy(request.strategy)
+
+        result = optimizer.optimize(
+            strategy_class=create_strategy,
+            param_ranges=param_tuples,
+            data=data,
+            initial_capital=100000
+        )
+
+        result['symbol'] = request.symbol.upper()
+        result['strategy'] = request.strategy
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Parameter optimization failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ CONFIDENCE TRACKING ENDPOINTS ============
+
+from tracking.confidence_tracker import get_confidence_tracker
+
+
+@api_router.get("/tracking/accuracy")
+async def get_prediction_accuracy(days_back: int = 90, min_confidence: Optional[float] = None):
+    """Get accuracy statistics for past predictions"""
+    try:
+        tracker = get_confidence_tracker(db)
+        stats = await tracker.get_accuracy_stats(days_back, min_confidence)
+        return stats
+
+    except Exception as e:
+        logger.error(f"Failed to get accuracy stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/tracking/predictions")
+async def get_recent_predictions(
+    limit: int = 20,
+    symbol: Optional[str] = None,
+    recommendation: Optional[str] = None
+):
+    """Get recent predictions with their outcomes"""
+    try:
+        tracker = get_confidence_tracker(db)
+        predictions = await tracker.get_recent_predictions(limit, symbol, recommendation)
+        return {"predictions": predictions, "count": len(predictions)}
+
+    except Exception as e:
+        logger.error(f"Failed to get predictions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/tracking/leaderboard")
+async def get_accuracy_leaderboard(period_days: int = 30):
+    """Get accuracy leaderboard by symbol"""
+    try:
+        tracker = get_confidence_tracker(db)
+        leaderboard = await tracker.get_leaderboard(period_days)
+        return leaderboard
+
+    except Exception as e:
+        logger.error(f"Failed to get leaderboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/tracking/verify")
+async def verify_pending_predictions():
+    """Verify pending predictions (should be called daily via cron)"""
+    try:
+        tracker = get_confidence_tracker(db)
+        result = await tracker.verify_predictions()
+        return result
+
+    except Exception as e:
+        logger.error(f"Failed to verify predictions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ DISCLAIMER ENDPOINTS ============
+
+from utils.disclaimers import Disclaimers
+
+
+@api_router.get("/disclaimer")
+async def get_disclaimer():
+    """Get full disclaimer text"""
+    return Disclaimers.get_full_disclaimer()
+
+
+@api_router.get("/disclaimer/short")
+async def get_short_disclaimer():
+    """Get short disclaimer for API responses"""
+    return Disclaimers.get_api_disclaimer()
+
 
 # Include the router in the main app
 app.include_router(api_router)

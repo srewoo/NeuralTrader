@@ -16,12 +16,24 @@ export default function ReasoningLog({ reasoning }) {
     if (!reasoning) return [];
 
     if (Array.isArray(reasoning)) {
-      return reasoning;
+      // If already an array of objects with content, use as-is
+      if (reasoning.length > 0 && typeof reasoning[0] === 'object' && reasoning[0].content) {
+        return reasoning.map((item, index) => ({
+          step: item.step || index + 1,
+          content: item.content,
+          type: item.type || detectStepType(item.content)
+        }));
+      }
+      // If array of strings, convert
+      return reasoning.map((line, index) => ({
+        step: index + 1,
+        content: typeof line === 'string' ? line : line.content || String(line),
+        type: detectStepType(typeof line === 'string' ? line : line.content || '')
+      }));
     }
 
     if (typeof reasoning === "string") {
-      // Try to split by numbered patterns like "1)", "2.", "1:", or newlines
-      // First try splitting by numbered patterns: "1)", "2)", etc.
+      // Try to split by numbered patterns like "1)", "2.", "1:", etc.
       const numberedPattern = /(?:^|\s)(\d+)\)\s*/g;
       const hasNumberedPoints = numberedPattern.test(reasoning);
 
@@ -34,21 +46,56 @@ export default function ReasoningLog({ reasoning }) {
           .map(line => line.trim())
           .filter(line => line.length > 0);
       } else {
-        // Try splitting by newlines or other patterns
-        lines = reasoning
-          .split(/\n+|(?<=\.)\s+(?=[A-Z])|(?:^|\s)[-•]\s+/)
-          .map(line => line.trim())
-          .filter(line => line.length > 0);
-      }
+        // Look for section headers like "Price Action Analysis:", "Momentum Assessment:", etc.
+        // These are more reliable markers for analysis sections
+        const sectionHeaders = [
+          'Price Action',
+          'Momentum',
+          'Volatility',
+          'Trend',
+          'Pattern',
+          'Volume',
+          'Support',
+          'Resistance',
+          'Risk',
+          'Summary',
+          'Recommendation',
+          'Target',
+          'Synthesis',
+          'Assessment',
+          'Analysis',
+          'Conclusion'
+        ];
 
-      // If still only one line, try to split on section headers
-      if (lines.length === 1) {
-        const sectionPattern = /([A-Z][a-zA-Z\s]+:)/g;
-        if (sectionPattern.test(reasoning)) {
+        // Create a regex pattern to split on section headers
+        const headerPattern = new RegExp(
+          `(?=(?:${sectionHeaders.join('|')})[^:]*:)`,
+          'gi'
+        );
+
+        // First try splitting by section headers
+        const sections = reasoning.split(headerPattern).filter(s => s.trim().length > 0);
+
+        if (sections.length > 1) {
+          lines = sections.map(s => s.trim());
+        } else {
+          // Try splitting by double newlines or explicit separators
           lines = reasoning
-            .split(/(?=[A-Z][a-zA-Z\s]+:)/)
+            .split(/\n\n+|\n(?=\d+[\.\)]\s)|(?<=\.\s{2,})/g)
             .map(line => line.trim())
             .filter(line => line.length > 0);
+        }
+
+        // If still only one line, try splitting by sentence-ending patterns followed by section keywords
+        if (lines.length === 1) {
+          const keywordSplitPattern = new RegExp(
+            `(?<=\\.)\\s+(?=(?:${sectionHeaders.join('|')}|The|However|Additionally|Furthermore|Overall|Based)\\s)`,
+            'gi'
+          );
+          const splitResult = reasoning.split(keywordSplitPattern);
+          if (splitResult.length > 1) {
+            lines = splitResult.map(s => s.trim()).filter(s => s.length > 0);
+          }
         }
       }
 

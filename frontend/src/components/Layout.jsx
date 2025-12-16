@@ -7,7 +7,8 @@ import {
   BarChart3,
   Zap,
   LineChart,
-  Brain
+  Brain,
+  HelpCircle
 } from "lucide-react";
 
 export const Layout = () => {
@@ -19,6 +20,7 @@ export const Layout = () => {
     { path: "/history", icon: History, label: "History" },
     { path: "/backtesting", icon: LineChart, label: "Backtest" },
     { path: "/settings", icon: Settings, label: "Settings" },
+    { path: "/help", icon: HelpCircle, label: "Help" },
   ];
 
   return (

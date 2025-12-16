@@ -1,115 +1,726 @@
 INFO:     Will watch for changes in these directories: ['/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [36952] using WatchFiles
-INFO:     Started server process [36961]
+INFO:     Started reloader process [34279] using WatchFiles
+INFO:     Started server process [34338]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:59911 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59948 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59913 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59948 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59923 - "OPTIONS /api/backtest/run HTTP/1.1" 200 OK
-2025-12-15 19:13:07,693 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
-2025-12-15 19:13:07,694 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
-2025-12-15 19:13:07,696 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
-2025-12-15 19:13:08,724 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
-2025-12-15 19:13:08,727 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
-2025-12-15 19:13:08,727 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
-INFO:     127.0.0.1:59923 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
-INFO:     127.0.0.1:59923 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60174 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59923 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60176 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-2025-12-15 19:13:23,842 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
-2025-12-15 19:13:23,844 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
-2025-12-15 19:13:23,882 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
-2025-12-15 19:13:23,884 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
-2025-12-15 19:13:23,884 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
-INFO:     127.0.0.1:60275 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
-2025-12-15 19:13:34,507 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
-2025-12-15 19:13:34,510 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
-2025-12-15 19:13:34,546 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
-2025-12-15 19:13:34,549 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
-2025-12-15 19:13:34,549 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
-INFO:     127.0.0.1:60388 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
-2025-12-15 19:13:55,541 - backtesting.engine - INFO - Running backtest for TCS with Mean Reversion
-2025-12-15 19:13:55,542 - backtesting.price_cache - INFO - Fetching TCS from yfinance
-2025-12-15 19:13:55,780 - backtesting.price_cache - INFO - Cached 490 records for TCS
-2025-12-15 19:13:55,784 - backtesting.engine - ERROR - Backtest failed: 'int' object has no attribute 'days'
-2025-12-15 19:13:55,784 - server - ERROR - Backtest failed: 'int' object has no attribute 'days'
-INFO:     127.0.0.1:60695 - "POST /api/backtest/run HTTP/1.1" 500 Internal Server Error
-WARNING:  WatchFiles detected changes in 'backtesting/price_cache.py'. Reloading...
+INFO:     127.0.0.1:51138 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51138 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51154 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51138 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51363 - "GET /api/recommendations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51365 - "GET /api/recommendations HTTP/1.1" 200 OK
+2025-12-16 09:33:14,045 - server - INFO - Generating AI recommendations for 100 stocks
+2025-12-16 09:33:15,077 - analysis.enhanced_analyzer - ERROR - Analysis failed for RELIANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,078 - server - WARNING - Enhanced analysis failed for RELIANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,216 - analysis.enhanced_analyzer - ERROR - Analysis failed for TCS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,216 - server - WARNING - Enhanced analysis failed for TCS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,363 - analysis.enhanced_analyzer - ERROR - Analysis failed for HDFCBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,363 - server - WARNING - Enhanced analysis failed for HDFCBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,540 - analysis.enhanced_analyzer - ERROR - Analysis failed for INFY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:15,540 - server - WARNING - Enhanced analysis failed for INFY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,208 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,208 - server - WARNING - Enhanced analysis failed for ICICIBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,356 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDUNILVR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,356 - server - WARNING - Enhanced analysis failed for HINDUNILVR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,498 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,498 - server - WARNING - Enhanced analysis failed for SBIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,632 - analysis.enhanced_analyzer - ERROR - Analysis failed for BHARTIARTL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,632 - server - WARNING - Enhanced analysis failed for BHARTIARTL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,785 - analysis.enhanced_analyzer - ERROR - Analysis failed for ITC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,785 - server - WARNING - Enhanced analysis failed for ITC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,936 - analysis.enhanced_analyzer - ERROR - Analysis failed for KOTAKBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:16,937 - server - WARNING - Enhanced analysis failed for KOTAKBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,582 - analysis.enhanced_analyzer - ERROR - Analysis failed for LT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,582 - server - WARNING - Enhanced analysis failed for LT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,742 - analysis.enhanced_analyzer - ERROR - Analysis failed for AXISBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,742 - server - WARNING - Enhanced analysis failed for AXISBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,934 - analysis.enhanced_analyzer - ERROR - Analysis failed for WIPRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:17,934 - server - WARNING - Enhanced analysis failed for WIPRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,091 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJFINANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,091 - server - WARNING - Enhanced analysis failed for BAJFINANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,247 - analysis.enhanced_analyzer - ERROR - Analysis failed for MARUTI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,248 - server - WARNING - Enhanced analysis failed for MARUTI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,409 - analysis.enhanced_analyzer - ERROR - Analysis failed for ASIANPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,409 - server - WARNING - Enhanced analysis failed for ASIANPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,551 - analysis.enhanced_analyzer - ERROR - Analysis failed for HCLTECH: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,551 - server - WARNING - Enhanced analysis failed for HCLTECH: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,708 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATAMOTORS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,708 - server - WARNING - Enhanced analysis failed for TATAMOTORS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,874 - analysis.enhanced_analyzer - ERROR - Analysis failed for SUNPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:18,874 - server - WARNING - Enhanced analysis failed for SUNPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,026 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATASTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,027 - server - WARNING - Enhanced analysis failed for TATASTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,675 - analysis.enhanced_analyzer - ERROR - Analysis failed for NTPC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,675 - server - WARNING - Enhanced analysis failed for NTPC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,819 - analysis.enhanced_analyzer - ERROR - Analysis failed for POWERGRID: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:19,819 - server - WARNING - Enhanced analysis failed for POWERGRID: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,015 - analysis.enhanced_analyzer - ERROR - Analysis failed for ULTRACEMCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,015 - server - WARNING - Enhanced analysis failed for ULTRACEMCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,168 - analysis.enhanced_analyzer - ERROR - Analysis failed for TITAN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,169 - server - WARNING - Enhanced analysis failed for TITAN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,322 - analysis.enhanced_analyzer - ERROR - Analysis failed for NESTLEIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,322 - server - WARNING - Enhanced analysis failed for NESTLEIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,481 - analysis.enhanced_analyzer - ERROR - Analysis failed for TECHM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,481 - server - WARNING - Enhanced analysis failed for TECHM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,637 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJAJFINSV: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,637 - server - WARNING - Enhanced analysis failed for BAJAJFINSV: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,795 - analysis.enhanced_analyzer - ERROR - Analysis failed for ONGC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,795 - server - WARNING - Enhanced analysis failed for ONGC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,956 - analysis.enhanced_analyzer - ERROR - Analysis failed for JSWSTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:20,956 - server - WARNING - Enhanced analysis failed for JSWSTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,100 - analysis.enhanced_analyzer - ERROR - Analysis failed for M&M: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,100 - server - WARNING - Enhanced analysis failed for M&M: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,752 - analysis.enhanced_analyzer - ERROR - Analysis failed for COALINDIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,752 - server - WARNING - Enhanced analysis failed for COALINDIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,902 - analysis.enhanced_analyzer - ERROR - Analysis failed for ADANIENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:21,902 - server - WARNING - Enhanced analysis failed for ADANIENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,038 - analysis.enhanced_analyzer - ERROR - Analysis failed for ADANIPORTS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,038 - server - WARNING - Enhanced analysis failed for ADANIPORTS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,223 - analysis.enhanced_analyzer - ERROR - Analysis failed for GRASIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,223 - server - WARNING - Enhanced analysis failed for GRASIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,376 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDALCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,376 - server - WARNING - Enhanced analysis failed for HINDALCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,527 - analysis.enhanced_analyzer - ERROR - Analysis failed for DIVISLAB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,527 - server - WARNING - Enhanced analysis failed for DIVISLAB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,690 - analysis.enhanced_analyzer - ERROR - Analysis failed for DRREDDY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,690 - server - WARNING - Enhanced analysis failed for DRREDDY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,846 - analysis.enhanced_analyzer - ERROR - Analysis failed for CIPLA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,846 - server - WARNING - Enhanced analysis failed for CIPLA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,993 - analysis.enhanced_analyzer - ERROR - Analysis failed for APOLLOHOSP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:22,993 - server - WARNING - Enhanced analysis failed for APOLLOHOSP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,154 - analysis.enhanced_analyzer - ERROR - Analysis failed for BRITANNIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,155 - server - WARNING - Enhanced analysis failed for BRITANNIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,822 - analysis.enhanced_analyzer - ERROR - Analysis failed for EICHERMOT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,822 - server - WARNING - Enhanced analysis failed for EICHERMOT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,965 - analysis.enhanced_analyzer - ERROR - Analysis failed for INDUSINDBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:23,966 - server - WARNING - Enhanced analysis failed for INDUSINDBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,118 - analysis.enhanced_analyzer - ERROR - Analysis failed for HEROMOTOCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,118 - server - WARNING - Enhanced analysis failed for HEROMOTOCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,278 - analysis.enhanced_analyzer - ERROR - Analysis failed for BPCL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,278 - server - WARNING - Enhanced analysis failed for BPCL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,458 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATACONSUM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,458 - server - WARNING - Enhanced analysis failed for TATACONSUM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,578 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBILIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,578 - server - WARNING - Enhanced analysis failed for SBILIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,724 - analysis.enhanced_analyzer - ERROR - Analysis failed for HDFCLIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,724 - server - WARNING - Enhanced analysis failed for HDFCLIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,870 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJAJ-AUTO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:24,870 - server - WARNING - Enhanced analysis failed for BAJAJ-AUTO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,026 - analysis.enhanced_analyzer - WARNING - Data quality issues for SHREECEM: ['Low liquidity: avg volume 33,917']
+2025-12-16 09:33:25,033 - analysis.enhanced_analyzer - ERROR - Analysis failed for SHREECEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,033 - server - WARNING - Enhanced analysis failed for SHREECEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,215 - analysis.enhanced_analyzer - ERROR - Analysis failed for VEDL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,218 - server - WARNING - Enhanced analysis failed for VEDL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,884 - analysis.enhanced_analyzer - ERROR - Analysis failed for HAVELLS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:25,884 - server - WARNING - Enhanced analysis failed for HAVELLS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,055 - analysis.enhanced_analyzer - ERROR - Analysis failed for PIDILITIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,055 - server - WARNING - Enhanced analysis failed for PIDILITIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,194 - analysis.enhanced_analyzer - ERROR - Analysis failed for DABUR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,194 - server - WARNING - Enhanced analysis failed for DABUR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,366 - analysis.enhanced_analyzer - ERROR - Analysis failed for GODREJCP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,366 - server - WARNING - Enhanced analysis failed for GODREJCP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,512 - analysis.enhanced_analyzer - ERROR - Analysis failed for SIEMENS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,512 - server - WARNING - Enhanced analysis failed for SIEMENS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,660 - analysis.enhanced_analyzer - ERROR - Analysis failed for DLF: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,660 - server - WARNING - Enhanced analysis failed for DLF: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,789 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIPRULI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,789 - server - WARNING - Enhanced analysis failed for ICICIPRULI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,922 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIGI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:26,922 - server - WARNING - Enhanced analysis failed for ICICIGI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,068 - analysis.enhanced_analyzer - ERROR - Analysis failed for AMBUJACEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,068 - server - WARNING - Enhanced analysis failed for AMBUJACEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,203 - analysis.enhanced_analyzer - ERROR - Analysis failed for BANKBARODA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,204 - server - WARNING - Enhanced analysis failed for BANKBARODA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,856 - analysis.enhanced_analyzer - ERROR - Analysis failed for PNB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:27,856 - server - WARNING - Enhanced analysis failed for PNB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:28,014 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATAPOWER: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:28,014 - server - WARNING - Enhanced analysis failed for TATAPOWER: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:28,144 - analysis.enhanced_analyzer - ERROR - Analysis failed for INDIGO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:28,144 - server - WARNING - Enhanced analysis failed for INDIGO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:29,375 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:30,705 - yfinance - ERROR - $ZOMATO.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:30,706 - server - WARNING - Enhanced analysis failed for ZOMATO: No data available
+2025-12-16 09:33:30,857 - analysis.enhanced_analyzer - ERROR - Analysis failed for PAYTM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:30,857 - server - WARNING - Enhanced analysis failed for PAYTM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:30,970 - analysis.enhanced_analyzer - ERROR - Analysis failed for NYKAA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:30,970 - server - WARNING - Enhanced analysis failed for NYKAA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,095 - analysis.enhanced_analyzer - ERROR - Analysis failed for JUBLFOOD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,095 - server - WARNING - Enhanced analysis failed for JUBLFOOD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,260 - analysis.enhanced_analyzer - ERROR - Analysis failed for BERGEPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,260 - server - WARNING - Enhanced analysis failed for BERGEPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,400 - analysis.enhanced_analyzer - ERROR - Analysis failed for COLPAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,400 - server - WARNING - Enhanced analysis failed for COLPAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,548 - analysis.enhanced_analyzer - ERROR - Analysis failed for MARICO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:31,548 - server - WARNING - Enhanced analysis failed for MARICO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:32,968 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:33,887 - yfinance - ERROR - $MCDOWELL-N.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:33,888 - server - WARNING - Enhanced analysis failed for MCDOWELL-N: No data available
+2025-12-16 09:33:34,433 - analysis.enhanced_analyzer - ERROR - Analysis failed for TRENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,433 - server - WARNING - Enhanced analysis failed for TRENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,576 - analysis.enhanced_analyzer - ERROR - Analysis failed for PIIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,576 - server - WARNING - Enhanced analysis failed for PIIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,713 - analysis.enhanced_analyzer - ERROR - Analysis failed for BIOCON: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,713 - server - WARNING - Enhanced analysis failed for BIOCON: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,854 - analysis.enhanced_analyzer - ERROR - Analysis failed for LUPIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:34,854 - server - WARNING - Enhanced analysis failed for LUPIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,006 - analysis.enhanced_analyzer - ERROR - Analysis failed for TORNTPHARM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,006 - server - WARNING - Enhanced analysis failed for TORNTPHARM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,222 - analysis.enhanced_analyzer - ERROR - Analysis failed for AUROPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,222 - server - WARNING - Enhanced analysis failed for AUROPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,387 - analysis.enhanced_analyzer - ERROR - Analysis failed for GAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,387 - server - WARNING - Enhanced analysis failed for GAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,542 - analysis.enhanced_analyzer - ERROR - Analysis failed for IOC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,542 - server - WARNING - Enhanced analysis failed for IOC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,698 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDPETRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:35,698 - server - WARNING - Enhanced analysis failed for HINDPETRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,323 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBICARD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,323 - server - WARNING - Enhanced analysis failed for SBICARD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,458 - analysis.enhanced_analyzer - ERROR - Analysis failed for CHOLAFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,459 - server - WARNING - Enhanced analysis failed for CHOLAFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,617 - analysis.enhanced_analyzer - ERROR - Analysis failed for MUTHOOTFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:36,617 - server - WARNING - Enhanced analysis failed for MUTHOOTFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:37,536 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:44,114 - yfinance - ERROR - $PEL.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:33:44,114 - server - WARNING - Enhanced analysis failed for PEL: No data available
+2025-12-16 09:33:44,262 - analysis.enhanced_analyzer - ERROR - Analysis failed for RECLTD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,262 - server - WARNING - Enhanced analysis failed for RECLTD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,406 - analysis.enhanced_analyzer - ERROR - Analysis failed for PFC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,406 - server - WARNING - Enhanced analysis failed for PFC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,542 - analysis.enhanced_analyzer - ERROR - Analysis failed for IRCTC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,542 - server - WARNING - Enhanced analysis failed for IRCTC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,721 - analysis.enhanced_analyzer - ERROR - Analysis failed for SAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,721 - server - WARNING - Enhanced analysis failed for SAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,864 - analysis.enhanced_analyzer - ERROR - Analysis failed for NMDC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:44,864 - server - WARNING - Enhanced analysis failed for NMDC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,030 - analysis.enhanced_analyzer - ERROR - Analysis failed for BHEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,030 - server - WARNING - Enhanced analysis failed for BHEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,679 - analysis.enhanced_analyzer - ERROR - Analysis failed for HAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,679 - server - WARNING - Enhanced analysis failed for HAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,849 - analysis.enhanced_analyzer - ERROR - Analysis failed for BEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,849 - server - WARNING - Enhanced analysis failed for BEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,981 - analysis.enhanced_analyzer - ERROR - Analysis failed for LTIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:45,981 - server - WARNING - Enhanced analysis failed for LTIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,132 - analysis.enhanced_analyzer - ERROR - Analysis failed for PERSISTENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,133 - server - WARNING - Enhanced analysis failed for PERSISTENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,276 - analysis.enhanced_analyzer - ERROR - Analysis failed for COFORGE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,276 - server - WARNING - Enhanced analysis failed for COFORGE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,530 - analysis.enhanced_analyzer - ERROR - Analysis failed for MPHASIS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,530 - server - WARNING - Enhanced analysis failed for MPHASIS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,671 - analysis.enhanced_analyzer - ERROR - Analysis failed for CANBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,671 - server - WARNING - Enhanced analysis failed for CANBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,798 - analysis.enhanced_analyzer - ERROR - Analysis failed for IDFCFIRSTB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,798 - server - WARNING - Enhanced analysis failed for IDFCFIRSTB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,963 - analysis.enhanced_analyzer - ERROR - Analysis failed for FEDERALBNK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:46,963 - server - WARNING - Enhanced analysis failed for FEDERALBNK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:47,080 - analysis.enhanced_analyzer - ERROR - Analysis failed for ABCAPITAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:47,080 - server - WARNING - Enhanced analysis failed for ABCAPITAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:33:47,642 - server - INFO - Generated recommendations: 0 buy, 0 sell
+INFO:     127.0.0.1:51365 - "POST /api/recommendations/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51685 - "GET /api/analysis/history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51689 - "GET /api/analysis/history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51715 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51718 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51716 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51718 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51718 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51716 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "OPTIONS /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "POST /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51914 - "POST /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51914 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51949 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51951 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51951 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51953 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52016 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52018 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52018 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/analysis/ed394535-37f8-47f5-8696-98fbd8ac5fb5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52067 - "GET /api/analysis/ed394535-37f8-47f5-8696-98fbd8ac5fb5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52067 - "GET /api/stocks/SBIN/history?period=6mo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/stocks/SBIN/indicators HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52070 - "GET /api/stocks/SBIN HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52067 - "GET /api/stocks/SBIN/indicators HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52072 - "GET /api/stocks/SBIN/history?period=6mo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/stocks/SBIN HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backtesting/monte_carlo.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [36961]
-INFO:     Started server process [39186]
+INFO:     Finished server process [34338]
+INFO:     Started server process [37494]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'backtesting/price_cache.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'backtesting/portfolio.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [39186]
-INFO:     Started server process [39469]
+INFO:     Finished server process [37494]
+INFO:     Started server process [39055]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-2025-12-15 19:15:08,436 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
-2025-12-15 19:15:08,436 - backtesting.engine - INFO - Running backtest for TCS with Mean Reversion
-2025-12-15 19:15:08,449 - backtesting.price_cache - INFO - Fetching TCS from yfinance
-2025-12-15 19:15:09,641 - backtesting.price_cache - INFO - Cached 490 records for TCS
-2025-12-15 19:15:09,654 - backtesting.engine - INFO - Backtest complete: 12.22% return, 2 trades
-INFO:     127.0.0.1:61544 - "POST /api/backtest/run HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61907 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61908 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61907 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61911 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-2025-12-15 19:15:45,365 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
-2025-12-15 19:15:45,368 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
-2025-12-15 19:15:45,634 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
-2025-12-15 19:15:45,645 - backtesting.engine - INFO - Backtest complete: -6.36% return, 3 trades
-INFO:     127.0.0.1:61911 - "POST /api/backtest/run HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61911 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61912 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62332 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62336 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62335 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52884 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52886 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52884 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52894 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52992 - "GET /api/stocks/RELIANCE/history?period=6mo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52993 - "GET /api/stocks/RELIANCE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52994 - "GET /api/stocks/RELIANCE/indicators HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52994 - "GET /api/patterns/RELIANCE?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52993 - "GET /api/patterns/RELIANCE?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53068 - "GET /api/patterns/RELIANCE?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53107 - "GET /api/patterns/RELIANCE?days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53132 - "OPTIONS /api/analyze HTTP/1.1" 200 OK
+2025-12-16 09:37:55,013 - agents.orchestrator - INFO - Starting analysis workflow for RELIANCE with o3-mini
+2025-12-16 09:37:55,021 - agents.base.Data Collection Agent - INFO - [Data Collection Agent] Fetching data for RELIANCE
+WARNING:  WatchFiles detected changes in 'backtesting/regime_tester.py'. Reloading...
+2025-12-16 09:37:55,344 - agents.base.Data Collection Agent - INFO - [Data Collection Agent] Successfully fetched data for RELIANCE
+INFO:     Shutting down
+2025-12-16 09:37:55,346 - agents.base.Technical Analysis Agent - INFO - [Technical Analysis Agent] Calculating technical indicators for RELIANCE
+2025-12-16 09:37:55,516 - agents.base.Technical Analysis Agent - INFO - [Technical Analysis Agent] Successfully calculated indicators for RELIANCE
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+2025-12-16 09:37:55,517 - agents.base.RAG Knowledge Agent - INFO - [RAG Knowledge Agent] Retrieving historical knowledge for RELIANCE
+2025-12-16 09:37:55,762 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 0
+2025-12-16 09:37:55,762 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-16 09:37:55,820 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-16 09:37:55,820 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-16 09:37:59,565 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+2025-12-16 09:37:59,810 - rag.vector_store - INFO - Query returned 0 results
+2025-12-16 09:37:59,810 - rag.retrieval - INFO - Retrieved 0 relevant documents for query
+2025-12-16 09:37:59,948 - rag.vector_store - INFO - Query returned 0 results
+2025-12-16 09:37:59,948 - rag.retrieval - INFO - Retrieved 0 relevant documents for query
+2025-12-16 09:37:59,948 - rag.retrieval - ERROR - Failed to retrieve similar patterns: unsupported format string passed to NoneType.__format__
+2025-12-16 09:38:00,039 - rag.vector_store - INFO - Query returned 0 results
+2025-12-16 09:38:00,039 - rag.retrieval - INFO - Retrieved 0 relevant documents for query
+2025-12-16 09:38:00,039 - agents.base.RAG Knowledge Agent - INFO - [RAG Knowledge Agent] Retrieved 0 documents with avg similarity 0.00
+2025-12-16 09:38:00,040 - agents.base.Deep Reasoning Agent - INFO - [Deep Reasoning Agent] Analyzing RELIANCE with o3-mini
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+2025-12-16 09:38:20,581 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-12-16 09:38:20,589 - agents.base.Deep Reasoning Agent - INFO - [Deep Reasoning Agent] Analysis complete: HOLD (55% confidence)
+2025-12-16 09:38:20,591 - agents.base.Validator Agent - INFO - [Validator Agent] Validating analysis for RELIANCE
+2025-12-16 09:38:20,591 - agents.base.Validator Agent - INFO - [Validator Agent] Validation complete: excellent (score: 100/100)
+2025-12-16 09:38:20,592 - agents.orchestrator - INFO - Analysis complete: HOLD (55% confidence, quality: 100/100)
+INFO:     127.0.0.1:53132 - "POST /api/analyze HTTP/1.1" 200 OK
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39055]
+INFO:     Started server process [40761]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:53326 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53719 - "GET /api/recommendations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53719 - "GET /api/recommendations HTTP/1.1" 200 OK
+2025-12-16 09:39:23,735 - server - INFO - Generating AI recommendations for 100 stocks
+2025-12-16 09:39:24,675 - analysis.enhanced_analyzer - ERROR - Analysis failed for RELIANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:24,675 - server - WARNING - Enhanced analysis failed for RELIANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:24,825 - analysis.enhanced_analyzer - ERROR - Analysis failed for TCS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:24,825 - server - WARNING - Enhanced analysis failed for TCS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,005 - analysis.enhanced_analyzer - ERROR - Analysis failed for HDFCBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,005 - server - WARNING - Enhanced analysis failed for HDFCBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,161 - analysis.enhanced_analyzer - ERROR - Analysis failed for INFY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,161 - server - WARNING - Enhanced analysis failed for INFY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,325 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,325 - server - WARNING - Enhanced analysis failed for ICICIBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,476 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDUNILVR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,476 - server - WARNING - Enhanced analysis failed for HINDUNILVR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,627 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,627 - server - WARNING - Enhanced analysis failed for SBIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,770 - analysis.enhanced_analyzer - ERROR - Analysis failed for BHARTIARTL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,770 - server - WARNING - Enhanced analysis failed for BHARTIARTL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,919 - analysis.enhanced_analyzer - ERROR - Analysis failed for ITC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:25,919 - server - WARNING - Enhanced analysis failed for ITC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,075 - analysis.enhanced_analyzer - ERROR - Analysis failed for KOTAKBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,075 - server - WARNING - Enhanced analysis failed for KOTAKBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,733 - analysis.enhanced_analyzer - ERROR - Analysis failed for LT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,734 - server - WARNING - Enhanced analysis failed for LT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,917 - analysis.enhanced_analyzer - ERROR - Analysis failed for AXISBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:26,918 - server - WARNING - Enhanced analysis failed for AXISBANK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,093 - analysis.enhanced_analyzer - ERROR - Analysis failed for WIPRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,093 - server - WARNING - Enhanced analysis failed for WIPRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,246 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJFINANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,246 - server - WARNING - Enhanced analysis failed for BAJFINANCE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,393 - analysis.enhanced_analyzer - ERROR - Analysis failed for MARUTI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,393 - server - WARNING - Enhanced analysis failed for MARUTI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,550 - analysis.enhanced_analyzer - ERROR - Analysis failed for ASIANPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,550 - server - WARNING - Enhanced analysis failed for ASIANPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,698 - analysis.enhanced_analyzer - ERROR - Analysis failed for HCLTECH: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,698 - server - WARNING - Enhanced analysis failed for HCLTECH: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,865 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATAMOTORS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:27,865 - server - WARNING - Enhanced analysis failed for TATAMOTORS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,019 - analysis.enhanced_analyzer - ERROR - Analysis failed for SUNPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,019 - server - WARNING - Enhanced analysis failed for SUNPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,184 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATASTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,184 - server - WARNING - Enhanced analysis failed for TATASTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,845 - analysis.enhanced_analyzer - ERROR - Analysis failed for NTPC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,845 - server - WARNING - Enhanced analysis failed for NTPC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,997 - analysis.enhanced_analyzer - ERROR - Analysis failed for POWERGRID: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:28,997 - server - WARNING - Enhanced analysis failed for POWERGRID: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,140 - analysis.enhanced_analyzer - ERROR - Analysis failed for ULTRACEMCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,140 - server - WARNING - Enhanced analysis failed for ULTRACEMCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,282 - analysis.enhanced_analyzer - ERROR - Analysis failed for TITAN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,282 - server - WARNING - Enhanced analysis failed for TITAN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,429 - analysis.enhanced_analyzer - ERROR - Analysis failed for NESTLEIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,429 - server - WARNING - Enhanced analysis failed for NESTLEIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,576 - analysis.enhanced_analyzer - ERROR - Analysis failed for TECHM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,576 - server - WARNING - Enhanced analysis failed for TECHM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,727 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJAJFINSV: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,727 - server - WARNING - Enhanced analysis failed for BAJAJFINSV: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,895 - analysis.enhanced_analyzer - ERROR - Analysis failed for ONGC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:29,895 - server - WARNING - Enhanced analysis failed for ONGC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,042 - analysis.enhanced_analyzer - ERROR - Analysis failed for JSWSTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,042 - server - WARNING - Enhanced analysis failed for JSWSTEEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,192 - analysis.enhanced_analyzer - ERROR - Analysis failed for M&M: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,192 - server - WARNING - Enhanced analysis failed for M&M: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,841 - analysis.enhanced_analyzer - ERROR - Analysis failed for COALINDIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,841 - server - WARNING - Enhanced analysis failed for COALINDIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,993 - analysis.enhanced_analyzer - ERROR - Analysis failed for ADANIENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:30,993 - server - WARNING - Enhanced analysis failed for ADANIENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,138 - analysis.enhanced_analyzer - ERROR - Analysis failed for ADANIPORTS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,138 - server - WARNING - Enhanced analysis failed for ADANIPORTS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,298 - analysis.enhanced_analyzer - ERROR - Analysis failed for GRASIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,298 - server - WARNING - Enhanced analysis failed for GRASIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,458 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDALCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,458 - server - WARNING - Enhanced analysis failed for HINDALCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,608 - analysis.enhanced_analyzer - ERROR - Analysis failed for DIVISLAB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,608 - server - WARNING - Enhanced analysis failed for DIVISLAB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,755 - analysis.enhanced_analyzer - ERROR - Analysis failed for DRREDDY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,755 - server - WARNING - Enhanced analysis failed for DRREDDY: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,938 - analysis.enhanced_analyzer - ERROR - Analysis failed for CIPLA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:31,938 - server - WARNING - Enhanced analysis failed for CIPLA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,095 - analysis.enhanced_analyzer - ERROR - Analysis failed for APOLLOHOSP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,095 - server - WARNING - Enhanced analysis failed for APOLLOHOSP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,257 - analysis.enhanced_analyzer - ERROR - Analysis failed for BRITANNIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,258 - server - WARNING - Enhanced analysis failed for BRITANNIA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,923 - analysis.enhanced_analyzer - ERROR - Analysis failed for EICHERMOT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:32,923 - server - WARNING - Enhanced analysis failed for EICHERMOT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,080 - analysis.enhanced_analyzer - ERROR - Analysis failed for INDUSINDBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,080 - server - WARNING - Enhanced analysis failed for INDUSINDBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,224 - analysis.enhanced_analyzer - ERROR - Analysis failed for HEROMOTOCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,224 - server - WARNING - Enhanced analysis failed for HEROMOTOCO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,388 - analysis.enhanced_analyzer - ERROR - Analysis failed for BPCL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,388 - server - WARNING - Enhanced analysis failed for BPCL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,558 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATACONSUM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,558 - server - WARNING - Enhanced analysis failed for TATACONSUM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,692 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBILIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,692 - server - WARNING - Enhanced analysis failed for SBILIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,814 - analysis.enhanced_analyzer - ERROR - Analysis failed for HDFCLIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,814 - server - WARNING - Enhanced analysis failed for HDFCLIFE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,962 - analysis.enhanced_analyzer - ERROR - Analysis failed for BAJAJ-AUTO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:33,962 - server - WARNING - Enhanced analysis failed for BAJAJ-AUTO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,089 - analysis.enhanced_analyzer - WARNING - Data quality issues for SHREECEM: ['Low liquidity: avg volume 33,918']
+2025-12-16 09:39:34,099 - analysis.enhanced_analyzer - ERROR - Analysis failed for SHREECEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,100 - server - WARNING - Enhanced analysis failed for SHREECEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,263 - analysis.enhanced_analyzer - ERROR - Analysis failed for VEDL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,264 - server - WARNING - Enhanced analysis failed for VEDL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,903 - analysis.enhanced_analyzer - ERROR - Analysis failed for HAVELLS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:34,903 - server - WARNING - Enhanced analysis failed for HAVELLS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,039 - analysis.enhanced_analyzer - ERROR - Analysis failed for PIDILITIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,039 - server - WARNING - Enhanced analysis failed for PIDILITIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,194 - analysis.enhanced_analyzer - ERROR - Analysis failed for DABUR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,194 - server - WARNING - Enhanced analysis failed for DABUR: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,341 - analysis.enhanced_analyzer - ERROR - Analysis failed for GODREJCP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,342 - server - WARNING - Enhanced analysis failed for GODREJCP: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,541 - analysis.enhanced_analyzer - ERROR - Analysis failed for SIEMENS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,541 - server - WARNING - Enhanced analysis failed for SIEMENS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,675 - analysis.enhanced_analyzer - ERROR - Analysis failed for DLF: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,675 - server - WARNING - Enhanced analysis failed for DLF: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,800 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIPRULI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,800 - server - WARNING - Enhanced analysis failed for ICICIPRULI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,935 - analysis.enhanced_analyzer - ERROR - Analysis failed for ICICIGI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:35,937 - server - WARNING - Enhanced analysis failed for ICICIGI: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,099 - analysis.enhanced_analyzer - ERROR - Analysis failed for AMBUJACEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,099 - server - WARNING - Enhanced analysis failed for AMBUJACEM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,252 - analysis.enhanced_analyzer - ERROR - Analysis failed for BANKBARODA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,253 - server - WARNING - Enhanced analysis failed for BANKBARODA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,905 - analysis.enhanced_analyzer - ERROR - Analysis failed for PNB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:36,905 - server - WARNING - Enhanced analysis failed for PNB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:37,081 - analysis.enhanced_analyzer - ERROR - Analysis failed for TATAPOWER: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:37,081 - server - WARNING - Enhanced analysis failed for TATAPOWER: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:37,211 - analysis.enhanced_analyzer - ERROR - Analysis failed for INDIGO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:37,211 - server - WARNING - Enhanced analysis failed for INDIGO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:38,527 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:39,785 - yfinance - ERROR - $ZOMATO.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:39,786 - server - WARNING - Enhanced analysis failed for ZOMATO: No data available
+2025-12-16 09:39:39,911 - analysis.enhanced_analyzer - ERROR - Analysis failed for PAYTM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:39,911 - server - WARNING - Enhanced analysis failed for PAYTM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,028 - analysis.enhanced_analyzer - ERROR - Analysis failed for NYKAA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,028 - server - WARNING - Enhanced analysis failed for NYKAA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,161 - analysis.enhanced_analyzer - ERROR - Analysis failed for JUBLFOOD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,161 - server - WARNING - Enhanced analysis failed for JUBLFOOD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,312 - analysis.enhanced_analyzer - ERROR - Analysis failed for BERGEPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,312 - server - WARNING - Enhanced analysis failed for BERGEPAINT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,445 - analysis.enhanced_analyzer - ERROR - Analysis failed for COLPAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,445 - server - WARNING - Enhanced analysis failed for COLPAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,595 - analysis.enhanced_analyzer - ERROR - Analysis failed for MARICO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:40,595 - server - WARNING - Enhanced analysis failed for MARICO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:42,094 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:43,263 - yfinance - ERROR - $MCDOWELL-N.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:43,264 - server - WARNING - Enhanced analysis failed for MCDOWELL-N: No data available
+2025-12-16 09:39:43,413 - analysis.enhanced_analyzer - ERROR - Analysis failed for TRENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,413 - server - WARNING - Enhanced analysis failed for TRENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,561 - analysis.enhanced_analyzer - ERROR - Analysis failed for PIIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,561 - server - WARNING - Enhanced analysis failed for PIIND: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,712 - analysis.enhanced_analyzer - ERROR - Analysis failed for BIOCON: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,713 - server - WARNING - Enhanced analysis failed for BIOCON: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,869 - analysis.enhanced_analyzer - ERROR - Analysis failed for LUPIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:43,869 - server - WARNING - Enhanced analysis failed for LUPIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,015 - analysis.enhanced_analyzer - ERROR - Analysis failed for TORNTPHARM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,015 - server - WARNING - Enhanced analysis failed for TORNTPHARM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,168 - analysis.enhanced_analyzer - ERROR - Analysis failed for AUROPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,169 - server - WARNING - Enhanced analysis failed for AUROPHARMA: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,321 - analysis.enhanced_analyzer - ERROR - Analysis failed for GAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,321 - server - WARNING - Enhanced analysis failed for GAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,468 - analysis.enhanced_analyzer - ERROR - Analysis failed for IOC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,468 - server - WARNING - Enhanced analysis failed for IOC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,620 - analysis.enhanced_analyzer - ERROR - Analysis failed for HINDPETRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:44,620 - server - WARNING - Enhanced analysis failed for HINDPETRO: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,255 - analysis.enhanced_analyzer - ERROR - Analysis failed for SBICARD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,255 - server - WARNING - Enhanced analysis failed for SBICARD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,417 - analysis.enhanced_analyzer - ERROR - Analysis failed for CHOLAFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,417 - server - WARNING - Enhanced analysis failed for CHOLAFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,555 - analysis.enhanced_analyzer - ERROR - Analysis failed for MUTHOOTFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:45,555 - server - WARNING - Enhanced analysis failed for MUTHOOTFIN: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:46,487 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:47,429 - yfinance - ERROR - $PEL.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-16 09:39:47,431 - server - WARNING - Enhanced analysis failed for PEL: No data available
+2025-12-16 09:39:47,560 - analysis.enhanced_analyzer - ERROR - Analysis failed for RECLTD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:47,560 - server - WARNING - Enhanced analysis failed for RECLTD: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:47,690 - analysis.enhanced_analyzer - ERROR - Analysis failed for PFC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:47,690 - server - WARNING - Enhanced analysis failed for PFC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:47,817 - analysis.enhanced_analyzer - ERROR - Analysis failed for IRCTC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:47,817 - server - WARNING - Enhanced analysis failed for IRCTC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,003 - analysis.enhanced_analyzer - ERROR - Analysis failed for SAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,003 - server - WARNING - Enhanced analysis failed for SAIL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,155 - analysis.enhanced_analyzer - ERROR - Analysis failed for NMDC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,155 - server - WARNING - Enhanced analysis failed for NMDC: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,309 - analysis.enhanced_analyzer - ERROR - Analysis failed for BHEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,309 - server - WARNING - Enhanced analysis failed for BHEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,946 - analysis.enhanced_analyzer - ERROR - Analysis failed for HAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:48,946 - server - WARNING - Enhanced analysis failed for HAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,111 - analysis.enhanced_analyzer - ERROR - Analysis failed for BEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,111 - server - WARNING - Enhanced analysis failed for BEL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,242 - analysis.enhanced_analyzer - ERROR - Analysis failed for LTIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,242 - server - WARNING - Enhanced analysis failed for LTIM: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,384 - analysis.enhanced_analyzer - ERROR - Analysis failed for PERSISTENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,384 - server - WARNING - Enhanced analysis failed for PERSISTENT: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,525 - analysis.enhanced_analyzer - ERROR - Analysis failed for COFORGE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,526 - server - WARNING - Enhanced analysis failed for COFORGE: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,673 - analysis.enhanced_analyzer - ERROR - Analysis failed for MPHASIS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,673 - server - WARNING - Enhanced analysis failed for MPHASIS: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,813 - analysis.enhanced_analyzer - ERROR - Analysis failed for CANBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,814 - server - WARNING - Enhanced analysis failed for CANBK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,942 - analysis.enhanced_analyzer - ERROR - Analysis failed for IDFCFIRSTB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:49,942 - server - WARNING - Enhanced analysis failed for IDFCFIRSTB: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:50,081 - analysis.enhanced_analyzer - ERROR - Analysis failed for FEDERALBNK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:50,081 - server - WARNING - Enhanced analysis failed for FEDERALBNK: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:50,203 - analysis.enhanced_analyzer - ERROR - Analysis failed for ABCAPITAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:50,203 - server - WARNING - Enhanced analysis failed for ABCAPITAL: int() argument must be a string, a bytes-like object or a real number, not 'Timedelta'
+2025-12-16 09:39:50,739 - server - INFO - Generated recommendations: 0 buy, 0 sell
+INFO:     127.0.0.1:53719 - "POST /api/recommendations/generate HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backtesting/custom_indicators.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [40761]
+INFO:     Started server process [43020]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backtesting/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43020]
+Process SpawnProcess-6:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 26, in <module>
+    from backtesting.engine import BacktestEngine
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/__init__.py", line 10, in <module>
+    from .walk_forward import WalkForwardTester, IndianMarketCosts, get_walk_forward_tester
+ImportError: cannot import name 'WalkForwardTester' from 'backtesting.walk_forward' (/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/walk_forward.py)
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+Process SpawnProcess-7:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 26, in <module>
+    from backtesting.engine import BacktestEngine
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/__init__.py", line 10, in <module>
+    from .walk_forward import WalkForwardTester, IndianMarketCosts, get_walk_forward_tester
+ImportError: cannot import name 'WalkForwardTester' from 'backtesting.walk_forward' (/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/walk_forward.py)
+Process SpawnProcess-8:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 26, in <module>
+    from backtesting.engine import BacktestEngine
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/__init__.py", line 10, in <module>
+    from .walk_forward import WalkForwardTester, IndianMarketCosts, get_walk_forward_tester
+ImportError: cannot import name 'WalkForwardTester' from 'backtesting.walk_forward' (/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/backtesting/walk_forward.py)
+WARNING:  WatchFiles detected changes in 'backtesting/__init__.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'backtesting/__init__.py'. Reloading...
+INFO:     Started server process [45038]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Started server process [45177]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54749 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54808 - "GET /api/stocks/search?q=RELIANCE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54859 - "GET /api/stocks/search?q=RELIANCE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54863 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54863 - "GET /api/backtest/strategies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54865 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54863 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
 WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [39469]
-INFO:     Started server process [50800]
+INFO:     Finished server process [45177]
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Started server process [45372]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:50729 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50730 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50729 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50736 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-2025-12-15 19:27:24,626 - server - INFO - Generating AI recommendations for 100 stocks
-INFO:     127.0.0.1:51015 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51016 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51015 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51018 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51018 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51015 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51016 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51018 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-2025-12-15 19:27:47,101 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:27:50,486 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-INFO:     127.0.0.1:51211 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51212 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51211 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51220 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-2025-12-15 19:27:55,268 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:27:56,884 - server - INFO - Generating AI recommendations for 100 stocks
-INFO:     127.0.0.1:50910 - "GET /api/recommendations HTTP/1.1" 200 OK
-2025-12-15 19:28:11,958 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:28:13,806 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:28:15,187 - server - INFO - Generating AI recommendations for 100 stocks
-2025-12-15 19:28:17,693 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-INFO:     127.0.0.1:51220 - "GET /api/recommendations HTTP/1.1" 200 OK
-2025-12-15 19:28:30,295 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:28:32,147 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-2025-12-15 19:28:34,874 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
-INFO:     127.0.0.1:51396 - "GET /api/recommendations HTTP/1.1" 200 OK
+INFO:     Started server process [45466]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55800 - "GET /api/stocks/search?q=RELIANCE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55896 - "OPTIONS /api/backtest/run HTTP/1.1" 200 OK
+2025-12-16 09:44:16,229 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-16 09:44:16,230 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Mean Reversion
+2025-12-16 09:44:16,231 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-16 09:44:17,340 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-16 09:44:17,359 - backtesting.engine - INFO - Backtest complete: -6.36% return, 3 trades
+INFO:     127.0.0.1:55896 - "POST /api/backtest/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55896 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+2025-12-16 09:44:32,470 - backtesting.engine - INFO - Running backtest for RELIANCE.NS with Momentum
+2025-12-16 09:44:32,474 - backtesting.price_cache - INFO - Fetching RELIANCE.NS from yfinance
+2025-12-16 09:44:32,522 - backtesting.price_cache - INFO - Cached 490 records for RELIANCE.NS
+2025-12-16 09:44:32,533 - backtesting.engine - INFO - Backtest complete: 6.01% return, 11 trades
+INFO:     127.0.0.1:56068 - "POST /api/backtest/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56068 - "GET /api/backtest/history?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56592 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56594 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56592 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56602 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58113 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58113 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58114 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58113 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK

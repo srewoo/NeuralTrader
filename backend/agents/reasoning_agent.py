@@ -140,10 +140,60 @@ class DeepReasoningAgent(BaseAgent):
         Returns:
             Formatted prompt
         """
-        prompt = f"""You are an expert stock market analyst for Indian markets (NSE/BSE). 
+        prompt = f"""You are an expert stock market analyst for Indian markets (NSE/BSE).
 Perform a comprehensive analysis using chain-of-thought reasoning.
 
 {rag_context if rag_context else ""}
+
+=== FEW-SHOT EXAMPLES ===
+
+Example 1 - Strong BUY Signal:
+Stock: INFY at ₹1,450 with RSI=28, MACD bullish crossover, price below SMA20 but above SMA50
+Analysis Result:
+{{
+  "recommendation": "BUY",
+  "confidence": 78,
+  "entry_price": 1450,
+  "target_price": 1580,
+  "stop_loss": 1395,
+  "risk_reward_ratio": 2.36,
+  "time_horizon": "medium_term",
+  "reasoning": "1) PRICE ACTION: Stock corrected 8% from highs, now at support zone near SMA50. 2) MOMENTUM: RSI at 28 shows oversold condition, MACD just crossed above signal line indicating momentum shift. 3) TREND: Long-term uptrend intact as price above SMA50 and SMA200. 4) RISK: IT sector facing headwinds, but company fundamentals strong. 5) SYNTHESIS: Oversold bounce setup with favorable risk-reward, recommend accumulating.",
+  "key_risks": ["Sector-wide correction in IT", "Rupee appreciation", "Client spending cuts"],
+  "key_opportunities": ["Oversold bounce", "Strong order book", "AI/Cloud tailwinds"]
+}}
+
+Example 2 - SELL Signal:
+Stock: ADANIENT at ₹2,850 with RSI=76, MACD bearish divergence, price 15% above SMA50
+Analysis Result:
+{{
+  "recommendation": "SELL",
+  "confidence": 72,
+  "entry_price": 2850,
+  "target_price": 2550,
+  "stop_loss": 2950,
+  "risk_reward_ratio": 3.0,
+  "time_horizon": "short_term",
+  "reasoning": "1) PRICE ACTION: Extended 15% above SMA50, at upper Bollinger Band. 2) MOMENTUM: RSI at 76 overbought, MACD showing bearish divergence with lower highs. 3) TREND: Short-term overextension in otherwise bullish trend. 4) RISK: Short squeeze possible given high short interest. 5) SYNTHESIS: Profit booking opportunity, recommend reducing exposure or shorting with tight stops.",
+  "key_risks": ["Short squeeze", "Positive news catalyst", "Momentum continuation"],
+  "key_opportunities": ["Mean reversion", "Profit booking by FIIs", "Technical resistance"]
+}}
+
+Example 3 - HOLD Signal:
+Stock: HDFCBANK at ₹1,620 with RSI=52, MACD flat, price between SMA20 and SMA50
+Analysis Result:
+{{
+  "recommendation": "HOLD",
+  "confidence": 55,
+  "entry_price": 1620,
+  "target_price": 1720,
+  "stop_loss": 1550,
+  "risk_reward_ratio": 1.43,
+  "time_horizon": "medium_term",
+  "reasoning": "1) PRICE ACTION: Consolidating in narrow range between SMAs, no clear breakout. 2) MOMENTUM: RSI neutral at 52, MACD histogram flat near zero. 3) TREND: Sideways consolidation after recent rally. 4) RISK: Banking sector concerns persist but priced in. 5) SYNTHESIS: No clear entry signal, wait for breakout above 1,680 or breakdown below 1,560.",
+  "key_risks": ["NPA concerns", "Rate cycle uncertainty", "Merger integration"],
+  "key_opportunities": ["Breakout potential", "Valuation support", "Credit growth pickup"]
+}}
 
 === CURRENT MARKET DATA ===
 

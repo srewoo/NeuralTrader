@@ -7,6 +7,7 @@ import AnalysisHistory from "@/pages/AnalysisHistory";
 import StockDetail from "@/pages/StockDetail";
 import Backtesting from "@/pages/Backtesting";
 import AIRecommends from "@/pages/AIRecommends";
+import Help from "@/pages/Help";
 import Layout from "@/components/Layout";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="history" element={<AnalysisHistory />} />
             <Route path="backtesting" element={<Backtesting />} />
+            <Route path="help" element={<Help />} />
             <Route path="stock/:symbol" element={<StockDetail />} />
             <Route path="analysis/:analysisId" element={<StockDetail />} />
           </Route>

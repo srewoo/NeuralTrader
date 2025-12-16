@@ -83,4 +83,6 @@ android-sdk/
 .qodo
 .claude
 .pytest_cache
-logs
+# Project logs (ignore contents, keep folder placeholder)
+/logs/*
+!/logs/.gitkeep

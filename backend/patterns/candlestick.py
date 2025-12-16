@@ -378,18 +378,36 @@ class CandlestickPatternDetector:
     ) -> Dict[str, Any]:
         """Create pattern detection result"""
         pattern_info = self.PATTERNS.get(pattern_name, {})
-        
+        price = float(candle['Close'])
+
+        # Format date for display
+        date_str = str(date)
+        if hasattr(date, 'strftime'):
+            date_str = date.strftime('%d/%m/%Y')
+        elif 'T' in date_str:
+            date_str = date_str.split('T')[0]
+            # Convert YYYY-MM-DD to DD/MM/YYYY
+            parts = date_str.split('-')
+            if len(parts) == 3:
+                date_str = f"{parts[2]}/{parts[1]}/{parts[0]}"
+
+        implication = self._get_pattern_implication(pattern_name)
+
         return {
             "pattern": pattern_name,
             "date": str(date),
+            "date_formatted": date_str,
             "type": pattern_info.get("type", "unknown"),
             "strength": pattern_info.get("strength", "weak"),
-            "price": float(candle['Close']),
+            "price": price,
+            "price_formatted": f"₹{price:,.2f}",
             "open": float(candle['Open']),
             "high": float(candle['High']),
             "low": float(candle['Low']),
             "close": float(candle['Close']),
-            "description": self._get_pattern_description(pattern_name)
+            "description": self._get_pattern_description(pattern_name),
+            "implication": implication,
+            "display": f"{pattern_name.replace('_', ' ').title()}\n{date_str} - ₹{price:,.2f}"
         }
     
     def _get_pattern_description(self, pattern_name: str) -> str:
@@ -414,6 +432,101 @@ class CandlestickPatternDetector:
             "falling_three_methods": "Bearish continuation pattern"
         }
         return descriptions.get(pattern_name, "Candlestick pattern detected")
+
+    def _get_pattern_implication(self, pattern_name: str) -> Dict[str, str]:
+        """Get trading implication for the pattern"""
+        implications = {
+            "doji": {
+                "direction": "neutral",
+                "signal": "⚠️ Wait for confirmation",
+                "meaning": "Buyers and sellers are balanced. Wait for next candle to confirm direction."
+            },
+            "hammer": {
+                "direction": "bullish",
+                "signal": "📈 Potential upside",
+                "meaning": "Buyers rejected lower prices. Stock may reverse upward from here."
+            },
+            "inverted_hammer": {
+                "direction": "bullish",
+                "signal": "📈 Potential upside",
+                "meaning": "After downtrend, buyers showing interest. Watch for confirmation."
+            },
+            "hanging_man": {
+                "direction": "bearish",
+                "signal": "📉 Potential downside",
+                "meaning": "After uptrend, selling pressure emerging. Consider taking profits."
+            },
+            "shooting_star": {
+                "direction": "bearish",
+                "signal": "📉 Potential downside",
+                "meaning": "Buyers failed to hold highs. Reversal likely, watch for follow-through."
+            },
+            "spinning_top": {
+                "direction": "neutral",
+                "signal": "⚠️ Wait for confirmation",
+                "meaning": "Market is undecided. Trend may pause or reverse - wait for clarity."
+            },
+            "bullish_engulfing": {
+                "direction": "bullish",
+                "signal": "🚀 Strong buy signal",
+                "meaning": "Buyers overpowered sellers completely. High probability of upward move."
+            },
+            "bearish_engulfing": {
+                "direction": "bearish",
+                "signal": "🔻 Strong sell signal",
+                "meaning": "Sellers overpowered buyers completely. High probability of downward move."
+            },
+            "piercing_line": {
+                "direction": "bullish",
+                "signal": "📈 Bullish reversal",
+                "meaning": "Strong buying after gap down. Recovery likely to continue."
+            },
+            "dark_cloud_cover": {
+                "direction": "bearish",
+                "signal": "📉 Bearish reversal",
+                "meaning": "Strong selling after gap up. Decline likely to continue."
+            },
+            "morning_star": {
+                "direction": "bullish",
+                "signal": "🚀 Strong buy signal",
+                "meaning": "Classic bottom reversal. High confidence upward move expected."
+            },
+            "evening_star": {
+                "direction": "bearish",
+                "signal": "🔻 Strong sell signal",
+                "meaning": "Classic top reversal. High confidence downward move expected."
+            },
+            "three_white_soldiers": {
+                "direction": "bullish",
+                "signal": "🚀 Strong bullish momentum",
+                "meaning": "Sustained buying pressure. Uptrend likely to continue."
+            },
+            "three_black_crows": {
+                "direction": "bearish",
+                "signal": "🔻 Strong bearish momentum",
+                "meaning": "Sustained selling pressure. Downtrend likely to continue."
+            },
+            "harami": {
+                "direction": "neutral",
+                "signal": "⚠️ Trend weakening",
+                "meaning": "Current trend losing momentum. Possible reversal or consolidation ahead."
+            },
+            "rising_three_methods": {
+                "direction": "bullish",
+                "signal": "📈 Bullish continuation",
+                "meaning": "Brief pause in uptrend. Expect continuation higher."
+            },
+            "falling_three_methods": {
+                "direction": "bearish",
+                "signal": "📉 Bearish continuation",
+                "meaning": "Brief pause in downtrend. Expect continuation lower."
+            }
+        }
+        return implications.get(pattern_name, {
+            "direction": "neutral",
+            "signal": "Pattern detected",
+            "meaning": "Analyze in context of overall trend."
+        })
 
 
 # Global instance

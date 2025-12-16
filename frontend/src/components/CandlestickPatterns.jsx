@@ -197,9 +197,22 @@ export default function CandlestickPatterns({ symbol }) {
                 <div className="text-sm opacity-90">
                   {patterns.latest_signal.description}
                 </div>
-                <div className="text-xs opacity-75 mt-1">
-                  Detected on {new Date(patterns.latest_signal.date).toLocaleDateString()} 
-                  at ${patterns.latest_signal.price.toFixed(2)}
+                {/* Trading Implication for Latest Signal */}
+                {patterns.latest_signal.implication && (
+                  <div className={`mt-2 p-2 rounded ${
+                    patterns.latest_signal.implication.direction === 'bullish'
+                      ? 'bg-green-500/20 border border-green-500/30'
+                      : patterns.latest_signal.implication.direction === 'bearish'
+                      ? 'bg-red-500/20 border border-red-500/30'
+                      : 'bg-yellow-500/20 border border-yellow-500/30'
+                  }`}>
+                    <div className="font-semibold text-sm">{patterns.latest_signal.implication.signal}</div>
+                    <div className="text-xs opacity-90 mt-0.5">{patterns.latest_signal.implication.meaning}</div>
+                  </div>
+                )}
+                <div className="text-xs opacity-75 mt-2">
+                  Detected on {patterns.latest_signal.date_formatted || new Date(patterns.latest_signal.date).toLocaleDateString()}
+                  at {patterns.latest_signal.price_formatted || `₹${patterns.latest_signal.price.toFixed(2)}`}
                 </div>
               </AlertDescription>
             </Alert>
@@ -236,14 +249,27 @@ export default function CandlestickPatterns({ symbol }) {
                           <div className="text-sm opacity-90 mt-1">
                             {pattern.description}
                           </div>
+                          {/* Trading Implication */}
+                          {pattern.implication && (
+                            <div className={`mt-2 p-2 rounded text-sm ${
+                              pattern.implication.direction === 'bullish'
+                                ? 'bg-green-500/10 border border-green-500/20'
+                                : pattern.implication.direction === 'bearish'
+                                ? 'bg-red-500/10 border border-red-500/20'
+                                : 'bg-yellow-500/10 border border-yellow-500/20'
+                            }`}>
+                              <div className="font-medium">{pattern.implication.signal}</div>
+                              <div className="text-xs opacity-80 mt-0.5">{pattern.implication.meaning}</div>
+                            </div>
+                          )}
                           <div className="flex gap-4 mt-2 text-xs opacity-75">
-                            <span>Date: {new Date(pattern.date).toLocaleDateString()}</span>
-                            <span>Price: ${pattern.price.toFixed(2)}</span>
+                            <span>Date: {pattern.date_formatted || new Date(pattern.date).toLocaleDateString()}</span>
+                            <span>Price: {pattern.price_formatted || `₹${pattern.price.toFixed(2)}`}</span>
                           </div>
                         </div>
                       </div>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={getStrengthBadge(pattern.strength)}
                       >
                         {pattern.strength}
@@ -277,25 +303,40 @@ export default function CandlestickPatterns({ symbol }) {
               {patterns.all_patterns.map((pattern, index) => (
                 <div
                   key={`all-${pattern.date}-${pattern.pattern}-${index}`}
-                  className={`p-3 rounded-lg border ${getPatternColor(pattern.type)} flex items-center justify-between`}
+                  className={`p-3 rounded-lg border ${getPatternColor(pattern.type)}`}
                 >
-                  <div className="flex items-center gap-3">
-                    {getPatternIcon(pattern.type)}
-                    <div>
-                      <div className="font-medium text-sm">
-                        {formatPatternName(pattern.pattern)}
-                      </div>
-                      <div className="text-xs opacity-75">
-                        {new Date(pattern.date).toLocaleDateString()} - ${pattern.price.toFixed(2)}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getPatternIcon(pattern.type)}
+                      <div>
+                        <div className="font-medium text-sm">
+                          {formatPatternName(pattern.pattern)}
+                        </div>
+                        <div className="text-xs opacity-75">
+                          {pattern.date_formatted || new Date(pattern.date).toLocaleDateString()} - {pattern.price_formatted || `₹${pattern.price.toFixed(2)}`}
+                        </div>
                       </div>
                     </div>
+                    <Badge
+                      variant="outline"
+                      className={`${getStrengthBadge(pattern.strength)} text-xs`}
+                    >
+                      {pattern.strength}
+                    </Badge>
                   </div>
-                  <Badge 
-                    variant="outline" 
-                    className={`${getStrengthBadge(pattern.strength)} text-xs`}
-                  >
-                    {pattern.strength}
-                  </Badge>
+                  {/* Implication for all patterns */}
+                  {pattern.implication && (
+                    <div className={`mt-2 p-2 rounded text-xs ${
+                      pattern.implication.direction === 'bullish'
+                        ? 'bg-green-500/5'
+                        : pattern.implication.direction === 'bearish'
+                        ? 'bg-red-500/5'
+                        : 'bg-yellow-500/5'
+                    }`}>
+                      <span className="font-medium">{pattern.implication.signal}</span>
+                      <span className="opacity-75 ml-2">{pattern.implication.meaning}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
