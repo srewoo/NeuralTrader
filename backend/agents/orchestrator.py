@@ -27,7 +27,7 @@ class AnalysisState(TypedDict):
     provider: str
     api_key: str
     data_provider_keys: Dict[str, Any]
-    
+
     # Data collected by agents
     stock_data: Dict[str, Any]
     technical_indicators: Dict[str, Any]
@@ -37,6 +37,8 @@ class AnalysisState(TypedDict):
     rag_results: list
     similar_patterns: list
     strategy_recommendations: list
+    discovered_patterns: list  # NEW: Auto-discovered trading patterns
+    historical_events: list  # NEW: Historical news event impacts
     analysis_result: Dict[str, Any]
     validation: Dict[str, Any]
     insights: list
@@ -58,12 +60,13 @@ class AnalysisOrchestrator:
     """
     Orchestrates the multi-agent analysis workflow using LangGraph
     """
-    
-    def __init__(self):
+
+    def __init__(self, db=None):
         """Initialize orchestrator with agents"""
+        self.db = db
         self.data_agent = DataCollectionAgent()
         self.analysis_agent = TechnicalAnalysisAgent()
-        self.knowledge_agent = RAGKnowledgeAgent()
+        self.knowledge_agent = RAGKnowledgeAgent(db=db)
         self.reasoning_agent = DeepReasoningAgent()
         self.validator_agent = ValidatorAgent()
         self.insight_generator = InsightGenerator()
@@ -216,15 +219,18 @@ class AnalysisOrchestrator:
 _orchestrator_instance = None
 
 
-def get_orchestrator() -> AnalysisOrchestrator:
+def get_orchestrator(db=None) -> AnalysisOrchestrator:
     """
     Get or create global orchestrator instance (Singleton)
-    
+
+    Args:
+        db: MongoDB database instance
+
     Returns:
         AnalysisOrchestrator instance
     """
     global _orchestrator_instance
     if _orchestrator_instance is None:
-        _orchestrator_instance = AnalysisOrchestrator()
+        _orchestrator_instance = AnalysisOrchestrator(db=db)
     return _orchestrator_instance
 

@@ -1220,7 +1220,7 @@ async def analyze_stock(request: AnalysisRequest):
         }
 
         # Use the new multi-agent orchestrator (REAL IMPLEMENTATION)
-        orchestrator = get_orchestrator()
+        orchestrator = get_orchestrator(db=db)
 
         analysis_result = await orchestrator.run_analysis(
             symbol=request.symbol,
@@ -1516,7 +1516,18 @@ class BacktestComparisonRequest(BaseModel):
 async def generate_backtest_insights(request: BacktestComparisonRequest):
     """Generate AI-powered insights from backtest comparison results"""
     try:
-        orchestrator = get_orchestrator()
+        # Get API key from settings
+        settings = await db.settings.find_one({}, {"_id": 0})
+        if not settings:
+            raise HTTPException(status_code=500, detail="Settings not configured")
+
+        # Determine provider and API key
+        provider = settings.get('selected_provider', 'openai')
+        api_key = settings.get('openai_api_key') if provider == 'openai' else settings.get('gemini_api_key')
+        model = settings.get('selected_model', 'gpt-4o-mini')
+
+        if not api_key:
+            raise HTTPException(status_code=500, detail=f"{provider.upper()} API key not configured")
 
         # Format strategy data for AI analysis
         strategies_summary = []
@@ -1533,51 +1544,111 @@ async def generate_backtest_insights(request: BacktestComparisonRequest):
                     'final_value': strat.get('final_value')
                 })
 
-        # Create AI prompt
-        prompt = f"""Analyze the following backtest comparison results for {request.symbol} and provide 4-6 key insights in bullet points.
+        # Sort by return to identify best/worst
+        strategies_summary.sort(key=lambda x: x['return'] or -999, reverse=True)
 
-Backtest Results:
+        # Create comprehensive AI prompt with specific data points
+        prompt = f"""You are a quantitative analyst reviewing backtest results for {request.symbol}. Provide 5-7 specific, data-driven insights.
+
+BACKTEST RESULTS SUMMARY:
 {json.dumps(strategies_summary, indent=2)}
 
-Provide actionable insights that help investors understand:
-1. Which strategy performed best and why
-2. Risk-adjusted performance analysis
-3. Key differences between strategies
-4. Practical recommendations based on the data
-5. Any notable patterns or concerns
+ANALYSIS FRAMEWORK:
+1. Performance Ranking: Identify best and worst performing strategies with exact numbers
+2. Risk-Adjusted Returns: Compare Sharpe ratios - which strategy offers best risk-reward?
+3. Drawdown Analysis: Which strategy preserves capital best during downturns?
+4. Win Rate vs Returns: Is high win rate correlating with high returns?
+5. Trade Frequency: Does more trading lead to better or worse outcomes?
+6. Actionable Recommendation: Which strategy would you recommend and why?
 
-Format your response as bullet points. Each insight should be concise (1-2 sentences) and include specific numbers from the data. Use a professional but accessible tone."""
+FORMAT REQUIREMENTS:
+- Start each insight with a ✨ emoji
+- Include specific numbers (returns, Sharpe ratio, drawdown percentages)
+- Keep each insight to 1-2 sentences
+- Be direct and actionable
+- Compare strategies against each other
+- End with a clear recommendation
 
-        # Get AI analysis
-        analysis = await orchestrator.run_analysis(
-            symbol=request.symbol,
-            analysis_type="backtest_insights",
-            custom_prompt=prompt
-        )
+Example format:
+✨ Trend Following delivered the highest return at +31.19% with a Sharpe ratio of 0.73, significantly outperforming all other strategies
+✨ MACD Crossover was the worst performer at -20.52%, suggesting this strategy doesn't align well with {request.symbol}'s price patterns during this period
 
-        # Parse the AI response into structured insights
-        insights_text = analysis.get('result', {}).get('analysis', '')
+Now analyze the data above and provide your insights:"""
 
-        # Split into bullet points
+        # Call AI API directly
+        from agents.reasoning_agent import DeepReasoningAgent
+        reasoning_agent = DeepReasoningAgent()
+
+        insights_text = await reasoning_agent._call_llm(prompt, model, provider, api_key)
+
+        # Extract insights
         lines = insights_text.strip().split('\n')
         insights = []
         for line in lines:
             line = line.strip()
-            if line and (line.startswith('-') or line.startswith('•') or line.startswith('*') or line[0].isdigit()):
-                # Remove bullet point markers
-                clean_line = line.lstrip('-•*0123456789. ')
-                if clean_line:
+            if line and ('✨' in line or line.startswith('-') or line.startswith('•') or line.startswith('*') or (len(line) > 0 and line[0].isdigit())):
+                # Clean up bullet points
+                clean_line = line.replace('✨', '').lstrip('-•*0123456789. ').strip()
+                if clean_line and len(clean_line) > 20:  # Filter out very short lines
                     insights.append(clean_line)
+
+        # If no insights extracted, try alternate parsing
+        if not insights:
+            insights = [line.strip() for line in lines if line.strip() and len(line.strip()) > 20]
 
         return {
             "symbol": request.symbol,
-            "insights": insights,
+            "insights": insights[:7],  # Limit to 7 insights
             "raw_analysis": insights_text
         }
 
     except Exception as e:
         logger.error(f"Failed to generate backtest insights: {e}")
-        # Return fallback insights if AI fails
+        import traceback
+        traceback.print_exc()
+
+        # Provide smart fallback insights based on actual data
+        try:
+            strategies = request.strategies
+            valid_strategies = [s for s in strategies if not s.get('error')]
+
+            if valid_strategies:
+                # Sort by return
+                sorted_strats = sorted(valid_strategies, key=lambda x: x.get('total_return_pct', -999), reverse=True)
+                best = sorted_strats[0]
+                worst = sorted_strats[-1]
+
+                # Find best Sharpe
+                by_sharpe = sorted([s for s in valid_strategies if s.get('sharpe_ratio') is not None],
+                                   key=lambda x: x.get('sharpe_ratio', -999), reverse=True)
+                best_sharpe = by_sharpe[0] if by_sharpe else None
+
+                insights = [
+                    f"{best.get('display_name', 'Top strategy')} achieved the best return of {best.get('total_return_pct', 0):+.2f}% with a Sharpe ratio of {best.get('sharpe_ratio', 0):.2f}",
+                    f"{worst.get('display_name', 'Worst strategy')} had the lowest return at {worst.get('total_return_pct', 0):+.2f}%, indicating this approach didn't suit {request.symbol} during this period"
+                ]
+
+                if best_sharpe and best_sharpe != best:
+                    insights.append(f"For risk-adjusted returns, {best_sharpe.get('display_name')} had the best Sharpe ratio of {best_sharpe.get('sharpe_ratio', 0):.2f}")
+
+                # Add max drawdown insight
+                by_drawdown = sorted([s for s in valid_strategies if s.get('max_drawdown_pct') is not None],
+                                     key=lambda x: abs(x.get('max_drawdown_pct', 999)))
+                if by_drawdown:
+                    best_dd = by_drawdown[0]
+                    insights.append(f"{best_dd.get('display_name')} preserved capital best with only {abs(best_dd.get('max_drawdown_pct', 0)):.2f}% maximum drawdown")
+
+                insights.append("Consider both absolute returns and risk metrics when selecting a strategy for live trading")
+                insights.append("Past performance does not guarantee future results - always use proper position sizing and risk management")
+
+                return {
+                    "symbol": request.symbol,
+                    "insights": insights,
+                    "raw_analysis": "AI analysis unavailable, showing data-based insights"
+                }
+        except:
+            pass
+
         return {
             "symbol": request.symbol,
             "insights": [
@@ -2774,3 +2845,140 @@ app.include_router(api_router)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# ============ KNOWLEDGE BUILDING & PATTERN MINING ENDPOINTS ============
+
+from knowledge import get_news_event_knowledge, get_pattern_miner
+from knowledge.auto_discovery import get_discovery_pipeline
+from pydantic import BaseModel
+
+
+class StoreEventRequest(BaseModel):
+    event_title: str
+    event_date: datetime
+    event_type: str
+    symbols_affected: List[str]
+    sector: Optional[str] = None
+    immediate_impact: Optional[Dict[str, float]] = None
+    recovery_timeline: Optional[str] = None
+    pattern_observed: Optional[str] = None
+
+
+@api_router.post("/knowledge/events/store")
+async def store_news_event(request: StoreEventRequest):
+    """Store a news/event and its market impact"""
+    try:
+        news_knowledge = get_news_event_knowledge(db)
+        event_id = await news_knowledge.store_event_impact(
+            event_title=request.event_title,
+            event_date=request.event_date,
+            event_type=request.event_type,
+            symbols_affected=request.symbols_affected,
+            sector=request.sector,
+            immediate_impact=request.immediate_impact,
+            recovery_timeline=request.recovery_timeline,
+            pattern_observed=request.pattern_observed
+        )
+        return {"event_id": event_id, "message": "Event stored successfully"}
+
+    except Exception as e:
+        logger.error(f"Failed to store event: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/knowledge/events/similar")
+async def get_similar_events(event_type: str, sector: Optional[str] = None, limit: int = 5):
+    """Find similar historical events"""
+    try:
+        news_knowledge = get_news_event_knowledge(db)
+        events = await news_knowledge.find_similar_events(event_type, sector, limit)
+        return {"events": events, "count": len(events)}
+
+    except Exception as e:
+        logger.error(f"Failed to get similar events: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/knowledge/events/symbol/{symbol}")
+async def get_symbol_event_history(symbol: str, lookback_days: int = 365):
+    """Get event history for a symbol"""
+    try:
+        news_knowledge = get_news_event_knowledge(db)
+        events = await news_knowledge.get_symbol_event_history(symbol, lookback_days)
+        return {"symbol": symbol, "events": events, "count": len(events)}
+
+    except Exception as e:
+        logger.error(f"Failed to get symbol events: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/knowledge/events/pattern-summary")
+async def get_event_pattern_summary(event_type: str, sector: Optional[str] = None):
+    """Get pattern summary for an event type"""
+    try:
+        news_knowledge = get_news_event_knowledge(db)
+        summary = await news_knowledge.build_pattern_summary(event_type, sector)
+        return {"event_type": event_type, "summary": summary}
+
+    except Exception as e:
+        logger.error(f"Failed to get pattern summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/knowledge/patterns/discover")
+async def run_pattern_discovery(symbols: Optional[List[str]] = None, lookback_years: int = 5):
+    """Run pattern discovery on specified symbols"""
+    try:
+        # Get API keys for data providers
+        settings = await db.settings.find_one({}, {"_id": 0})
+        api_keys = None
+        if settings:
+            api_keys = {
+                "finnhub": settings.get('finnhub_api_key'),
+                "alpaca": {
+                    "key": settings.get('alpaca_api_key'),
+                    "secret": settings.get('alpaca_api_secret')
+                },
+                "fmp": settings.get('fmp_api_key')
+            }
+
+        discovery = get_discovery_pipeline(db)
+        result = await discovery.run_discovery(symbols, lookback_years, api_keys)
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Pattern discovery failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/knowledge/patterns/discovered")
+async def get_discovered_patterns(symbol: Optional[str] = None, min_success_rate: Optional[float] = None):
+    """Get discovered patterns"""
+    try:
+        pattern_miner = get_pattern_miner(db)
+
+        if symbol:
+            patterns = await pattern_miner.get_patterns_for_symbol(symbol)
+        else:
+            patterns = await pattern_miner.get_all_valid_patterns(min_success_rate)
+
+        return {"patterns": patterns, "count": len(patterns)}
+
+    except Exception as e:
+        logger.error(f"Failed to get patterns: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/knowledge/patterns/history")
+async def get_discovery_history(limit: int = 10):
+    """Get pattern discovery run history"""
+    try:
+        discovery = get_discovery_pipeline(db)
+        runs = await discovery.get_discovery_history(limit)
+        return {"runs": runs, "count": len(runs)}
+
+    except Exception as e:
+        logger.error(f"Failed to get discovery history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

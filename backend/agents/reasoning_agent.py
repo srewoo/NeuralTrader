@@ -55,9 +55,14 @@ class DeepReasoningAgent(BaseAgent):
                 )
             )
             
+            # Extract discovered patterns and historical events
+            discovered_patterns = state.get("discovered_patterns", [])
+            historical_events = state.get("historical_events", [])
+
             # Build comprehensive prompt with RAG context and percentile scores
             prompt = self._build_analysis_prompt(
-                symbol, stock_data, indicators, signals, percentile_scores, rag_context
+                symbol, stock_data, indicators, signals, percentile_scores, rag_context,
+                discovered_patterns, historical_events
             )
             
             # Call LLM with chain-of-thought prompting (REAL API CALL)
@@ -149,7 +154,9 @@ class DeepReasoningAgent(BaseAgent):
         indicators: Dict[str, Any],
         signals: Dict[str, Any],
         percentile_scores: Dict[str, Any],
-        rag_context: str
+        rag_context: str,
+        discovered_patterns: list = None,
+        historical_events: list = None
     ) -> str:
         """
         Build comprehensive analysis prompt with chain-of-thought structure
@@ -162,10 +169,14 @@ class DeepReasoningAgent(BaseAgent):
             signals: Technical signals
             percentile_scores: Percentile-based scores for context
             rag_context: RAG context
+            discovered_patterns: Auto-discovered trading patterns
+            historical_events: Historical news event impacts
 
         Returns:
             Formatted prompt
         """
+        discovered_patterns = discovered_patterns or []
+        historical_events = historical_events or []
         # Extract extended features for enhanced analysis
         current_price = indicators.get('current_price', stock_data.get('current_price'))
         lag_1d = indicators.get('lag_1d_price')
@@ -313,6 +324,34 @@ Interpretation: {percentile_scores.get('composite_interpretation', 'N/A')}
 
 USE THESE PERCENTILE INSIGHTS in your analysis - they provide crucial context that raw indicator values alone cannot convey.
 For example, RSI=35 might seem neutral, but if it's in the 10th percentile historically, it indicates extreme oversold conditions relative to this stock's normal range.
+"""
+
+        # Add discovered patterns section if available
+        if discovered_patterns:
+            prompt += "\n\n=== DISCOVERED TRADING PATTERNS (AUTO-MINED FROM HISTORICAL DATA) ===\n"
+            prompt += "The following patterns were automatically discovered by analyzing 5+ years of historical data:\n\n"
+            for i, pattern in enumerate(discovered_patterns[:3], 1):  # Show top 3
+                metadata = pattern.get("metadata", {})
+                prompt += f"Pattern {i}: {pattern.get('pattern_type', 'Unknown').replace('_', ' ').title()}\n"
+                prompt += f"- Success Rate: {metadata.get('success_rate', 0):.1%} ({metadata.get('occurrences', 0)} occurrences)\n"
+                prompt += f"- Average Return: {metadata.get('average_return', 0):+.2f}%\n"
+                prompt += f"- Conditions: {pattern.get('content', '')[:200]}...\n"
+                prompt += f"- Priority Score: {pattern.get('priority', 0)}/100\n\n"
+            prompt += "IMPORTANT: Check if current market conditions match any of these validated patterns. If they do, factor this historical success rate into your recommendation.\n"
+
+        # Add historical events section if available
+        if historical_events:
+            prompt += "\n\n=== HISTORICAL NEWS EVENT IMPACTS ===\n"
+            prompt += "Past news events affecting this stock and how the market reacted:\n\n"
+            for i, event in enumerate(historical_events[:3], 1):  # Show top 3
+                metadata = event.get("metadata", {})
+                prompt += f"Event {i}: {event.get('event_type', 'Unknown').replace('_', ' ').title()}\n"
+                prompt += f"- Immediate Impact: {metadata.get('immediate_impact', {})}\n"
+                prompt += f"- Recovery Timeline: {metadata.get('recovery_timeline', 'N/A')}\n"
+                prompt += f"- Details: {event.get('content', '')[:200]}...\n\n"
+            prompt += "IMPORTANT: Consider if similar events might occur soon and how the stock historically reacted to such catalysts.\n"
+
+        prompt += """
 
 === ANALYSIS INSTRUCTIONS ===
 
