@@ -3,7 +3,7 @@ LangGraph Orchestrator
 Manages the multi-agent workflow using LangGraph state machine
 """
 
-from typing import Dict, Any, TypedDict, Annotated
+from typing import Dict, Any, TypedDict, Annotated, Optional
 from langgraph.graph import StateGraph, END
 import operator
 import logging
@@ -12,6 +12,7 @@ from .analysis_agent import TechnicalAnalysisAgent
 from .knowledge_agent import RAGKnowledgeAgent
 from .reasoning_agent import DeepReasoningAgent
 from .validator_agent import ValidatorAgent
+from .insight_generator import InsightGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +26,21 @@ class AnalysisState(TypedDict):
     model: str
     provider: str
     api_key: str
+    data_provider_keys: Dict[str, Any]
     
     # Data collected by agents
     stock_data: Dict[str, Any]
     technical_indicators: Dict[str, Any]
     technical_signals: Dict[str, Any]
+    percentile_scores: Dict[str, Any]
     rag_context: str
     rag_results: list
     similar_patterns: list
     strategy_recommendations: list
     analysis_result: Dict[str, Any]
     validation: Dict[str, Any]
+    insights: list
+    summary_insight: str
     
     # Workflow management
     agent_steps: Annotated[list, operator.add]
@@ -61,7 +66,8 @@ class AnalysisOrchestrator:
         self.knowledge_agent = RAGKnowledgeAgent()
         self.reasoning_agent = DeepReasoningAgent()
         self.validator_agent = ValidatorAgent()
-        
+        self.insight_generator = InsightGenerator()
+
         # Build the workflow graph
         self.workflow = self._build_workflow()
         self.app = self.workflow.compile()
@@ -118,29 +124,32 @@ class AnalysisOrchestrator:
         symbol: str,
         model: str,
         provider: str,
-        api_key: str
+        api_key: str,
+        data_provider_keys: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Run the complete analysis workflow
-        
+
         Args:
             symbol: Stock symbol
             model: LLM model to use
             provider: Provider (openai/gemini)
-            api_key: API key
-            
+            api_key: API key for LLM
+            data_provider_keys: Optional API keys for data providers (Finnhub, Alpaca, FMP)
+
         Returns:
             Complete analysis result with all agent outputs
         """
         try:
             logger.info(f"Starting analysis workflow for {symbol} with {model}")
-            
+
             # Initialize state
             initial_state = {
                 "symbol": symbol,
                 "model": model,
                 "provider": provider,
                 "api_key": api_key,
+                "data_provider_keys": data_provider_keys or {},
                 "agent_steps": [],
                 "has_errors": False,
                 "last_error": ""
@@ -148,7 +157,20 @@ class AnalysisOrchestrator:
             
             # Run the workflow
             final_state = await self.app.ainvoke(initial_state)
-            
+
+            # Generate natural language insights
+            analysis_result = final_state.get("analysis_result", {})
+            technical_indicators = final_state.get("technical_indicators", {})
+            percentile_scores = final_state.get("percentile_scores", {})
+            stock_data = final_state.get("stock_data", {})
+
+            insights = self.insight_generator.generate_insights(
+                analysis_result, technical_indicators, percentile_scores, stock_data
+            )
+            summary_insight = self.insight_generator.generate_summary_insight(
+                analysis_result, percentile_scores
+            )
+
             # Extract result
             result = {
                 "symbol": symbol,
@@ -169,6 +191,9 @@ class AnalysisOrchestrator:
                 "validation_warnings": final_state.get("analysis_result", {}).get("validation_warnings", []),
                 "technical_indicators": final_state.get("technical_indicators", {}),
                 "technical_signals": final_state.get("technical_signals", {}),
+                "percentile_scores": percentile_scores,
+                "insights": insights,
+                "summary_insight": summary_insight,
                 "rag_patterns_found": len(final_state.get("rag_results", [])),
                 "similar_patterns_count": len(final_state.get("similar_patterns", [])),
                 "has_errors": final_state.get("has_errors", False)

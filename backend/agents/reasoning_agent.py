@@ -33,6 +33,7 @@ class DeepReasoningAgent(BaseAgent):
             stock_data = state.get("stock_data", {})
             indicators = state.get("technical_indicators", {})
             signals = state.get("technical_signals", {})
+            percentile_scores = state.get("percentile_scores", {})
             rag_context = state.get("rag_context", "")
             model = state.get("model", "gpt-4.1")
             provider = state.get("provider", "openai")
@@ -54,9 +55,9 @@ class DeepReasoningAgent(BaseAgent):
                 )
             )
             
-            # Build comprehensive prompt with RAG context
+            # Build comprehensive prompt with RAG context and percentile scores
             prompt = self._build_analysis_prompt(
-                symbol, stock_data, indicators, signals, rag_context
+                symbol, stock_data, indicators, signals, percentile_scores, rag_context
             )
             
             # Call LLM with chain-of-thought prompting (REAL API CALL)
@@ -87,6 +88,28 @@ class DeepReasoningAgent(BaseAgent):
             for field in required_fields:
                 if field not in analysis_result:
                     raise ValueError(f"Missing required field: {field}")
+
+            # Add default values for optional enhanced fields if missing
+            if "sector_analysis" not in analysis_result:
+                analysis_result["sector_analysis"] = {
+                    "sector_trend": "neutral",
+                    "relative_strength": "inline",
+                    "sector_catalysts": "N/A"
+                }
+            if "percentile_metrics" not in analysis_result:
+                analysis_result["percentile_metrics"] = {
+                    "rsi_percentile": "N/A",
+                    "volatility_percentile": "N/A",
+                    "volume_percentile": "N/A"
+                }
+            if "confidence_breakdown" not in analysis_result:
+                # Keep backward compatibility
+                analysis_result["confidence_breakdown"] = {
+                    "technical_score": analysis_result.get("confidence", 50),
+                    "momentum_score": analysis_result.get("confidence", 50),
+                    "risk_score": analysis_result.get("confidence", 50),
+                    "sector_score": 50
+                }
             
             # Add model information
             analysis_result["model_used"] = model
@@ -125,23 +148,51 @@ class DeepReasoningAgent(BaseAgent):
         stock_data: Dict[str, Any],
         indicators: Dict[str, Any],
         signals: Dict[str, Any],
+        percentile_scores: Dict[str, Any],
         rag_context: str
     ) -> str:
         """
         Build comprehensive analysis prompt with chain-of-thought structure
-        
+        Enhanced with industry benchmarking, role specialization, and percentile scoring
+
         Args:
             symbol: Stock symbol
             stock_data: Stock data
             indicators: Technical indicators
             signals: Technical signals
+            percentile_scores: Percentile-based scores for context
             rag_context: RAG context
-            
+
         Returns:
             Formatted prompt
         """
-        prompt = f"""You are an expert stock market analyst for Indian markets (NSE/BSE).
-Perform a comprehensive analysis using chain-of-thought reasoning.
+        # Extract extended features for enhanced analysis
+        current_price = indicators.get('current_price', stock_data.get('current_price'))
+        lag_1d = indicators.get('lag_1d_price')
+        lag_5d = indicators.get('lag_5d_price')
+        volatility_10d = indicators.get('volatility_10d')
+        volatility_20d = indicators.get('volatility_20d')
+        price_vs_sma20 = indicators.get('price_vs_sma20_pct')
+        price_vs_sma50 = indicators.get('price_vs_sma50_pct')
+        return_1d = indicators.get('return_1d')
+        return_5d = indicators.get('return_5d')
+        return_20d = indicators.get('return_20d')
+        volume_ratio = indicators.get('volume_ratio')
+
+        # Calculate sector-relative metrics
+        sector = stock_data.get('sector', 'Unknown')
+        industry = stock_data.get('industry', 'Unknown')
+
+        prompt = f"""You are a senior quantitative analyst with 15+ years of experience in Indian equity markets (NSE/BSE).
+You specialize in technical analysis, sector rotation strategies, and risk-adjusted returns.
+
+ROLE & EXPERTISE:
+- Expert in Indian market microstructure, sectoral trends, and regulatory environment
+- Proficient in statistical analysis, pattern recognition, and quantitative modeling
+- Focus on data-driven decisions with clear risk-reward frameworks
+- Experienced in comparing stocks against industry peers and sector benchmarks
+
+Perform a comprehensive analysis using chain-of-thought reasoning with industry-relative context.
 
 {rag_context if rag_context else ""}
 
@@ -198,69 +249,162 @@ Analysis Result:
 === CURRENT MARKET DATA ===
 
 Stock: {stock_data.get('name', symbol)} ({symbol})
-Sector: {stock_data.get('sector', 'N/A')}
-Industry: {stock_data.get('industry', 'N/A')}
+Sector: {sector}
+Industry: {industry}
+
+INDUSTRY CONTEXT:
+When analyzing this stock, consider the following sector-specific factors:
+- {sector} sector trends and rotation patterns in Indian markets
+- Industry-specific regulatory changes or tailwinds/headwinds
+- Peer comparison within {industry} (relative strength, valuation multiples)
+- Sector-average volatility and typical trading ranges
+- Recent FII/DII activity in the sector
 
 Price Data:
-- Current Price: ₹{stock_data.get('current_price', 'N/A')}
+- Current Price: ₹{current_price if current_price else stock_data.get('current_price', 'N/A')}
 - Previous Close: ₹{stock_data.get('previous_close', 'N/A')}
-- Change: {stock_data.get('change_percent', 'N/A')}%
+- 1-Day Change: {stock_data.get('change_percent', 'N/A')}%
 - Volume: {stock_data.get('volume', 'N/A'):,}
+- Volume Ratio (vs 20D avg): {volume_ratio if volume_ratio else 'N/A'}x
 - Market Cap: {stock_data.get('market_cap', 'N/A')}
 - P/E Ratio: {stock_data.get('pe_ratio', 'N/A')}
 - 52W High: ₹{stock_data.get('week_52_high', 'N/A')}
 - 52W Low: ₹{stock_data.get('week_52_low', 'N/A')}
 
+Recent Price Action (Historical Context):
+- Price 1 day ago: ₹{lag_1d if lag_1d else 'N/A'}
+- Price 5 days ago: ₹{lag_5d if lag_5d else 'N/A'}
+- 1-Day Return: {return_1d if return_1d else 'N/A'}%
+- 5-Day Return: {return_5d if return_5d else 'N/A'}%
+- 20-Day Return: {return_20d if return_20d else 'N/A'}%
+
+Volatility Metrics (Recent History):
+- 10-Day Volatility: {volatility_10d if volatility_10d else 'N/A'}%
+- 20-Day Volatility: {volatility_20d if volatility_20d else 'N/A'}%
+- ATR (14): {indicators.get('atr', 'N/A')} - Signal: {signals.get('volatility', 'N/A')}
+
 Technical Indicators:
 - RSI (14): {indicators.get('rsi', 'N/A')} - Signal: {signals.get('rsi', 'N/A')}
 - MACD: {indicators.get('macd', 'N/A')} / Signal: {indicators.get('macd_signal', 'N/A')} - Signal: {signals.get('macd', 'N/A')}
 - Histogram: {indicators.get('macd_histogram', 'N/A')}
-- SMA 20: ₹{indicators.get('sma_20', 'N/A')}
-- SMA 50: ₹{indicators.get('sma_50', 'N/A')}
+- SMA 20: ₹{indicators.get('sma_20', 'N/A')} (Price {price_vs_sma20 if price_vs_sma20 else 'N/A'}% {'above' if price_vs_sma20 and price_vs_sma20 > 0 else 'below'})
+- SMA 50: ₹{indicators.get('sma_50', 'N/A')} (Price {price_vs_sma50 if price_vs_sma50 else 'N/A'}% {'above' if price_vs_sma50 and price_vs_sma50 > 0 else 'below'})
 - SMA 200: ₹{indicators.get('sma_200', 'N/A')}
 - Bollinger Bands: ₹{indicators.get('bb_upper', 'N/A')} / ₹{indicators.get('bb_middle', 'N/A')} / ₹{indicators.get('bb_lower', 'N/A')}
-- ATR: {indicators.get('atr', 'N/A')} - Volatility: {signals.get('volatility', 'N/A')}
 - Stochastic K/D: {indicators.get('stochastic_k', 'N/A')} / {indicators.get('stochastic_d', 'N/A')}
 - ADX: {indicators.get('adx', 'N/A')}
 - CCI: {indicators.get('cci', 'N/A')}
+- OBV: {indicators.get('obv', 'N/A')}
 
 Trend Analysis:
 - Overall Trend: {signals.get('trend', 'N/A')}
 - Momentum: {signals.get('momentum', 'N/A')}
 
+PERCENTILE-BASED CONTEXT (6-Month Historical Distribution):
+This section provides critical context by comparing current metrics to their 6-month historical range:
+
+- RSI Percentile: {percentile_scores.get('rsi_interpretation', 'N/A')}
+- Volatility Percentile: {percentile_scores.get('volatility_interpretation', 'N/A')}
+- Volume Percentile: {percentile_scores.get('volume_interpretation', 'N/A')}
+- Price Position: {percentile_scores.get('price_position_interpretation', 'N/A')}
+
+COMPOSITE SCORE: {percentile_scores.get('composite_score', 'N/A')}/100
+Interpretation: {percentile_scores.get('composite_interpretation', 'N/A')}
+
+USE THESE PERCENTILE INSIGHTS in your analysis - they provide crucial context that raw indicator values alone cannot convey.
+For example, RSI=35 might seem neutral, but if it's in the 10th percentile historically, it indicates extreme oversold conditions relative to this stock's normal range.
+
 === ANALYSIS INSTRUCTIONS ===
 
-Use the historical knowledge provided above and perform step-by-step chain-of-thought reasoning:
+Use the historical knowledge provided above and perform step-by-step chain-of-thought reasoning with INDUSTRY-RELATIVE perspective:
 
-1. Price Action Analysis: Analyze current price relative to moving averages and support/resistance
-2. Momentum Assessment: Evaluate RSI, Stochastic, and MACD for momentum direction
-3. Trend Confirmation: Verify trend using multiple indicators (SMA, ADX)
-4. Volatility Check: Assess risk using ATR and Bollinger Bands
-5. Pattern Recognition: Identify any patterns from historical knowledge
-6. Risk Assessment: List potential risks and concerns
-7. Final Recommendation: Synthesize all factors into actionable recommendation
+CRITICAL ANALYSIS FRAMEWORK:
+1. Sector Context Analysis (NEW):
+   - How is {sector} performing in current market conditions?
+   - Is the stock outperforming or underperforming its sector peers?
+   - Consider sector rotation patterns and institutional flows
+   - Evaluate if sector-specific catalysts or headwinds exist
+
+2. Recent Price Momentum (6-Week Window):
+   - Analyze 1D, 5D, and 20D returns for trend acceleration/deceleration
+   - Compare volume ratio - is accumulation/distribution happening?
+   - Check if recent volatility (10D, 20D) is expanding or contracting
+   - Assess if price action shows institutional participation
+
+3. Price Action & Position Analysis:
+   - Current price vs SMA20/50/200 (use percentage deviation metrics)
+   - Evaluate if stock is at extremes (overbought/oversold relative to history)
+   - Identify support/resistance zones and Bollinger Band positioning
+   - Compare lag prices (1D, 5D ago) to gauge momentum shift
+
+4. Technical Momentum Assessment:
+   - RSI, Stochastic for overbought/oversold conditions
+   - MACD histogram for momentum direction and divergences
+   - ADX for trend strength
+   - Synthesize: Is momentum building or fading?
+
+5. Volatility & Risk Profile:
+   - ATR and recent volatility (10D, 20D) for risk sizing
+   - Compare to sector-average volatility
+   - Bollinger Band width for volatility compression/expansion
+   - Determine appropriate position sizing and stop-loss width
+
+6. Pattern Recognition & Historical Context:
+   - Identify any chart patterns from RAG knowledge base
+   - Look for similar setups in the same stock or sector peers
+   - Consider seasonal patterns or event-driven catalysts
+
+7. Risk-Reward Framework:
+   - List specific risks: technical, sector-specific, macro factors
+   - Identify catalysts and opportunities
+   - Calculate entry, target, and stop-loss with clear R:R ratio
+   - Ensure stop-loss accounts for recent volatility
+
+8. Industry-Relative Scoring:
+   - Technical strength vs sector peers
+   - Momentum quality (sustained vs choppy)
+   - Risk-adjusted return potential
+   - Overall conviction level
 
 Provide your analysis in the following JSON format:
 {{
   "recommendation": "BUY" or "SELL" or "HOLD",
-  "confidence": 0-100 (integer),
+  "confidence": 0-100 (integer, based on signal strength and conviction),
   "entry_price": suggested entry price (number),
   "target_price": price target (number),
   "stop_loss": stop loss price (number),
   "risk_reward_ratio": calculated ratio (number),
   "time_horizon": "short_term" or "medium_term" or "long_term",
-  "reasoning": "Step-by-step chain-of-thought analysis explaining your decision. Use numbered steps. Include: 1) Price action analysis, 2) Momentum assessment, 3) Trend confirmation, 4) Risk factors, 5) Final synthesis",
-  "key_risks": ["risk1", "risk2", "risk3"],
-  "key_opportunities": ["opportunity1", "opportunity2"],
-  "similar_patterns": "Any similar historical patterns from the knowledge base",
+  "reasoning": "Comprehensive step-by-step chain-of-thought analysis. MUST include all 8 framework points: 1) Sector Context, 2) Recent Price Momentum (6-week), 3) Price Action & Position, 4) Technical Momentum, 5) Volatility & Risk, 6) Pattern Recognition, 7) Risk-Reward Framework, 8) Industry-Relative Scoring. Be specific about percentages, price levels, and comparative analysis vs sector peers.",
+  "key_risks": ["risk1 (sector-specific)", "risk2 (technical)", "risk3 (macro/regulatory)"],
+  "key_opportunities": ["opportunity1 (with catalyst)", "opportunity2 (with timeframe)"],
+  "similar_patterns": "Any similar historical patterns from the knowledge base, with recency preference (last 6 weeks)",
+  "sector_analysis": {{
+    "sector_trend": "bullish/bearish/neutral - brief justification",
+    "relative_strength": "outperforming/underperforming/inline - vs sector peers",
+    "sector_catalysts": "any sector-specific tailwinds or headwinds"
+  }},
   "confidence_breakdown": {{
-    "technical_score": 0-100,
-    "momentum_score": 0-100,
-    "risk_score": 0-100
+    "technical_score": 0-100 (indicator alignment and signal quality),
+    "momentum_score": 0-100 (trend strength and momentum sustainability),
+    "risk_score": 0-100 (volatility, sector risk, macro factors),
+    "sector_score": 0-100 (relative performance vs industry peers)
+  }},
+  "percentile_metrics": {{
+    "rsi_percentile": "Current RSI relative to 6-month history (e.g., 'RSI at 28 is in 15th percentile - historically oversold')",
+    "volatility_percentile": "Current volatility vs 6-month range (e.g., '10D volatility at 2.3% is in 70th percentile - above average')",
+    "volume_percentile": "Volume ratio context (e.g., 'Volume 1.8x average is in 80th percentile - strong participation')"
   }}
 }}
 
-Be specific with price levels and provide actionable, data-driven insights. Use the historical patterns from the knowledge base to support your analysis."""
+CRITICAL REQUIREMENTS:
+1. Be SPECIFIC with price levels, percentages, and numerical analysis
+2. Use the extended metrics (lag prices, volatility %, position vs SMAs, returns) in your reasoning
+3. Provide industry-relative context - don't analyze in isolation
+4. Include percentile-based insights for key metrics when possible
+5. Prioritize recent patterns (last 6 weeks) over older historical data
+6. Ensure reasoning directly references the 8-point analysis framework
+7. Make recommendations actionable with clear entry/exit levels accounting for volatility"""
         
         return prompt
     

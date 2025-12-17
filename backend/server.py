@@ -175,28 +175,70 @@ def get_indian_stock_suffix(symbol: str) -> str:
     return symbol
 
 async def fetch_stock_data(symbol: str) -> Dict[str, Any]:
-    """Fetch stock data from Yahoo Finance"""
+    """Fetch stock data from Yahoo Finance with latest available data"""
     try:
+        from datetime import datetime, timezone
+
         ticker_symbol = get_indian_stock_suffix(symbol)
         ticker = yf.Ticker(ticker_symbol)
-        
+
         # Get basic info
         info = ticker.info
-        hist = ticker.history(period="1d")
-        
+
+        # Try to get intraday data first (1m interval for last 7 days)
+        # This gives us the most recent data available
+        try:
+            hist_intraday = ticker.history(period="1d", interval="1m")
+            if not hist_intraday.empty:
+                hist = hist_intraday
+                is_intraday = True
+            else:
+                hist = ticker.history(period="5d")
+                is_intraday = False
+        except:
+            hist = ticker.history(period="5d")
+            is_intraday = False
+
         if hist.empty:
             # Try BSE
             ticker_symbol = symbol.upper().replace('.NS', '') + '.BO'
             ticker = yf.Ticker(ticker_symbol)
             info = ticker.info
-            hist = ticker.history(period="1d")
-        
+            try:
+                hist_intraday = ticker.history(period="1d", interval="1m")
+                if not hist_intraday.empty:
+                    hist = hist_intraday
+                    is_intraday = True
+                else:
+                    hist = ticker.history(period="5d")
+                    is_intraday = False
+            except:
+                hist = ticker.history(period="5d")
+                is_intraday = False
+
         if hist.empty:
             raise HTTPException(status_code=404, detail=f"Stock {symbol} not found")
-        
-        current_price = float(hist['Close'].iloc[-1]) if not hist.empty else info.get('currentPrice', 0)
+
+        # Get the latest data point
+        last_timestamp = hist.index[-1]
+        current_price = float(hist['Close'].iloc[-1])
         previous_close = info.get('previousClose', current_price)
-        
+
+        # Calculate data age
+        if hasattr(last_timestamp, 'to_pydatetime'):
+            last_update = last_timestamp.to_pydatetime()
+        else:
+            last_update = last_timestamp
+
+        # Make timezone aware if not already
+        if last_update.tzinfo is None:
+            from pytz import timezone as tz
+            ist = tz('Asia/Kolkata')
+            last_update = ist.localize(last_update)
+
+        current_time = datetime.now(timezone.utc)
+        data_age_minutes = int((current_time - last_update).total_seconds() / 60)
+
         return {
             "symbol": symbol.upper().replace('.NS', '').replace('.BO', ''),
             "name": info.get('longName', info.get('shortName', symbol)),
@@ -210,7 +252,10 @@ async def fetch_stock_data(symbol: str) -> Dict[str, Any]:
             "week_52_high": info.get('fiftyTwoWeekHigh'),
             "week_52_low": info.get('fiftyTwoWeekLow'),
             "sector": info.get('sector', 'N/A'),
-            "industry": info.get('industry', 'N/A')
+            "industry": info.get('industry', 'N/A'),
+            "last_updated": last_update.isoformat(),
+            "data_age_minutes": data_age_minutes,
+            "is_realtime": is_intraday and data_age_minutes < 5
         }
     except Exception as e:
         logger.error(f"Error fetching stock data: {e}")
@@ -722,8 +767,9 @@ async def analyze_stock_for_recommendation(symbol: str, stock_info: dict, use_en
             recommendation = result.get('recommendation', 'HOLD')
             confidence = result.get('confidence', 0)
 
-            # Only return if strong signal
-            if recommendation in ['HOLD'] or confidence < 55:
+            # Only return if signal has reasonable confidence
+            # Lower threshold to 45% to ensure we get recommendations
+            if recommendation in ['HOLD'] or confidence < 45:
                 return None
 
             # Extract signals from the detailed analysis
@@ -885,11 +931,11 @@ async def analyze_stock_for_recommendation(symbol: str, stock_info: dict, use_en
             if volume_ratio > 1.5:
                 signals.append(f"High volume ({volume_ratio:.1f}x avg)")
 
-            # Determine recommendation
-            if buy_score >= 4 and buy_score > sell_score:
+            # Determine recommendation (lowered threshold from 4 to 3 for more signals)
+            if buy_score >= 3 and buy_score > sell_score:
                 recommendation = "BUY"
                 confidence = min(95, 50 + buy_score * 8)
-            elif sell_score >= 4 and sell_score > buy_score:
+            elif sell_score >= 3 and sell_score > buy_score:
                 recommendation = "SELL"
                 confidence = min(95, 50 + sell_score * 8)
             else:
@@ -1163,14 +1209,25 @@ async def analyze_stock(request: AnalysisRequest):
         raise HTTPException(status_code=400, detail=f"Please configure your {request.provider} API key in Settings")
     
     try:
+        # Get data provider API keys from settings
+        data_provider_keys = {
+            "finnhub": settings.get('finnhub_api_key'),
+            "alpaca": {
+                "key": settings.get('alpaca_api_key'),
+                "secret": settings.get('alpaca_api_secret')
+            },
+            "fmp": settings.get('fmp_api_key')
+        }
+
         # Use the new multi-agent orchestrator (REAL IMPLEMENTATION)
         orchestrator = get_orchestrator()
-        
+
         analysis_result = await orchestrator.run_analysis(
             symbol=request.symbol,
             model=request.model,
             provider=request.provider,
-            api_key=api_key
+            api_key=api_key,
+            data_provider_keys=data_provider_keys
         )
         
         # Save to database
@@ -1449,6 +1506,89 @@ async def clear_cache(symbol: Optional[str] = None):
     cache = get_price_cache()
     cache.clear_cache(symbol)
     return {"message": f"Cache cleared for {symbol if symbol else 'all symbols'}"}
+
+class BacktestComparisonRequest(BaseModel):
+    """Request model for AI backtest insights"""
+    symbol: str
+    strategies: List[Dict[str, Any]]  # List of strategy results with metrics
+
+@api_router.post("/backtest/insights")
+async def generate_backtest_insights(request: BacktestComparisonRequest):
+    """Generate AI-powered insights from backtest comparison results"""
+    try:
+        orchestrator = get_orchestrator()
+
+        # Format strategy data for AI analysis
+        strategies_summary = []
+        for strat in request.strategies:
+            if not strat.get('error'):
+                strategies_summary.append({
+                    'name': strat.get('display_name', strat.get('strategy')),
+                    'return': strat.get('total_return_pct'),
+                    'cagr': strat.get('cagr_pct'),
+                    'sharpe': strat.get('sharpe_ratio'),
+                    'max_drawdown': strat.get('max_drawdown_pct'),
+                    'win_rate': strat.get('win_rate_pct'),
+                    'trades': strat.get('total_trades'),
+                    'final_value': strat.get('final_value')
+                })
+
+        # Create AI prompt
+        prompt = f"""Analyze the following backtest comparison results for {request.symbol} and provide 4-6 key insights in bullet points.
+
+Backtest Results:
+{json.dumps(strategies_summary, indent=2)}
+
+Provide actionable insights that help investors understand:
+1. Which strategy performed best and why
+2. Risk-adjusted performance analysis
+3. Key differences between strategies
+4. Practical recommendations based on the data
+5. Any notable patterns or concerns
+
+Format your response as bullet points. Each insight should be concise (1-2 sentences) and include specific numbers from the data. Use a professional but accessible tone."""
+
+        # Get AI analysis
+        analysis = await orchestrator.run_analysis(
+            symbol=request.symbol,
+            analysis_type="backtest_insights",
+            custom_prompt=prompt
+        )
+
+        # Parse the AI response into structured insights
+        insights_text = analysis.get('result', {}).get('analysis', '')
+
+        # Split into bullet points
+        lines = insights_text.strip().split('\n')
+        insights = []
+        for line in lines:
+            line = line.strip()
+            if line and (line.startswith('-') or line.startswith('•') or line.startswith('*') or line[0].isdigit()):
+                # Remove bullet point markers
+                clean_line = line.lstrip('-•*0123456789. ')
+                if clean_line:
+                    insights.append(clean_line)
+
+        return {
+            "symbol": request.symbol,
+            "insights": insights,
+            "raw_analysis": insights_text
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to generate backtest insights: {e}")
+        # Return fallback insights if AI fails
+        return {
+            "symbol": request.symbol,
+            "insights": [
+                f"Analyzed {len(request.strategies)} strategies for {request.symbol}",
+                "Review the comparison table above for detailed metrics",
+                "Consider risk-adjusted returns (Sharpe ratio) alongside absolute returns",
+                "Lower maximum drawdown indicates better risk management",
+                "Past performance does not guarantee future results"
+            ],
+            "raw_analysis": "AI analysis temporarily unavailable"
+        }
 
 # ============ NEWS & SENTIMENT ENDPOINTS ============
 

@@ -186,6 +186,72 @@ export default function Dashboard() {
     }
   };
 
+  const getIndicatorSignal = (label, value, currentPrice) => {
+    if (!value) return "neutral";
+
+    switch (label) {
+      case "RSI":
+        if (value < 30) return "good";
+        if (value > 70) return "bad";
+        return "neutral";
+
+      case "MACD":
+        if (value > 5) return "good";
+        if (value < -5) return "bad";
+        return "neutral";
+
+      case "SMA 20":
+      case "SMA 50":
+        if (!currentPrice) return "neutral";
+        if (currentPrice > value * 1.02) return "good";
+        if (currentPrice < value * 0.98) return "bad";
+        return "neutral";
+
+      case "BB Upper":
+        if (!currentPrice) return "neutral";
+        if (currentPrice > value * 0.99) return "bad";
+        return "neutral";
+
+      case "BB Lower":
+        if (!currentPrice) return "neutral";
+        if (currentPrice < value * 1.01) return "good";
+        return "neutral";
+
+      case "ATR":
+        // ATR indicates volatility - high ATR is risky (amber/bad), low ATR is stable (neutral/good)
+        if (!currentPrice) return "neutral";
+        const atrPercent = (value / currentPrice) * 100;
+        if (atrPercent > 3) return "bad"; // High volatility
+        if (atrPercent < 1) return "good"; // Low volatility
+        return "neutral";
+
+      default:
+        return "neutral";
+    }
+  };
+
+  const getIndicatorColors = (signal) => {
+    switch (signal) {
+      case "good":
+        return "bg-success/10 border border-success/20";
+      case "bad":
+        return "bg-danger/10 border border-danger/20";
+      default:
+        return "bg-amber-500/10 border border-amber-500/20";
+    }
+  };
+
+  const getIndicatorTextColor = (signal) => {
+    switch (signal) {
+      case "good":
+        return "text-success";
+      case "bad":
+        return "text-danger";
+      default:
+        return "text-amber-500";
+    }
+  };
+
   return (
     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6" data-testid="dashboard">
       {/* Search Section */}
@@ -255,7 +321,7 @@ export default function Dashboard() {
                       <button
                         key={item.symbol}
                         data-testid={`watchlist-${item.symbol}`}
-                        onClick={() => selectStock(item.symbol)}
+                        onClick={() => navigate(`/stock/${item.symbol}`)}
                         className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-surface-highlight transition-colors"
                       >
                         <span className="font-data text-text-primary">{item.symbol}</span>
@@ -415,21 +481,27 @@ export default function Dashboard() {
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                       {[
-                        { label: "RSI", value: technicalIndicators.rsi, good: technicalIndicators.rsi > 30 && technicalIndicators.rsi < 70 },
+                        { label: "RSI", value: technicalIndicators.rsi },
                         { label: "MACD", value: technicalIndicators.macd },
                         { label: "SMA 20", value: technicalIndicators.sma_20, prefix: "₹" },
                         { label: "SMA 50", value: technicalIndicators.sma_50, prefix: "₹" },
                         { label: "BB Upper", value: technicalIndicators.bb_upper, prefix: "₹" },
                         { label: "BB Lower", value: technicalIndicators.bb_lower, prefix: "₹" },
                         { label: "ATR", value: technicalIndicators.atr },
-                      ].map((indicator) => (
-                        <div key={indicator.label} className="p-3 rounded-lg bg-surface-highlight">
-                          <p className="text-xs text-text-secondary">{indicator.label}</p>
-                          <p className="font-data text-text-primary">
-                            {indicator.prefix || ""}{indicator.value?.toFixed(2) || "N/A"}
-                          </p>
-                        </div>
-                      ))}
+                      ].map((indicator) => {
+                        const signal = getIndicatorSignal(indicator.label, indicator.value, stockData?.current_price);
+                        const colorClass = getIndicatorColors(signal);
+                        const textColorClass = getIndicatorTextColor(signal);
+
+                        return (
+                          <div key={indicator.label} className={`p-3 rounded-lg ${colorClass}`}>
+                            <p className="text-xs text-text-secondary">{indicator.label}</p>
+                            <p className={`font-data ${textColorClass} font-semibold`}>
+                              {indicator.prefix || ""}{indicator.value?.toFixed(2) || "N/A"}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>

@@ -197,7 +197,7 @@ export default function ReasoningLog({ reasoning }) {
         </Badge>
       </div>
 
-      <ScrollArea className="h-auto max-h-[400px]">
+      <ScrollArea className="h-[400px] w-full">
         <div className="space-y-2 pr-4">
           {reasoningSteps.map((step, index) => (
             <motion.div

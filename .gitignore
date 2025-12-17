@@ -85,4 +85,5 @@ android-sdk/
 .pytest_cache
 # Project logs (ignore contents, keep folder placeholder)
 /logs/*
-!/logs/.gitkeep
+logs/
+logs

@@ -12,7 +12,8 @@ import {
   DollarSign,
   Target,
   AlertCircle,
-  Search
+  Search,
+  Brain
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,9 @@ export default function Backtesting() {
   const [initialCapital, setInitialCapital] = useState(100000);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState(null);
+  const [comparisonResults, setComparisonResults] = useState(null);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const [history, setHistory] = useState([]);
 
   // Autocomplete state
@@ -147,19 +151,85 @@ export default function Backtesting() {
 
     setIsRunning(true);
     setResult(null);
+    setComparisonResults(null);
 
     try {
-      const response = await axios.post(`${API_URL}/backtest/run`, {
-        symbol,
-        strategy: selectedStrategy,
-        start_date: startDate,
-        end_date: endDate,
-        initial_capital: initialCapital
-      });
+      if (selectedStrategy === 'ALL') {
+        // Run all strategies in parallel
+        toast.info("Running all strategies in parallel...");
 
-      setResult(response.data);
-      fetchHistory();
-      toast.success("Backtest completed!");
+        const strategyNames = strategies
+          .filter(s => s.name !== 'ALL')
+          .map(s => s.name);
+
+        const promises = strategyNames.map(strategyName =>
+          axios.post(`${API_URL}/backtest/run`, {
+            symbol,
+            strategy: strategyName,
+            start_date: startDate,
+            end_date: endDate,
+            initial_capital: initialCapital
+          }).catch(error => ({
+            error: true,
+            strategy: strategyName,
+            message: error.response?.data?.detail || error.message
+          }))
+        );
+
+        const results = await Promise.all(promises);
+
+        // Process results
+        const comparisonData = results.map((result, index) => {
+          if (result.error) {
+            return {
+              strategy: result.strategy,
+              error: result.message
+            };
+          }
+
+          // Extract metrics from the response
+          // Axios wraps response in .data property
+          const metrics = result.data?.metrics || result.metrics || {};
+          const strategyName = result.data?.strategy || strategyNames[index];
+
+          console.log('Processing result for:', strategyName, metrics);
+
+          return {
+            strategy: strategyName,
+            display_name: strategies.find(s => s.name === strategyName)?.display_name,
+            total_return_pct: metrics.total_return_pct ?? null,
+            cagr_pct: metrics.cagr_pct ?? null,
+            sharpe_ratio: metrics.sharpe_ratio ?? null,
+            max_drawdown_pct: metrics.max_drawdown_pct ?? null,
+            win_rate_pct: metrics.win_rate_pct ?? null,
+            total_trades: metrics.total_trades ?? null,
+            final_value: metrics.final_value ?? null
+          };
+        });
+
+        console.log('Comparison data:', comparisonData);
+
+        setComparisonResults(comparisonData);
+
+        // Generate AI insights
+        fetchAiInsights(comparisonData);
+
+        fetchHistory();
+        toast.success(`Completed backtesting ${strategyNames.length} strategies!`);
+      } else {
+        // Run single strategy
+        const response = await axios.post(`${API_URL}/backtest/run`, {
+          symbol,
+          strategy: selectedStrategy,
+          start_date: startDate,
+          end_date: endDate,
+          initial_capital: initialCapital
+        });
+
+        setResult(response.data);
+        fetchHistory();
+        toast.success("Backtest completed!");
+      }
     } catch (error) {
       console.error("Backtest error:", error);
       toast.error(error.response?.data?.detail || "Backtest failed");
@@ -168,9 +238,37 @@ export default function Backtesting() {
     }
   };
 
+  const fetchAiInsights = async (comparisonData) => {
+    setLoadingInsights(true);
+    setAiInsights(null);
+
+    try {
+      const response = await axios.post(`${API_URL}/backtest/insights`, {
+        symbol: symbol.replace('.NS', '').replace('.BO', ''),
+        strategies: comparisonData
+      });
+
+      setAiInsights(response.data);
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      // Set fallback insights
+      setAiInsights({
+        insights: [
+          "Review the comparison table above for detailed performance metrics",
+          "Consider both absolute returns and risk-adjusted metrics (Sharpe ratio)",
+          "Lower maximum drawdown indicates better risk management",
+          "Higher win rate doesn't always mean better overall performance",
+          "Past performance does not guarantee future results"
+        ]
+      });
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
   const exportResults = () => {
     if (!result) return;
-    
+
     const dataStr = JSON.stringify(result, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -274,6 +372,10 @@ export default function Backtesting() {
                     <SelectValue placeholder="Select strategy" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="ALL">
+                      🔥 ALL (Compare All Strategies)
+                    </SelectItem>
+                    <div className="border-t border-[#1F1F1F] my-1"></div>
                     {strategies.map((strategy) => (
                       <SelectItem key={strategy.name} value={strategy.name}>
                         {strategy.display_name}
@@ -281,7 +383,11 @@ export default function Backtesting() {
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedStrategy && (
+                {selectedStrategy === 'ALL' ? (
+                  <p className="text-xs text-text-secondary mt-1">
+                    Run all strategies in parallel and compare results
+                  </p>
+                ) : selectedStrategy && (
                   <p className="text-xs text-text-secondary mt-1">
                     {strategies.find(s => s.name === selectedStrategy)?.description}
                   </p>
@@ -386,7 +492,7 @@ export default function Backtesting() {
 
         {/* Results Panel */}
         <div className="lg:col-span-2">
-          {!result ? (
+          {!result && !comparisonResults ? (
             <Card className="card-surface">
               <CardContent className="py-24">
                 <div className="text-center">
@@ -397,6 +503,124 @@ export default function Backtesting() {
                 </div>
               </CardContent>
             </Card>
+          ) : comparisonResults ? (
+            /* Strategy Comparison Table */
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="card-surface">
+                <CardHeader>
+                  <CardTitle className="text-sm font-heading">Strategy Comparison</CardTitle>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Comparison of all strategies for {symbol}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-[#1F1F1F]">
+                          <th className="text-left py-3 px-4 text-xs font-medium text-text-secondary">Strategy</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Return %</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">CAGR %</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Sharpe</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Max DD %</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Win Rate %</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Trades</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-text-secondary">Final Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comparisonResults
+                          .filter(r => !r.error)
+                          .sort((a, b) => (b.total_return_pct || 0) - (a.total_return_pct || 0))
+                          .map((row, index) => (
+                            <tr
+                              key={row.strategy}
+                              className={`border-b border-[#1F1F1F] hover:bg-surface-highlight transition-colors ${
+                                index === 0 ? 'bg-success/5' : ''
+                              }`}
+                            >
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  {index === 0 && <span className="text-success">🏆</span>}
+                                  <span className="text-sm text-text-primary font-medium">
+                                    {row.display_name || strategies.find(s => s.name === row.strategy)?.display_name || row.strategy}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className={`py-3 px-4 text-right font-data ${
+                                row.total_return_pct >= 0 ? 'text-success' : 'text-danger'
+                              }`}>
+                                {row.total_return_pct?.toFixed(2) || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-text-primary">
+                                {row.cagr_pct?.toFixed(2) || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-text-primary">
+                                {row.sharpe_ratio?.toFixed(2) || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-danger">
+                                {row.max_drawdown_pct?.toFixed(2) || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-text-primary">
+                                {row.win_rate_pct?.toFixed(1) || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-text-primary">
+                                {row.total_trades || 'N/A'}
+                              </td>
+                              <td className="py-3 px-4 text-right font-data text-text-primary">
+                                ₹{row.final_value?.toLocaleString() || 'N/A'}
+                              </td>
+                            </tr>
+                          ))}
+                        {comparisonResults.filter(r => r.error).map((row) => (
+                          <tr key={row.strategy} className="border-b border-[#1F1F1F]">
+                            <td className="py-3 px-4 text-sm text-text-primary">
+                              {strategies.find(s => s.name === row.strategy)?.display_name || row.strategy}
+                            </td>
+                            <td colSpan="7" className="py-3 px-4 text-sm text-danger">
+                              Error: {row.error}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* AI-Powered Insights */}
+                  <div className="mt-6 p-4 rounded-lg bg-gradient-to-br from-ai-accent/5 to-primary/5 border border-ai-accent/20">
+                    <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-ai-accent" />
+                      AI Analysis & Insights
+                    </h4>
+
+                    {loadingInsights ? (
+                      <div className="flex items-center gap-2 text-sm text-text-secondary py-4">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>AI is analyzing the results...</span>
+                      </div>
+                    ) : aiInsights ? (
+                      <div className="space-y-2 text-sm text-text-secondary">
+                        <ul className="space-y-2.5">
+                          {aiInsights.insights.map((insight, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="text-ai-accent mt-0.5 flex-shrink-0">✨</span>
+                              <span className="text-text-primary leading-relaxed">{insight}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-4 pt-3 border-t border-[#1F1F1F] flex items-center gap-2 text-xs opacity-60">
+                          <Brain className="w-3 h-3" />
+                          <span>AI-powered analysis by NeuralTrader</span>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

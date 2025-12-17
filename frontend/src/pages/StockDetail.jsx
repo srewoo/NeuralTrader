@@ -15,7 +15,8 @@ import {
   Loader2,
   Star,
   Download,
-  Share2
+  Share2,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,9 @@ export default function StockDetail() {
   const [priceHistory, setPriceHistory] = useState(null);
   const [technicalIndicators, setTechnicalIndicators] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReloading, setIsReloading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     if (analysisId) {
@@ -45,6 +49,30 @@ export default function StockDetail() {
       fetchStockDetail(symbol);
     }
   }, [symbol, analysisId]);
+
+  // Auto-refresh stock data every 30 seconds when enabled
+  useEffect(() => {
+    if (!autoRefresh || (!symbol && !analysis?.symbol)) return;
+
+    const interval = setInterval(() => {
+      const targetSymbol = analysis?.symbol || symbol;
+      if (targetSymbol) {
+        refreshStockData(targetSymbol);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, symbol, analysis?.symbol]);
+
+  const refreshStockData = async (stockSymbol) => {
+    try {
+      const stockResponse = await axios.get(`${API_URL}/stocks/${stockSymbol}`);
+      setStockData(stockResponse.data);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error refreshing stock data:", error);
+    }
+  };
 
   const fetchAnalysisById = async (id) => {
     setIsLoading(true);
@@ -88,6 +116,7 @@ export default function StockDetail() {
       setStockData(stockResponse.data);
       setPriceHistory(historyResponse.data);
       setTechnicalIndicators(indicatorsResponse.data);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Error fetching stock data:", error);
       throw error;
@@ -116,6 +145,69 @@ export default function StockDetail() {
     }
   };
 
+  const getIndicatorSignal = (label, value, currentPrice) => {
+    if (!value) return "neutral";
+
+    switch (label) {
+      case "RSI":
+        // RSI: <30 oversold (bullish), >70 overbought (bearish), 30-70 neutral
+        if (value < 30) return "good"; // Oversold - potential buy
+        if (value > 70) return "bad"; // Overbought - potential sell
+        return "neutral";
+
+      case "MACD":
+        // MACD: positive is bullish, negative is bearish
+        if (value > 5) return "good";
+        if (value < -5) return "bad";
+        return "neutral";
+
+      case "SMA 20":
+      case "SMA 50":
+        // Price above SMA is bullish, below is bearish
+        if (!currentPrice) return "neutral";
+        if (currentPrice > value * 1.02) return "good"; // 2% above SMA
+        if (currentPrice < value * 0.98) return "bad"; // 2% below SMA
+        return "neutral";
+
+      case "BB Upper":
+        // Near upper band can indicate overbought
+        if (!currentPrice) return "neutral";
+        if (currentPrice > value * 0.99) return "bad"; // Near upper band
+        return "neutral";
+
+      case "BB Lower":
+        // Near lower band can indicate oversold
+        if (!currentPrice) return "neutral";
+        if (currentPrice < value * 1.01) return "good"; // Near lower band
+        return "neutral";
+
+      default:
+        return "neutral";
+    }
+  };
+
+  const getIndicatorColors = (signal) => {
+    switch (signal) {
+      case "good":
+        return "bg-success/10 border border-success/20";
+      case "bad":
+        return "bg-danger/10 border border-danger/20";
+      default:
+        return "bg-amber-500/10 border border-amber-500/20";
+    }
+  };
+
+  const getIndicatorTextColor = (signal) => {
+    switch (signal) {
+      case "good":
+        return "text-success";
+      case "bad":
+        return "text-danger";
+      default:
+        return "text-amber-500";
+    }
+  };
+
   const exportAnalysis = () => {
     if (!analysis) return;
     
@@ -132,9 +224,9 @@ export default function StockDetail() {
 
   const shareAnalysis = async () => {
     if (!analysis) return;
-    
+
     const shareText = `AI Analysis for ${analysis.symbol}: ${analysis.recommendation} Signal with ${analysis.confidence}% confidence`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -148,6 +240,45 @@ export default function StockDetail() {
     } else {
       navigator.clipboard.writeText(shareText);
       toast.success("Analysis copied to clipboard");
+    }
+  };
+
+  const reloadAnalysis = async () => {
+    const targetSymbol = displaySymbol;
+    if (!targetSymbol) {
+      toast.error("No stock symbol available");
+      return;
+    }
+
+    setIsReloading(true);
+    try {
+      // Request a new analysis
+      toast.info("Generating new analysis...");
+      const analyzeResponse = await axios.post(`${API_URL}/analyze`, {
+        symbol: targetSymbol
+      });
+
+      // Fetch the new analysis and stock data
+      if (analyzeResponse.data.analysis_id) {
+        const [analysisResponse, stockResponse, historyResponse, indicatorsResponse] = await Promise.all([
+          axios.get(`${API_URL}/analysis/${analyzeResponse.data.analysis_id}`),
+          axios.get(`${API_URL}/stocks/${targetSymbol}`),
+          axios.get(`${API_URL}/stocks/${targetSymbol}/history?period=6mo`),
+          axios.get(`${API_URL}/stocks/${targetSymbol}/indicators`)
+        ]);
+
+        setAnalysis(analysisResponse.data);
+        setStockData(stockResponse.data);
+        setPriceHistory(historyResponse.data);
+        setTechnicalIndicators(indicatorsResponse.data);
+
+        toast.success("Analysis updated successfully");
+      }
+    } catch (error) {
+      console.error("Error reloading analysis:", error);
+      toast.error("Failed to reload analysis");
+    } finally {
+      setIsReloading(false);
     }
   };
 
@@ -191,15 +322,44 @@ export default function StockDetail() {
                     <BarChart3 className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-heading font-bold text-text-primary mb-1">
-                      {displaySymbol}
-                    </h1>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h1 className="text-3xl font-heading font-bold text-text-primary">
+                        {displaySymbol}
+                      </h1>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={reloadAnalysis}
+                        disabled={isReloading}
+                        className="h-8 w-8 p-0 hover:bg-primary/10"
+                        title="Reload analysis"
+                      >
+                        <RefreshCw className={`w-5 h-5 text-primary ${isReloading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                     {displayData && (
-                      <p className="text-text-secondary">{displayData.name}</p>
+                      <>
+                        <p className="text-text-secondary">{displayData.name}</p>
+                        {displayData.last_updated && (
+                          <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary">
+                            <span>
+                              Updated: {new Date(displayData.last_updated).toLocaleTimeString()}
+                            </span>
+                            {displayData.is_realtime && (
+                              <Badge className="bg-success/10 text-success border-success/20 text-[10px] px-1 py-0">LIVE</Badge>
+                            )}
+                            {displayData.data_age_minutes > 15 && (
+                              <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] px-1 py-0">
+                                {displayData.data_age_minutes}m ago
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
-                
+
                 {displayData && (
                   <div className="text-right">
                     <p className="text-3xl font-data font-bold text-text-primary">
@@ -216,6 +376,17 @@ export default function StockDetail() {
                       <span className="font-data text-sm">
                         {displayData.change >= 0 ? "+" : ""}{displayData.change} ({displayData.change_percent}%)
                       </span>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 mt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAutoRefresh(!autoRefresh)}
+                        className={`text-xs h-7 ${autoRefresh ? 'text-success' : 'text-text-secondary'}`}
+                      >
+                        <RefreshCw className={`w-3 h-3 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} />
+                        Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -285,14 +456,20 @@ export default function StockDetail() {
                     { label: "SMA 50", value: technicalIndicators.sma_50, prefix: "₹" },
                     { label: "BB Upper", value: technicalIndicators.bb_upper, prefix: "₹" },
                     { label: "BB Lower", value: technicalIndicators.bb_lower, prefix: "₹" },
-                  ].map((indicator) => (
-                    <div key={indicator.label} className="p-3 rounded-lg bg-surface-highlight">
-                      <p className="text-xs text-text-secondary mb-1">{indicator.label}</p>
-                      <p className="font-data text-text-primary">
-                        {indicator.prefix || ""}{indicator.value?.toFixed(2) || "N/A"}
-                      </p>
-                    </div>
-                  ))}
+                  ].map((indicator) => {
+                    const signal = getIndicatorSignal(indicator.label, indicator.value, displayData?.current_price);
+                    const colorClass = getIndicatorColors(signal);
+                    const textColorClass = getIndicatorTextColor(signal);
+
+                    return (
+                      <div key={indicator.label} className={`p-3 rounded-lg ${colorClass}`}>
+                        <p className="text-xs text-text-secondary mb-1">{indicator.label}</p>
+                        <p className={`font-data ${textColorClass} font-semibold`}>
+                          {indicator.prefix || ""}{indicator.value?.toFixed(2) || "N/A"}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -337,7 +514,7 @@ export default function StockDetail() {
         {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
           {/* Analysis Summary */}
-          {analysis && (
+          {analysis ? (
             <Card className="card-surface border-ai-accent/20">
               <CardHeader>
                 <CardTitle className="text-sm font-heading flex items-center gap-2">
@@ -428,6 +605,36 @@ export default function StockDetail() {
                     Share
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="card-surface border-ai-accent/20">
+              <CardHeader>
+                <CardTitle className="text-sm font-heading flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-ai-accent" />
+                  AI Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-12">
+                <Brain className="w-12 h-12 mx-auto text-ai-accent/50 mb-4" />
+                <p className="text-text-secondary mb-4">No AI analysis available yet</p>
+                <Button
+                  onClick={reloadAnalysis}
+                  disabled={isReloading}
+                  className="btn-primary"
+                >
+                  {isReloading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 mr-2" />
+                      Run AI Analysis
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           )}

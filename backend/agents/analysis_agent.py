@@ -7,6 +7,13 @@ from typing import Dict, Any
 import pandas as pd
 import ta
 from .base import BaseAgent
+from .percentile_scorer import PercentileScorer
+import sys
+import os
+
+# Add parent directory to path to import data_providers
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from data_providers.provider_manager import get_provider_manager
 
 
 def get_indian_stock_suffix(symbol: str) -> str:
@@ -24,6 +31,7 @@ class TechnicalAnalysisAgent(BaseAgent):
     
     def __init__(self):
         super().__init__("Technical Analysis Agent")
+        self.percentile_scorer = PercentileScorer()
     
     async def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -53,16 +61,24 @@ class TechnicalAnalysisAgent(BaseAgent):
                 )
             )
 
-            # Add .NS suffix for Indian stocks
-            ticker_symbol = get_indian_stock_suffix(symbol)
+            # Get API keys from state for provider manager
+            api_keys = state.get("data_provider_keys", {})
+            provider_manager = get_provider_manager(api_keys if api_keys else None)
 
-            # Fetch historical data (REAL API CALL)
-            import yfinance as yf
-            ticker = yf.Ticker(ticker_symbol)
-            hist = ticker.history(period="6mo")
-            
-            if len(hist) < 50:
-                raise ValueError(f"Insufficient data for {symbol}")
+            # Fetch historical data using provider manager with fallback
+            hist = await provider_manager.get_historical_data(symbol, period="6mo", interval="1d")
+
+            if hist is None or len(hist) < 50:
+                # Try fallback with shorter period
+                self.log_execution(f"6-month data insufficient, trying 3-month period")
+                hist = await provider_manager.get_historical_data(symbol, period="3mo", interval="1d")
+
+                if hist is None or len(hist) < 50:
+                    raise ValueError(
+                        f"Insufficient historical data for {symbol} (need at least 50 days, got {len(hist) if hist is not None else 0}). "
+                        "This stock may be newly listed or have limited trading history. "
+                        "Consider adding API keys in Settings for better data availability."
+                    )
             
             # Calculate real technical indicators
             close = hist['Close']
@@ -105,7 +121,34 @@ class TechnicalAnalysisAgent(BaseAgent):
             # Additional indicators
             adx = ta.trend.ADXIndicator(high, low, close, window=14).adx().iloc[-1]
             cci = ta.trend.CCIIndicator(high, low, close, window=20).cci().iloc[-1]
-            
+
+            # EXTENDED FEATURES (from ai-stock-dashboard analysis)
+            current_price = float(close.iloc[-1])
+
+            # Lag features (historical context)
+            lag_1 = float(close.shift(1).iloc[-1]) if len(close) > 1 else None
+            lag_5 = float(close.shift(5).iloc[-1]) if len(close) > 5 else None
+            lag_10 = float(close.shift(10).iloc[-1]) if len(close) > 10 else None
+
+            # Rolling volatility
+            volatility_10d = float(close.pct_change().rolling(10).std().iloc[-1]) if len(close) >= 10 else None
+            volatility_20d = float(close.pct_change().rolling(20).std().iloc[-1]) if len(close) >= 20 else None
+
+            # Price position relative to SMAs (%)
+            price_vs_sma20_pct = ((current_price - sma_20) / sma_20) * 100 if sma_20 else None
+            price_vs_sma50_pct = ((current_price - sma_50) / sma_50) * 100 if sma_50 else None
+            price_vs_sma200_pct = ((current_price - sma_200) / sma_200) * 100 if sma_200 else None
+
+            # Returns at multiple intervals
+            return_1d = float(close.pct_change(1).iloc[-1]) * 100 if len(close) > 1 else None
+            return_5d = float(close.pct_change(5).iloc[-1]) * 100 if len(close) > 5 else None
+            return_10d = float(close.pct_change(10).iloc[-1]) * 100 if len(close) > 10 else None
+            return_20d = float(close.pct_change(20).iloc[-1]) * 100 if len(close) > 20 else None
+
+            # Volume analysis
+            avg_volume_20d = float(volume.rolling(20).mean().iloc[-1]) if len(volume) >= 20 else None
+            volume_ratio = float(volume.iloc[-1] / avg_volume_20d) if avg_volume_20d else 1.0
+
             technical_indicators = {
                 "rsi": round(float(rsi), 2) if not pd.isna(rsi) else None,
                 "macd": round(float(macd), 2) if not pd.isna(macd) else None,
@@ -122,12 +165,33 @@ class TechnicalAnalysisAgent(BaseAgent):
                 "stochastic_k": round(float(stochastic_k), 2) if not pd.isna(stochastic_k) else None,
                 "stochastic_d": round(float(stochastic_d), 2) if not pd.isna(stochastic_d) else None,
                 "adx": round(float(adx), 2) if not pd.isna(adx) else None,
-                "cci": round(float(cci), 2) if not pd.isna(cci) else None
+                "cci": round(float(cci), 2) if not pd.isna(cci) else None,
+                # Extended features
+                "current_price": round(current_price, 2),
+                "lag_1d_price": round(lag_1, 2) if lag_1 else None,
+                "lag_5d_price": round(lag_5, 2) if lag_5 else None,
+                "lag_10d_price": round(lag_10, 2) if lag_10 else None,
+                "volatility_10d": round(volatility_10d * 100, 2) if volatility_10d else None,  # As percentage
+                "volatility_20d": round(volatility_20d * 100, 2) if volatility_20d else None,
+                "price_vs_sma20_pct": round(price_vs_sma20_pct, 2) if price_vs_sma20_pct else None,
+                "price_vs_sma50_pct": round(price_vs_sma50_pct, 2) if price_vs_sma50_pct else None,
+                "price_vs_sma200_pct": round(price_vs_sma200_pct, 2) if price_vs_sma200_pct else None,
+                "return_1d": round(return_1d, 2) if return_1d else None,
+                "return_5d": round(return_5d, 2) if return_5d else None,
+                "return_10d": round(return_10d, 2) if return_10d else None,
+                "return_20d": round(return_20d, 2) if return_20d else None,
+                "volume_ratio": round(volume_ratio, 2)
             }
             
+            # Calculate percentile scores for context
+            percentile_scores = self.percentile_scorer.calculate_percentiles(
+                hist, technical_indicators
+            )
+
             # Update state
             state["technical_indicators"] = technical_indicators
-            
+            state["percentile_scores"] = percentile_scores
+
             # Analyze indicators for signals
             signals = self._analyze_signals(technical_indicators, state.get("stock_data", {}))
             state["technical_signals"] = signals
@@ -135,12 +199,13 @@ class TechnicalAnalysisAgent(BaseAgent):
             # Update step to completed
             state["agent_steps"][-1] = self.create_step_record(
                 status="completed",
-                message=f"Calculated 14 technical indicators",
+                message=f"Calculated 26 technical indicators with percentile scoring",
                 data={
                     "rsi": technical_indicators.get("rsi"),
                     "macd": technical_indicators.get("macd"),
                     "trend_signal": signals.get("trend"),
-                    "momentum_signal": signals.get("momentum")
+                    "momentum_signal": signals.get("momentum"),
+                    "composite_score": percentile_scores.get("composite_score")
                 }
             )
             

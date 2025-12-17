@@ -211,8 +211,8 @@ export default function CandlestickPatterns({ symbol }) {
                   </div>
                 )}
                 <div className="text-xs opacity-75 mt-2">
-                  Detected on {patterns.latest_signal.date_formatted || new Date(patterns.latest_signal.date).toLocaleDateString()}
-                  at {patterns.latest_signal.price_formatted || `₹${patterns.latest_signal.price.toFixed(2)}`}
+                  Detected on {patterns.latest_signal.datetime_formatted ||
+                    `${patterns.latest_signal.date_formatted || new Date(patterns.latest_signal.date).toLocaleDateString()} ${patterns.latest_signal.time || ''}`} • Price: {patterns.latest_signal.price_formatted || `₹${patterns.latest_signal.price?.toFixed(2)}`}
                 </div>
               </AlertDescription>
             </Alert>
@@ -263,7 +263,10 @@ export default function CandlestickPatterns({ symbol }) {
                             </div>
                           )}
                           <div className="flex gap-4 mt-2 text-xs opacity-75">
-                            <span>Date: {pattern.date_formatted || new Date(pattern.date).toLocaleDateString()}</span>
+                            <span>
+                              {pattern.datetime_formatted ||
+                                `${pattern.date_formatted || new Date(pattern.date).toLocaleDateString()} ${pattern.time || ''}`}
+                            </span>
                             <span>Price: {pattern.price_formatted || `₹${pattern.price.toFixed(2)}`}</span>
                           </div>
                         </div>
@@ -313,7 +316,8 @@ export default function CandlestickPatterns({ symbol }) {
                           {formatPatternName(pattern.pattern)}
                         </div>
                         <div className="text-xs opacity-75">
-                          {pattern.date_formatted || new Date(pattern.date).toLocaleDateString()} - {pattern.price_formatted || `₹${pattern.price.toFixed(2)}`}
+                          {pattern.datetime_formatted ||
+                            `${pattern.date_formatted || new Date(pattern.date).toLocaleDateString()} ${pattern.time || ''}`} - {pattern.price_formatted || `₹${pattern.price.toFixed(2)}`}
                         </div>
                       </div>
                     </div>

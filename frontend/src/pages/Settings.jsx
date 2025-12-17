@@ -49,11 +49,31 @@ export default function Settings() {
   const [settings, setSettings] = useState({
     openai_api_key: "",
     gemini_api_key: "",
+    finnhub_api_key: "",
+    alpaca_api_key: "",
+    alpaca_api_secret: "",
+    fmp_api_key: "",
     selected_model: "gpt-4.1",
     selected_provider: "openai",
   });
+
+  // Ensure all fields always have string values (never undefined)
+  const normalizeSettings = (data) => ({
+    openai_api_key: data?.openai_api_key || "",
+    gemini_api_key: data?.gemini_api_key || "",
+    finnhub_api_key: data?.finnhub_api_key || "",
+    alpaca_api_key: data?.alpaca_api_key || "",
+    alpaca_api_secret: data?.alpaca_api_secret || "",
+    fmp_api_key: data?.fmp_api_key || "",
+    selected_model: data?.selected_model || "gpt-4.1",
+    selected_provider: data?.selected_provider || "openai",
+  });
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [showFinnhubKey, setShowFinnhubKey] = useState(false);
+  const [showAlpacaKey, setShowAlpacaKey] = useState(false);
+  const [showAlpacaSecret, setShowAlpacaSecret] = useState(false);
+  const [showFMPKey, setShowFMPKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -65,7 +85,7 @@ export default function Settings() {
     try {
       // Try to fetch from backend first
       const response = await axios.get(`${API_URL}/settings`);
-      const backendSettings = mergeWithDefaults(response.data);
+      const backendSettings = normalizeSettings(mergeWithDefaults(response.data));
       setSettings(backendSettings);
       // Also save to localStorage as backup
       saveStoredSettings(backendSettings);
@@ -74,8 +94,11 @@ export default function Settings() {
       // Fallback to localStorage if backend is unavailable
       const cachedSettings = getStoredSettings();
       if (cachedSettings) {
-        setSettings(mergeWithDefaults(cachedSettings));
+        setSettings(normalizeSettings(mergeWithDefaults(cachedSettings)));
         toast.info("Loaded cached settings (backend unavailable)");
+      } else {
+        // If no cached settings, ensure we have default values
+        setSettings(normalizeSettings({}));
       }
     }
   };
@@ -211,6 +234,158 @@ export default function Settings() {
                 >
                   aistudio.google.com
                 </a>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Provider API Keys Section */}
+        <Card className="card-surface">
+          <CardHeader>
+            <CardTitle className="text-lg font-heading flex items-center gap-2">
+              <Key className="w-5 h-5 text-success" />
+              Data Provider API Keys (Optional)
+            </CardTitle>
+            <CardDescription>
+              Add API keys for better data reliability and higher rate limits. All providers have free tiers!
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Finnhub Key */}
+            <div className="space-y-2">
+              <Label htmlFor="finnhub-key" className="text-text-primary flex items-center gap-2">
+                Finnhub API Key
+                <span className="text-xs text-success font-normal">(60 calls/min free)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="finnhub-key"
+                  type={showFinnhubKey ? "text" : "password"}
+                  value={settings.finnhub_api_key}
+                  onChange={(e) => handleChange("finnhub_api_key", e.target.value)}
+                  placeholder="Optional - adds Finnhub as data source"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFinnhubKey(!showFinnhubKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showFinnhubKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://finnhub.io/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  finnhub.io
+                </a>
+                {" "}• Best for Indian stocks, real-time quotes
+              </p>
+            </div>
+
+            {/* Alpaca Keys */}
+            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
+              <div className="flex items-center gap-2">
+                <Label className="text-text-primary">
+                  Alpaca API (200 calls/min free)
+                </Label>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="alpaca-key" className="text-sm text-text-secondary">API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="alpaca-key"
+                    type={showAlpacaKey ? "text" : "password"}
+                    value={settings.alpaca_api_key}
+                    onChange={(e) => handleChange("alpaca_api_key", e.target.value)}
+                    placeholder="Optional - requires both key and secret"
+                    className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAlpacaKey(!showAlpacaKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                  >
+                    {showAlpacaKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="alpaca-secret" className="text-sm text-text-secondary">API Secret</Label>
+                <div className="relative">
+                  <Input
+                    id="alpaca-secret"
+                    type={showAlpacaSecret ? "text" : "password"}
+                    value={settings.alpaca_api_secret}
+                    onChange={(e) => handleChange("alpaca_api_secret", e.target.value)}
+                    placeholder="Optional - requires both key and secret"
+                    className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAlpacaSecret(!showAlpacaSecret)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                  >
+                    {showAlpacaSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-secondary">
+                Get free API credentials from{" "}
+                <a
+                  href="https://alpaca.markets/docs/api-references/market-data-api/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  alpaca.markets
+                </a>
+                {" "}• Best for US stocks
+              </p>
+            </div>
+
+            {/* FMP Key */}
+            <div className="space-y-2">
+              <Label htmlFor="fmp-key" className="text-text-primary flex items-center gap-2">
+                Financial Modeling Prep API Key
+                <span className="text-xs text-success font-normal">(250 calls/day free)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="fmp-key"
+                  type={showFMPKey ? "text" : "password"}
+                  value={settings.fmp_api_key}
+                  onChange={(e) => handleChange("fmp_api_key", e.target.value)}
+                  placeholder="Optional - adds FMP as data source"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFMPKey(!showFMPKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showFMPKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://site.financialmodelingprep.com/developer/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  financialmodelingprep.com
+                </a>
+                {" "}• Best for fundamentals and US stocks
               </p>
             </div>
           </CardContent>

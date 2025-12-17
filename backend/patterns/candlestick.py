@@ -380,16 +380,30 @@ class CandlestickPatternDetector:
         pattern_info = self.PATTERNS.get(pattern_name, {})
         price = float(candle['Close'])
 
-        # Format date for display
+        # Format date and time for display
         date_str = str(date)
+        time_str = None
+
         if hasattr(date, 'strftime'):
             date_str = date.strftime('%d/%m/%Y')
+            time_str = date.strftime('%H:%M:%S')
         elif 'T' in date_str:
-            date_str = date_str.split('T')[0]
+            # Split date and time
+            parts = date_str.split('T')
+            date_part = parts[0]
+            if len(parts) > 1:
+                # Extract time (HH:MM:SS)
+                time_part = parts[1].split('.')[0] if '.' in parts[1] else parts[1]
+                time_str = time_part[:8] if len(time_part) >= 8 else time_part
+
             # Convert YYYY-MM-DD to DD/MM/YYYY
-            parts = date_str.split('-')
-            if len(parts) == 3:
-                date_str = f"{parts[2]}/{parts[1]}/{parts[0]}"
+            date_parts = date_part.split('-')
+            if len(date_parts) == 3:
+                date_str = f"{date_parts[2]}/{date_parts[1]}/{date_parts[0]}"
+
+        # If no time or time is 00:00:00, use market close time (3:30 PM IST for Indian markets)
+        if not time_str or time_str == "00:00:00":
+            time_str = "15:30:00"
 
         implication = self._get_pattern_implication(pattern_name)
 
@@ -397,6 +411,8 @@ class CandlestickPatternDetector:
             "pattern": pattern_name,
             "date": str(date),
             "date_formatted": date_str,
+            "time": time_str,
+            "datetime_formatted": f"{date_str} {time_str}",
             "type": pattern_info.get("type", "unknown"),
             "strength": pattern_info.get("strength", "weak"),
             "price": price,
