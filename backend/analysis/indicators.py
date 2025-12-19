@@ -356,7 +356,7 @@ class AdvancedIndicators:
         # Monthly (resample to monthly)
         if len(df) >= 150:  # At least 6 months of data
             try:
-                monthly_df = df.resample('M').agg({
+                monthly_df = df.resample('ME').agg({
                     'Open': 'first',
                     'High': 'max',
                     'Low': 'min',

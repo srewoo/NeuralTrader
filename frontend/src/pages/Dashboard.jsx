@@ -32,6 +32,7 @@ import StockChart from "@/components/StockChart";
 import AgentWorkflow from "@/components/AgentWorkflow";
 import ReasoningLog from "@/components/ReasoningLog";
 import CandlestickPatterns from "@/components/CandlestickPatterns";
+import MarketIndices from "@/components/MarketIndices";
 import { getSetting } from "@/utils/settingsStorage";
 import { API_URL } from "@/config/api";
 
@@ -254,6 +255,11 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6" data-testid="dashboard">
+      {/* Market Indices Overview */}
+      <div className="mb-8">
+        <MarketIndices />
+      </div>
+
       {/* Search Section */}
       <div className="mb-8">
         <div className="relative max-w-2xl">

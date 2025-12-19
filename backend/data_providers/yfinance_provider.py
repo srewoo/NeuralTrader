@@ -29,33 +29,47 @@ class YFinanceProvider(BaseDataProvider):
     async def get_quote(self, symbol: str) -> Optional[StockData]:
         """Get current quote from Yahoo Finance"""
         try:
-            # Try NSE first, then BSE
-            for suffix in ['.NS', '.BO']:
-                ticker_symbol = self._get_indian_symbol(symbol, suffix)
-                ticker = yf.Ticker(ticker_symbol)
-                info = ticker.info
-                hist = ticker.history(period="1d")
+            # Try different symbol formats
+            # 1. First try as-is (for US stocks like AAPL, TSLA)
+            # 2. Then try with .NS suffix (Indian NSE stocks)
+            # 3. Finally try with .BO suffix (Indian BSE stocks)
 
-                if not hist.empty:
-                    current_price = float(hist['Close'].iloc[-1])
-                    previous_close = float(info.get('previousClose', hist['Close'].iloc[-1]))
+            symbols_to_try = [
+                symbol.upper().strip(),  # US stocks
+                f"{symbol.upper().strip()}.NS",  # NSE
+                f"{symbol.upper().strip()}.BO",  # BSE
+            ]
 
-                    return StockData(
-                        symbol=ticker_symbol,
-                        name=info.get('longName', symbol),
-                        current_price=current_price,
-                        previous_close=previous_close,
-                        volume=int(hist['Volume'].iloc[-1]) if 'Volume' in hist else 0,
-                        market_cap=info.get('marketCap'),
-                        pe_ratio=info.get('trailingPE'),
-                        week_52_high=info.get('fiftyTwoWeekHigh'),
-                        week_52_low=info.get('fiftyTwoWeekLow'),
-                        sector=info.get('sector'),
-                        industry=info.get('industry'),
-                        provider=self.name
-                    )
+            for ticker_symbol in symbols_to_try:
+                try:
+                    ticker = yf.Ticker(ticker_symbol)
+                    info = ticker.info
+                    hist = ticker.history(period="1d")
 
-            logger.warning(f"No data found for {symbol} on NSE or BSE")
+                    if not hist.empty and 'Close' in hist:
+                        current_price = float(hist['Close'].iloc[-1])
+                        previous_close = float(info.get('previousClose', hist['Close'].iloc[-1]))
+
+                        return StockData(
+                            symbol=ticker_symbol,
+                            name=info.get('longName', symbol),
+                            current_price=current_price,
+                            previous_close=previous_close,
+                            volume=int(hist['Volume'].iloc[-1]) if 'Volume' in hist else 0,
+                            market_cap=info.get('marketCap'),
+                            pe_ratio=info.get('trailingPE'),
+                            week_52_high=info.get('fiftyTwoWeekHigh'),
+                            week_52_low=info.get('fiftyTwoWeekLow'),
+                            sector=info.get('sector'),
+                            industry=info.get('industry'),
+                            provider=self.name
+                        )
+                except Exception as e:
+                    # Try next format
+                    logger.debug(f"Failed to fetch {ticker_symbol}: {e}")
+                    continue
+
+            logger.warning(f"No data found for {symbol} across all exchanges")
             return None
 
         except Exception as e:
@@ -70,14 +84,23 @@ class YFinanceProvider(BaseDataProvider):
     ) -> Optional[pd.DataFrame]:
         """Get historical data from Yahoo Finance"""
         try:
-            # Try NSE first, then BSE
-            for suffix in ['.NS', '.BO']:
-                ticker_symbol = self._get_indian_symbol(symbol, suffix)
-                ticker = yf.Ticker(ticker_symbol)
-                hist = ticker.history(period=period, interval=interval)
+            # Try different symbol formats (US, NSE, BSE)
+            symbols_to_try = [
+                symbol.upper().strip(),  # US stocks
+                f"{symbol.upper().strip()}.NS",  # NSE
+                f"{symbol.upper().strip()}.BO",  # BSE
+            ]
 
-                if not hist.empty and len(hist) >= 10:  # Minimum data check
-                    return hist
+            for ticker_symbol in symbols_to_try:
+                try:
+                    ticker = yf.Ticker(ticker_symbol)
+                    hist = ticker.history(period=period, interval=interval)
+
+                    if not hist.empty and len(hist) >= 10:  # Minimum data check
+                        return hist
+                except Exception as e:
+                    logger.debug(f"Failed to fetch historical data for {ticker_symbol}: {e}")
+                    continue
 
             logger.warning(f"Insufficient historical data for {symbol}")
             return None

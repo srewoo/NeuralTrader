@@ -1,11 +1,11 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, WebSocket
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validator
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone
@@ -40,6 +40,21 @@ from analysis.enhanced_analyzer import get_enhanced_analyzer
 # Import LLM features
 from llm_features import get_llm_features
 
+# Import Portfolio Management
+from portfolio.risk_metrics import calculate_portfolio_risk
+from portfolio.correlation import calculate_correlation_matrix, calculate_diversification_score
+from portfolio.optimizer import optimize_portfolio
+
+# Import Real-Time System
+from realtime.connection_manager import get_connection_manager
+from realtime.market_stream import get_market_stream
+
+# Import Cost Tracking
+from cost_tracking import get_cost_tracker
+
+# Import Indian Market Indices
+from market_data.indian_indices import get_indian_indices_data
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -56,7 +71,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(','),
+    allow_origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3005').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -78,6 +93,13 @@ class Settings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None
+    alpaca_api_key: Optional[str] = None
+    alpaca_api_secret: Optional[str] = None
+    fmp_api_key: Optional[str] = None
+    iex_api_key: Optional[str] = None
+    polygon_api_key: Optional[str] = None
+    twelve_data_api_key: Optional[str] = None
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -86,6 +108,13 @@ class Settings(BaseModel):
 class SettingsCreate(BaseModel):
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None
+    alpaca_api_key: Optional[str] = None
+    alpaca_api_secret: Optional[str] = None
+    fmp_api_key: Optional[str] = None
+    iex_api_key: Optional[str] = None
+    polygon_api_key: Optional[str] = None
+    twelve_data_api_key: Optional[str] = None
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
 
@@ -160,10 +189,40 @@ class AnalysisRequest(BaseModel):
     model: str = "gpt-4.1"
     provider: str = "openai"
 
+    @validator('symbol')
+    def validate_symbol(cls, v):
+        """Validate stock symbol format"""
+        if not v or not isinstance(v, str):
+            raise ValueError("Symbol must be a non-empty string")
+        # Remove whitespace and convert to uppercase
+        v = v.strip().upper()
+        # Check for valid symbol format (alphanumeric, dots, hyphens allowed)
+        import re
+        if not re.match(r'^[A-Z0-9\.\-]+$', v):
+            raise ValueError("Symbol contains invalid characters")
+        if len(v) > 20:
+            raise ValueError("Symbol too long (max 20 characters)")
+        return v
+
+    @validator('provider')
+    def validate_provider(cls, v):
+        """Validate provider is supported"""
+        if v not in ['openai', 'gemini']:
+            raise ValueError("Provider must be 'openai' or 'gemini'")
+        return v
+
 class StockSearchResult(BaseModel):
     symbol: str
     name: str
     exchange: str
+
+class PortfolioRequest(BaseModel):
+    items: List[Dict[str, Any]] # [{"symbol": "RELIANCE", "weight": 0.5}, ...]
+    period: str = "1y"
+
+class OptimizerRequest(BaseModel):
+    symbols: List[str]
+    risk_free_rate: float = 0.06
 
 # ============ DATA COLLECTION ============
 
@@ -590,6 +649,64 @@ Be specific with price levels and provide actionable insights. Consider both bul
 
 # ============ API ENDPOINTS ============
 
+# ============ WEB SOCKETS ============
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    manager = get_connection_manager()
+    await manager.connect(websocket, client_id)
+    try:
+        while True:
+            # Wait for messages from client (e.g. subscribe)
+            data = await websocket.receive_text()
+            try:
+                message = json.loads(data)
+                action = message.get("action")
+                
+                if action == "subscribe":
+                    symbols = message.get("symbols", [])
+                    await manager.subscribe(client_id, symbols)
+                    # Send confirmation
+                    await manager.send_personal_message({"type": "subscribed", "symbols": symbols}, client_id)
+                    
+                elif action == "unsubscribe":
+                    symbols = message.get("symbols", [])
+                    await manager.unsubscribe(client_id, symbols)
+                    
+            except json.JSONDecodeError:
+                pass
+                
+    except Exception as e:
+        logger.warning(f"WebSocket error for {client_id}: {e}")
+        manager.disconnect(client_id)
+
+@app.on_event("startup")
+async def startup_event():
+    # Create MongoDB indexes for better query performance
+    try:
+        # Index for analysis history queries by symbol
+        await db.analysis_history.create_index([("symbol", 1), ("created_at", -1)])
+        # Index for settings lookups
+        await db.settings.create_index([("id", 1)])
+        # Index for watchlist queries
+        await db.watchlist.create_index([("symbol", 1)])
+        # Index for API cost tracking queries
+        await db.api_costs.create_index([("timestamp", -1)])
+        await db.api_costs.create_index([("provider", 1), ("model", 1)])
+        await db.api_costs.create_index([("user_id", 1), ("timestamp", -1)])
+        logger.info("MongoDB indexes created successfully")
+    except Exception as e:
+        logger.warning(f"Failed to create MongoDB indexes: {e}")
+
+    # Start Market Stream
+    stream = get_market_stream()
+    asyncio.create_task(stream.start_stream())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    stream = get_market_stream()
+    await stream.stop_stream()
+
 @api_router.get("/")
 async def root():
     return {"message": "Stock Trading AI API", "version": "1.0.0"}
@@ -598,44 +715,104 @@ async def root():
 @api_router.get("/settings")
 async def get_settings():
     settings = await db.settings.find_one({}, {"_id": 0})
+
+    # Default settings template
+    default_settings = {
+        "openai_api_key": "",
+        "gemini_api_key": "",
+        "finnhub_api_key": "",
+        "alpaca_api_key": "",
+        "alpaca_api_secret": "",
+        "fmp_api_key": "",
+        "iex_api_key": "",
+        "polygon_api_key": "",
+        "twelve_data_api_key": "",
+        "selected_model": "gpt-4.1",
+        "selected_provider": "openai"
+    }
+
     if not settings:
-        return {
-            "openai_api_key": "",
-            "gemini_api_key": "",
-            "selected_model": "gpt-4.1",
-            "selected_provider": "openai"
-        }
+        return default_settings
+
+    # Merge with defaults to ensure all fields exist
+    merged_settings = {**default_settings, **settings}
+
     # Mask API keys
-    if settings.get('openai_api_key'):
-        settings['openai_api_key'] = settings['openai_api_key'][:8] + '...' + settings['openai_api_key'][-4:] if len(settings['openai_api_key']) > 12 else '****'
-    if settings.get('gemini_api_key'):
-        settings['gemini_api_key'] = settings['gemini_api_key'][:8] + '...' + settings['gemini_api_key'][-4:] if len(settings['gemini_api_key']) > 12 else '****'
-    return settings
+    def mask_key(key):
+        if not key:
+            return ""
+        return key[:8] + '...' + key[-4:] if len(key) > 12 else '****'
+
+    if merged_settings.get('openai_api_key'):
+        merged_settings['openai_api_key'] = mask_key(merged_settings['openai_api_key'])
+    if merged_settings.get('gemini_api_key'):
+        merged_settings['gemini_api_key'] = mask_key(merged_settings['gemini_api_key'])
+    if merged_settings.get('finnhub_api_key'):
+        merged_settings['finnhub_api_key'] = mask_key(merged_settings['finnhub_api_key'])
+    if merged_settings.get('alpaca_api_key'):
+        merged_settings['alpaca_api_key'] = mask_key(merged_settings['alpaca_api_key'])
+    if merged_settings.get('alpaca_api_secret'):
+        merged_settings['alpaca_api_secret'] = mask_key(merged_settings['alpaca_api_secret'])
+    if merged_settings.get('fmp_api_key'):
+        merged_settings['fmp_api_key'] = mask_key(merged_settings['fmp_api_key'])
+    if merged_settings.get('iex_api_key'):
+        merged_settings['iex_api_key'] = mask_key(merged_settings['iex_api_key'])
+    if merged_settings.get('polygon_api_key'):
+        merged_settings['polygon_api_key'] = mask_key(merged_settings['polygon_api_key'])
+    if merged_settings.get('twelve_data_api_key'):
+        merged_settings['twelve_data_api_key'] = mask_key(merged_settings['twelve_data_api_key'])
+
+    return merged_settings
 
 @api_router.post("/settings")
 async def save_settings(settings: SettingsCreate):
     existing = await db.settings.find_one({})
-    
+
     update_data = {
         "selected_model": settings.selected_model,
         "selected_provider": settings.selected_provider,
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
-    
+
+    # Helper function to check if key is masked
+    def is_masked(key):
+        return not key or key.startswith('****') or '...' in key
+
     # Only update API keys if they're provided and not masked
-    if settings.openai_api_key and not settings.openai_api_key.startswith('****') and '...' not in settings.openai_api_key:
+    if settings.openai_api_key and not is_masked(settings.openai_api_key):
         update_data["openai_api_key"] = settings.openai_api_key
-    
-    if settings.gemini_api_key and not settings.gemini_api_key.startswith('****') and '...' not in settings.gemini_api_key:
+
+    if settings.gemini_api_key and not is_masked(settings.gemini_api_key):
         update_data["gemini_api_key"] = settings.gemini_api_key
-    
+
+    if settings.finnhub_api_key and not is_masked(settings.finnhub_api_key):
+        update_data["finnhub_api_key"] = settings.finnhub_api_key
+
+    if settings.alpaca_api_key and not is_masked(settings.alpaca_api_key):
+        update_data["alpaca_api_key"] = settings.alpaca_api_key
+
+    if settings.alpaca_api_secret and not is_masked(settings.alpaca_api_secret):
+        update_data["alpaca_api_secret"] = settings.alpaca_api_secret
+
+    if settings.fmp_api_key and not is_masked(settings.fmp_api_key):
+        update_data["fmp_api_key"] = settings.fmp_api_key
+
+    if settings.iex_api_key and not is_masked(settings.iex_api_key):
+        update_data["iex_api_key"] = settings.iex_api_key
+
+    if settings.polygon_api_key and not is_masked(settings.polygon_api_key):
+        update_data["polygon_api_key"] = settings.polygon_api_key
+
+    if settings.twelve_data_api_key and not is_masked(settings.twelve_data_api_key):
+        update_data["twelve_data_api_key"] = settings.twelve_data_api_key
+
     if existing:
         await db.settings.update_one({}, {"$set": update_data})
     else:
         update_data["id"] = str(uuid.uuid4())
         update_data["created_at"] = datetime.now(timezone.utc).isoformat()
         await db.settings.insert_one(update_data)
-    
+
     return {"message": "Settings saved successfully"}
 
 # Top 100 NSE/BSE Stocks
@@ -1035,66 +1212,90 @@ async def get_cached_recommendations():
 @api_router.post("/recommendations/generate")
 async def generate_ai_recommendations(limit: int = 50):
     """
-    Generate fresh AI-powered stock recommendations based on technical analysis.
-    Scans top NSE/BSE stocks and saves results to database.
+    Generate new AI recommendations for NIFTY 100 stocks
+    This is a heavy operation, so it runs in background or with a timeout
     """
     try:
-        logger.info(f"Generating AI recommendations for {len(NIFTY_100_STOCKS)} stocks")
+        # Get NIFTY 100 stocks (hardcoded for now, ideally fetch from source)
+        # Using a subset for demo/speed
+        nifty_stocks = [
+            "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", 
+            "HINDUNILVR", "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK",
+            "LTIM", "AXISBANK", "BAJFINANCE", "MARUTI", "ASIANPAINT",
+            "HCLTECH", "TITAN", "SUNPHARMA", "ULTRACEMCO", "WIPRO"
+        ]
+        
+        # Limit the number of stocks to analyze
+        stocks_to_analyze = nifty_stocks[:limit]
+        
+        logger.info(f"Starting batch analysis for {len(stocks_to_analyze)} stocks")
+        
+        results = []
+        tasks = []
+        
+        # Helper to process single stock
+        async def process_stock(symbol):
+            try:
+                # Get basic info first
+                ticker = get_indian_stock_suffix(symbol)
+                info = yf.Ticker(ticker).info
+                stock_info = {
+                    "symbol": symbol,
+                    "name": info.get('longName', symbol),
+                    "sector": info.get('sector', 'N/A')
+                }
+                
+                # Analyze
+                result = await analyze_stock_for_recommendation(symbol, stock_info)
+                return result
+            except Exception as e:
+                logger.error(f"Error processing {symbol}: {e}")
+                return None
 
-        buy_recommendations = []
-        sell_recommendations = []
-
-        # Analyze stocks (limit concurrent requests to avoid rate limiting)
-        stock_dict = {s["symbol"]: s for s in NIFTY_100_STOCKS}
-
-        # Process in batches
-        batch_size = 10
-        for i in range(0, len(NIFTY_100_STOCKS), batch_size):
-            batch = NIFTY_100_STOCKS[i:i + batch_size]
-            tasks = [
-                analyze_stock_for_recommendation(stock["symbol"], stock)
-                for stock in batch
-            ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            for result in results:
-                if isinstance(result, dict):
-                    if result["recommendation"] == "BUY":
-                        buy_recommendations.append(result)
-                    elif result["recommendation"] == "SELL":
-                        sell_recommendations.append(result)
-
-            # Small delay between batches to avoid rate limiting
-            await asyncio.sleep(0.5)
-
+        # Create tasks
+        for symbol in stocks_to_analyze:
+            tasks.append(process_stock(symbol))
+            
+        # Run in parallel with semaphore to avoid rate limits if needed
+        # For now, gather all
+        batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results
+        buy_recs = []
+        sell_recs = []
+        
+        for res in batch_results:
+            if isinstance(res, dict):
+                if res['recommendation'] == 'BUY':
+                    buy_recs.append(res)
+                elif res['recommendation'] == 'SELL':
+                    sell_recs.append(res)
+                    
         # Sort by confidence
-        buy_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
-        sell_recommendations.sort(key=lambda x: x["confidence"], reverse=True)
-
+        buy_recs.sort(key=lambda x: x['confidence'], reverse=True)
+        sell_recs.sort(key=lambda x: x['confidence'], reverse=True)
+        
+        # Create summary
+        total_analyzed = len(stocks_to_analyze)
+        market_sentiment = "Neutral"
+        if len(buy_recs) > len(sell_recs) * 1.5:
+            market_sentiment = "Bullish"
+        elif len(sell_recs) > len(buy_recs) * 1.5:
+            market_sentiment = "Bearish"
+            
         recommendations_data = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "total_stocks_analyzed": len(NIFTY_100_STOCKS),
-            "buy_recommendations": buy_recommendations[:limit],
-            "sell_recommendations": sell_recommendations[:limit],
             "summary": {
-                "total_buy_signals": len(buy_recommendations),
-                "total_sell_signals": len(sell_recommendations),
-                "market_sentiment": "Bullish" if len(buy_recommendations) > len(sell_recommendations) else "Bearish" if len(sell_recommendations) > len(buy_recommendations) else "Neutral"
-            }
+                "total_analyzed": total_analyzed,
+                "market_sentiment": market_sentiment,
+                "total_buy_signals": len(buy_recs),
+                "total_sell_signals": len(sell_recs)
+            },
+            "buy_recommendations": buy_recs[:limit],
+            "sell_recommendations": sell_recs[:limit],
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-        # Save to database (keep only last 10 recommendation sets)
-        await db.recommendations.insert_one(recommendations_data.copy())
-
-        # Clean up old recommendations (keep last 10)
-        count = await db.recommendations.count_documents({})
-        if count > 10:
-            oldest = await db.recommendations.find({}, sort=[("generated_at", 1)]).limit(count - 10).to_list(length=count - 10)
-            if oldest:
-                old_ids = [doc["_id"] for doc in oldest]
-                await db.recommendations.delete_many({"_id": {"$in": old_ids}})
-
-        logger.info(f"Generated recommendations: {len(buy_recommendations)} buy, {len(sell_recommendations)} sell")
+        logger.info(f"Generated recommendations: {len(buy_recs)} buy, {len(sell_recs)} sell")
 
         return recommendations_data
 
@@ -1171,12 +1372,79 @@ async def search_stocks(q: str):
 # Stock data endpoints
 @api_router.get("/stocks/{symbol}")
 async def get_stock(symbol: str):
-    """Get current stock data"""
+    """Get current stock data with automatic provider fallback"""
+    # Get API keys from settings
+    settings = await db.settings.find_one({}, {"_id": 0})
+
+    # Build provider keys dict from settings
+    provider_keys = {}
+    if settings:
+        if settings.get('alpaca_api_key') and settings.get('alpaca_api_secret'):
+            provider_keys['alpaca'] = {
+                'key': settings.get('alpaca_api_key'),
+                'secret': settings.get('alpaca_api_secret'),
+                'paper': True  # Default to paper trading for safety
+            }
+        if settings.get('iex_api_key'):
+            provider_keys['iex'] = settings.get('iex_api_key')
+
+    # Try using data provider factory with fallback
+    if provider_keys:
+        try:
+            from data_providers.factory import get_data_provider_factory
+            factory = get_data_provider_factory(provider_keys)
+            quote = await factory.get_quote(symbol)
+
+            if quote:
+                return quote
+        except Exception as e:
+            logger.warning(f"Data provider factory failed, falling back to yfinance: {e}")
+
+    # Fallback to existing yfinance implementation
     return await fetch_stock_data(symbol)
 
 @api_router.get("/stocks/{symbol}/history")
 async def get_stock_history(symbol: str, period: str = "1y"):
-    """Get historical price data"""
+    """Get historical price data with automatic provider fallback"""
+    # Get API keys from settings
+    settings = await db.settings.find_one({}, {"_id": 0})
+
+    # Build provider keys dict from settings
+    provider_keys = {}
+    if settings:
+        if settings.get('alpaca_api_key') and settings.get('alpaca_api_secret'):
+            provider_keys['alpaca'] = {
+                'key': settings.get('alpaca_api_key'),
+                'secret': settings.get('alpaca_api_secret'),
+                'paper': True
+            }
+        if settings.get('iex_api_key'):
+            provider_keys['iex'] = settings.get('iex_api_key')
+
+    # Try using data provider factory with fallback
+    if provider_keys:
+        try:
+            from data_providers.factory import get_data_provider_factory
+            factory = get_data_provider_factory(provider_keys)
+            hist_df = await factory.get_historical_data(symbol, period=period)
+
+            if hist_df is not None and not hist_df.empty:
+                # Convert DataFrame to array format for frontend
+                data = []
+                for date, row in hist_df.iterrows():
+                    data.append({
+                        "date": date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else str(date),
+                        "open": round(float(row['Open']), 2),
+                        "high": round(float(row['High']), 2),
+                        "low": round(float(row['Low']), 2),
+                        "close": round(float(row['Close']), 2),
+                        "volume": int(row['Volume']) if 'Volume' in row else 0
+                    })
+                return {"symbol": symbol, "data": data}
+        except Exception as e:
+            logger.warning(f"Data provider factory failed for history, falling back to yfinance: {e}")
+
+    # Fallback to existing yfinance implementation
     return await fetch_historical_data(symbol, period)
 
 @api_router.get("/stocks/{symbol}/indicators")
@@ -2438,6 +2706,40 @@ async def run_monte_carlo_simulation(request: MonteCarloRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ ML PREDICTION ENDPOINTS ============
+
+from ml.inference import get_ml_service
+
+@api_router.get("/ml/predict/{symbol}")
+async def predict_stock_price(symbol: str, days_lookback: int = 60):
+    """
+    Predict next day's stock price using LSTM model.
+    Trains a model on-the-fly using recent data.
+    """
+    try:
+        # Fetch historical data
+        ticker_symbol = get_indian_stock_suffix(symbol)
+        ticker = yf.Ticker(ticker_symbol)
+        # Fetch enough data for training (e.g. 2 years)
+        hist = ticker.history(period="2y")
+        
+        if hist.empty:
+            raise HTTPException(status_code=404, detail=f"No data found for {symbol}")
+            
+        # Get ML service
+        ml_service = get_ml_service()
+        
+        # Run prediction
+        result = await ml_service.predict_next_price(symbol, hist, lookback_days)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # ============ PORTFOLIO BACKTESTING ENDPOINTS ============
 
 from backtesting.portfolio import get_portfolio_backtester, get_correlation_analyzer
@@ -2839,8 +3141,46 @@ async def get_short_disclaimer():
     return Disclaimers.get_api_disclaimer()
 
 
-# Include the router in the main app
-app.include_router(api_router)
+# ============ API COST TRACKING ENDPOINTS ============
+
+@api_router.get("/api-costs/summary")
+async def get_cost_summary(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    group_by: str = "day"
+):
+    """
+    Get API cost summary for a time period
+
+    Args:
+        start_date: ISO format date (default: 30 days ago)
+        end_date: ISO format date (default: now)
+        group_by: day, week, month, provider, or model
+    """
+    tracker = get_cost_tracker(db)
+
+    start = datetime.fromisoformat(start_date) if start_date else None
+    end = datetime.fromisoformat(end_date) if end_date else None
+
+    return await tracker.get_usage_summary(
+        start_date=start,
+        end_date=end,
+        group_by=group_by
+    )
+
+
+@api_router.get("/api-costs/current-month")
+async def get_current_month_cost():
+    """Get total API cost for current month"""
+    tracker = get_cost_tracker(db)
+    cost = await tracker.get_current_month_cost()
+
+    return {
+        "month": datetime.now(timezone.utc).strftime("%Y-%m"),
+        "total_cost": cost,
+        "currency": "USD"
+    }
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
@@ -2982,3 +3322,72 @@ async def get_discovery_history(limit: int = 10):
         logger.error(f"Failed to get discovery history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============ INDIAN MARKET INDICES ENDPOINTS ============
+
+@api_router.get("/market/indices")
+async def get_all_indices():
+    """Get data for all Indian stock market indices"""
+    try:
+        indices_data = get_indian_indices_data()
+        indices = await indices_data.get_all_indices()
+        return {"indices": indices, "count": len(indices), "timestamp": datetime.now(timezone.utc).isoformat()}
+
+    except Exception as e:
+        logger.error(f"Failed to get indices: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/indices/{index_name}")
+async def get_index_data(index_name: str):
+    """Get data for a specific index (e.g., NIFTY_50, SENSEX, NIFTY_BANK, NIFTY_METAL)"""
+    try:
+        indices_data = get_indian_indices_data()
+        data = await indices_data.get_index_data(index_name)
+        
+        if not data:
+            raise HTTPException(status_code=404, detail=f"Index {index_name} not found")
+        
+        return data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get index {index_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/indices/{index_name}/movers")
+async def get_index_movers(index_name: str):
+    """Get biggest gainers and losers for an index"""
+    try:
+        indices_data = get_indian_indices_data()
+        performance = await indices_data.get_constituents_performance(index_name)
+        
+        if not performance.get("gainers") and not performance.get("losers"):
+            raise HTTPException(status_code=404, detail=f"No data found for {index_name}")
+        
+        return performance
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get movers for {index_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/overview")
+async def get_market_overview():
+    """Get complete market overview with all indices and top gainers/losers"""
+    try:
+        indices_data = get_indian_indices_data()
+        overview = await indices_data.get_market_overview()
+        return overview
+
+    except Exception as e:
+        logger.error(f"Failed to get market overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Include the router in the main app (must be after all endpoint definitions)
+app.include_router(api_router)

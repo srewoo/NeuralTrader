@@ -10,6 +10,8 @@ from .yfinance_provider import YFinanceProvider
 from .finnhub_provider import FinnhubProvider
 from .alpaca_provider import AlpacaProvider
 from .fmp_provider import FMPProvider
+from .polygon_provider import PolygonProvider
+from .twelve_data_provider import TwelveDataProvider
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +32,9 @@ class DataProviderManager:
                 {
                     "finnhub": "your_key",
                     "alpaca": {"key": "...", "secret": "..."},
-                    "fmp": "your_key"
+                    "fmp": "your_key",
+                    "polygon": "your_key",
+                    "twelve_data": "your_key"
                 }
         """
         api_keys = api_keys or {}
@@ -38,7 +42,15 @@ class DataProviderManager:
         # Initialize all providers
         self.providers: List[BaseDataProvider] = []
 
-        # Finnhub (best for Indian stocks if API key available)
+        # Twelve Data (best free tier - real-time, 8 calls/min)
+        twelve_data_key = api_keys.get("twelve_data")
+        if twelve_data_key:
+            twelve_data = TwelveDataProvider(api_key=twelve_data_key)
+            if twelve_data.is_available:
+                self.providers.append(twelve_data)
+                logger.info("Twelve Data provider initialized (8 calls/min, 800/day)")
+
+        # Finnhub (good for all markets, 60 calls/min)
         finnhub_key = api_keys.get("finnhub")
         if finnhub_key:
             finnhub = FinnhubProvider(api_key=finnhub_key)
@@ -46,12 +58,7 @@ class DataProviderManager:
                 self.providers.append(finnhub)
                 logger.info("Finnhub provider initialized (60 calls/min)")
 
-        # YFinance (always available, no API key needed)
-        yfinance = YFinanceProvider()
-        self.providers.append(yfinance)
-        logger.info("Yahoo Finance provider initialized (free, no API key)")
-
-        # Alpaca (good for US stocks)
+        # Alpaca (good for US stocks, 200 calls/min)
         alpaca_creds = api_keys.get("alpaca", {})
         if isinstance(alpaca_creds, dict):
             alpaca = AlpacaProvider(
@@ -62,13 +69,26 @@ class DataProviderManager:
                 self.providers.append(alpaca)
                 logger.info("Alpaca provider initialized (200 calls/min)")
 
-        # FMP (good for fundamentals)
+        # Polygon.io (EOD data, 5 calls/min free)
+        polygon_key = api_keys.get("polygon")
+        if polygon_key:
+            polygon = PolygonProvider(api_key=polygon_key)
+            if polygon.is_available:
+                self.providers.append(polygon)
+                logger.info("Polygon.io provider initialized (5 calls/min EOD)")
+
+        # FMP (good for fundamentals, 500MB/month)
         fmp_key = api_keys.get("fmp")
         if fmp_key:
             fmp = FMPProvider(api_key=fmp_key)
             if fmp.is_available:
                 self.providers.append(fmp)
-                logger.info("FMP provider initialized (250 calls/day)")
+                logger.info("FMP provider initialized (500MB/month)")
+
+        # YFinance (always available fallback, no API key needed)
+        yfinance = YFinanceProvider()
+        self.providers.append(yfinance)
+        logger.info("Yahoo Finance provider initialized (free fallback)")
 
         logger.info(f"Initialized {len(self.providers)} data providers")
 

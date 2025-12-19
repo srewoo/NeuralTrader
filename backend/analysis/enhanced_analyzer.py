@@ -22,6 +22,16 @@ import asyncio
 from .market_regime import MarketRegimeDetector, get_regime_detector
 from .indicators import AdvancedIndicators, get_advanced_indicators
 from .fundamental_screener import FundamentalScreener, get_fundamental_screener
+from patterns.validator import PatternValidator, get_pattern_validator
+from .fundamentals.forensic import ForensicAnalyzer, get_forensic_analyzer
+from .fundamentals.valuation import ValuationAnalyzer, get_valuation_analyzer
+from .fundamentals.qualitative import QualitativeAnalyzer, get_qualitative_analyzer
+from .fundamentals.macro import MacroAnalyzer, get_macro_analyzer
+
+try:
+    from rag.ingestion import get_ingestion_pipeline
+except ImportError:
+    get_ingestion_pipeline = None
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +45,12 @@ class EnhancedAnalyzer:
         self.regime_detector = get_regime_detector()
         self.advanced_indicators = get_advanced_indicators()
         self.screener = get_fundamental_screener()
+        self.pattern_validator = get_pattern_validator()
+        self.forensic_analyzer = get_forensic_analyzer()
+        self.valuation_analyzer = get_valuation_analyzer()
+        self.qualitative_analyzer = get_qualitative_analyzer()
+        self.macro_analyzer = get_macro_analyzer()
+        self.ingestion = get_ingestion_pipeline() if get_ingestion_pipeline else None
 
         # Indicator weights based on historical effectiveness
         self.indicator_weights = {
@@ -133,16 +149,73 @@ class EnhancedAnalyzer:
             if include_backtest_validation:
                 backtest_validation = await self._validate_with_backtest(symbol, signals)
 
-            # Fundamental Analysis
+            # Fundamental Analysis (Enhanced)
             fundamental_data = None
             fundamental_score = 0
+            forensic_report = None
+            valuation_report = None
+            qualitative_report = None
+            
             if include_fundamentals:
+                # 1. Basic Screener Data
                 fundamental_data = await self.screener.get_stock_fundamentals(symbol)
+                
                 if fundamental_data and 'error' not in fundamental_data:
                     fundamental_score = self._calculate_fundamental_score(fundamental_data)
+                    
+                    # 2. Forensic Analysis (Safety)
+                    # Need ticker object to get statements
+                    ticker_obj = yf.Ticker(self.screener._get_indian_symbol(symbol))
+                    forensic_report = self.forensic_analyzer.get_forensic_report(ticker_obj)
+                    
+                    # 3. Valuation Analysis (Price)
+                    valuation_report = self.valuation_analyzer.get_valuation_report(ticker_obj)
+                    
+                    # 4. Qualitative Analysis (Moat) - ONLY if we can get text (requires heavy API usage, maybe optional?)
+                    # For now, we leave qualitative report as None in batch, or implement if description available
+                    # We will skip in default flow to avoid slow-down, unless specifically requested or if info available
+                     
                 else:
                     logger.warning(f"Fundamental analysis failed for {symbol}: {fundamental_data.get('error') if fundamental_data else 'No data'}")
                     fundamental_score = 50  # Neutral if data missing
+            
+            # Macro Context
+            macro_report = self.macro_analyzer.analyze_macro_context(regime_info)
+
+            # Validate patterns if any found
+            validated_patterns = []
+            if pattern_signals:
+                for pattern in pattern_signals:
+                    try:
+                        validation = self.pattern_validator.validate_pattern(pattern, df)
+                        if validation['is_valid']:
+                            pattern['validation'] = validation
+                            validated_patterns.append(pattern)
+                        else:
+                            # Keep but mark as invalid/weak
+                            pattern['validation'] = validation
+                            pattern['strength'] = 'weak' # Downgrade strength
+                            validated_patterns.append(pattern)
+                            
+                        # RAG Ingestion for Valid Patterns
+                        if self.ingestion and validation['is_valid']:
+                            try:
+                                self.ingestion.ingest_trading_pattern(
+                                    pattern_name=pattern.get('pattern', pattern.get('name', 'unknown')),
+                                    description=pattern.get('description', ''),
+                                    indicators={"price": df['Close'].iloc[-1]},
+                                    outcome=pattern['type'],
+                                    confidence=validation.get('confidence', 50),
+                                    additional_info={"symbol": symbol, "date": datetime.now().isoformat()}
+                                )
+                            except Exception as e:
+                                logger.warning(f"Failed to ingest pattern to RAG: {e}")
+                            
+                    except Exception as e:
+                        logger.warning(f"Pattern validation failed: {e}")
+                        validated_patterns.append(pattern)
+
+                pattern_signals = validated_patterns
 
             # Calculate Bayesian confidence
             confidence, confidence_breakdown = self._calculate_bayesian_confidence(
@@ -170,12 +243,33 @@ class EnhancedAnalyzer:
             # Corporate events (earnings, dividends, splits)
             corporate_events = await self._detect_corporate_events(symbol)
 
+            # Final Audit of Recommendation (Tech + Fund + Forensic)
+            final_recommendation = self._determine_final_recommendation(
+                scores, confluence, fundamental_score, forensic_report
+            )
+            
+            # If default recommendation contradicts forensic veto, override it
+            if "AVOID" in final_recommendation:
+                recommendation = final_recommendation
+            
             return {
                 "symbol": symbol,
                 "timestamp": datetime.now().isoformat(),
                 "recommendation": recommendation,
+                "final_recommendation": final_recommendation,
                 "confidence": confidence,
                 "confidence_breakdown": confidence_breakdown,
+                "analysis_summary": { # Backward compatibility
+                    "recommendation": final_recommendation,
+                    "confidence": confidence,
+                    "signal_strength": "High" if confidence > 70 else "Medium"
+                },
+                "deep_fundamentals": {
+                    "forensic": forensic_report,
+                    "valuation": valuation_report,
+                    "macro": macro_report,
+                    "qualitative": qualitative_report
+                },
                 "fundamental_score": fundamental_score,
                 "fundamentals": fundamental_data,
                 "current_price": round(float(df['Close'].iloc[-1]), 2),
@@ -1140,6 +1234,33 @@ class EnhancedAnalyzer:
             'confidence': 0,
             'timestamp': datetime.now().isoformat()
         }
+
+    def _determine_final_recommendation(self, scores, confluence, fund_score, forensic=None):
+        """Combine Tech + Fund + Forensic for final audit"""
+        tech_score = confluence.get('confidence_score', 50)
+        
+        # Forensic Veto
+        if forensic:
+            m_score = forensic.get('beneish_m_score', {}).get('score', -3) if forensic.get('beneish_m_score') else -3
+            
+            z_res = forensic.get('altman_z_score')
+            z_score = z_res.get('score', 3) if z_res and 'score' in z_res else 3
+            
+            # M-Score > -1.78 is suspicious (high probability of manipulation)
+            if m_score > -1.78:
+                return "AVOID (Accounting Risk)"
+            # Z-Score < 1.8 is distress
+            if z_score < 1.8:
+                return "AVOID (Bankruptcy Risk)"
+
+        # Weighted Score
+        final_score = (tech_score * 0.6) + (fund_score * 0.4)
+        
+        if final_score > 75: return "STRONG BUY"
+        if final_score > 60: return "BUY"
+        if final_score < 30: return "STRONG SELL"
+        if final_score < 40: return "SELL"
+        return "HOLD"
 
 
 # Global instance

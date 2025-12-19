@@ -8,6 +8,15 @@ import requests
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
+import sys
+import os
+
+# Add RAG import
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+try:
+    from rag.ingestion import get_ingestion_pipeline
+except ImportError:
+    get_ingestion_pipeline = None
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +37,7 @@ class NewsAggregator:
     def __init__(self):
         """Initialize news aggregator"""
         self.session = requests.Session()
+        self.ingestion = get_ingestion_pipeline() if get_ingestion_pipeline else None
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
@@ -110,6 +120,21 @@ class NewsAggregator:
                     }
                     
                     articles.append(article)
+                    
+                    # RAG Ingestion (Auto-feed news to brain)
+                    if self.ingestion:
+                        try:
+                            self.ingestion.ingest_document(
+                                content=f"{article['title']}\n{article['description']}",
+                                metadata={
+                                    "category": "news", 
+                                    "source": source_name,
+                                    "url": article['link'],
+                                    "date": article['published']
+                                }
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to ingest article into RAG: {e}")
                     
                 except Exception as e:
                     logger.debug(f"Failed to parse entry: {e}")

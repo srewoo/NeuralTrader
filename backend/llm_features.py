@@ -14,6 +14,7 @@ from datetime import datetime
 import logging
 import json
 import yfinance as yf
+from llm.grounding import get_grounding_engine
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,11 @@ class LLMFeatures:
 
     def __init__(self):
         self.supported_providers = ['openai', 'gemini']
+        try:
+             self.grounding_engine = get_grounding_engine()
+        except (ImportError, AttributeError, Exception) as e:
+             logger.warning(f"Grounding engine initialization failed: {e}")
+             self.grounding_engine = None
 
     async def ask_about_stock(
         self,
@@ -85,6 +91,17 @@ Guidelines:
 Response:"""
 
             response = await self._call_llm(prompt, api_key, provider, model)
+
+            # Grounding / Fact-Check
+            if self.grounding_engine and symbol and current_price:
+                 context = {
+                     "current_price": current_price,
+                     "high": info.get('fiftyTwoWeekHigh'),
+                     "low": info.get('fiftyTwoWeekLow')
+                 }
+                 check_result = self.grounding_engine.check_response(response, context)
+                 if not check_result['is_grounded']:
+                     response = check_result['corrected_text']
 
             result = {
                 "question": question,
@@ -516,10 +533,18 @@ Respond with ONLY valid JSON."""
 
     def _calculate_rsi(self, prices, period=14):
         """Calculate RSI"""
+        if len(prices) < period:
+            return 50  # Neutral RSI if not enough data
+
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
         rs = gain / loss
+
+        # Handle division by zero and NaN
+        if rs.empty or pd.isna(rs.iloc[-1]) or loss.iloc[-1] == 0:
+            return 50  # Neutral RSI if calculation fails
+
         return 100 - (100 / (1 + rs.iloc[-1]))
 
     async def _call_llm(
@@ -528,9 +553,12 @@ Respond with ONLY valid JSON."""
         api_key: str,
         provider: str,
         model: str,
-        json_mode: bool = False
+        json_mode: bool = False,
+        cost_tracker=None,
+        request_type: str = "general",
+        symbol: str = None
     ) -> str:
-        """Call LLM API"""
+        """Call LLM API with cost tracking"""
         if provider == "openai":
             import openai
             client = openai.AsyncOpenAI(api_key=api_key)
@@ -545,6 +573,18 @@ Respond with ONLY valid JSON."""
                 kwargs["response_format"] = {"type": "json_object"}
 
             completion = await client.chat.completions.create(**kwargs)
+
+            # Track costs if tracker provided
+            if cost_tracker and hasattr(completion, 'usage'):
+                await cost_tracker.track_call(
+                    provider=provider,
+                    model=model,
+                    input_tokens=completion.usage.prompt_tokens,
+                    output_tokens=completion.usage.completion_tokens,
+                    request_type=request_type,
+                    symbol=symbol
+                )
+
             return completion.choices[0].message.content
 
         elif provider == "gemini":
@@ -564,6 +604,17 @@ Respond with ONLY valid JSON."""
                 contents=types.Content(parts=[types.Part(text=prompt)]),
                 config=config
             )
+
+            # Track costs if tracker provided (Gemini usage data)
+            if cost_tracker and hasattr(completion, 'usage_metadata'):
+                await cost_tracker.track_call(
+                    provider=provider,
+                    model=model,
+                    input_tokens=completion.usage_metadata.prompt_token_count,
+                    output_tokens=completion.usage_metadata.candidates_token_count,
+                    request_type=request_type,
+                    symbol=symbol
+                )
 
             return completion.text
 

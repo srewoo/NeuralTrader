@@ -53,6 +53,9 @@ export default function Settings() {
     alpaca_api_key: "",
     alpaca_api_secret: "",
     fmp_api_key: "",
+    iex_api_key: "",
+    polygon_api_key: "",
+    twelve_data_api_key: "",
     selected_model: "gpt-4.1",
     selected_provider: "openai",
   });
@@ -65,6 +68,9 @@ export default function Settings() {
     alpaca_api_key: data?.alpaca_api_key || "",
     alpaca_api_secret: data?.alpaca_api_secret || "",
     fmp_api_key: data?.fmp_api_key || "",
+    iex_api_key: data?.iex_api_key || "",
+    polygon_api_key: data?.polygon_api_key || "",
+    twelve_data_api_key: data?.twelve_data_api_key || "",
     selected_model: data?.selected_model || "gpt-4.1",
     selected_provider: data?.selected_provider || "openai",
   });
@@ -74,6 +80,9 @@ export default function Settings() {
   const [showAlpacaKey, setShowAlpacaKey] = useState(false);
   const [showAlpacaSecret, setShowAlpacaSecret] = useState(false);
   const [showFMPKey, setShowFMPKey] = useState(false);
+  const [showIEXKey, setShowIEXKey] = useState(false);
+  const [showPolygonKey, setShowPolygonKey] = useState(false);
+  const [showTwelveDataKey, setShowTwelveDataKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -386,6 +395,117 @@ export default function Settings() {
                   financialmodelingprep.com
                 </a>
                 {" "}• Best for fundamentals and US stocks
+              </p>
+            </div>
+
+            {/* IEX Cloud Key */}
+            <div className="space-y-2">
+              <Label htmlFor="iex-key" className="text-text-primary flex items-center gap-2">
+                IEX Cloud API Key
+                <span className="text-xs text-warning font-normal">(May be down)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="iex-key"
+                  type={showIEXKey ? "text" : "password"}
+                  value={settings.iex_api_key}
+                  onChange={(e) => handleChange("iex_api_key", e.target.value)}
+                  placeholder="Optional - may be unavailable"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowIEXKey(!showIEXKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showIEXKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get API key from{" "}
+                <a
+                  href="https://iexcloud.io/console/tokens"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  iexcloud.io
+                </a>
+                {" "}• Note: Service may be experiencing issues
+              </p>
+            </div>
+
+            {/* Polygon.io Key */}
+            <div className="space-y-2">
+              <Label htmlFor="polygon-key" className="text-text-primary flex items-center gap-2">
+                Polygon.io API Key
+                <span className="text-xs text-success font-normal">(5 calls/min free)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="polygon-key"
+                  type={showPolygonKey ? "text" : "password"}
+                  value={settings.polygon_api_key}
+                  onChange={(e) => handleChange("polygon_api_key", e.target.value)}
+                  placeholder="Optional - EOD data, 2 years history"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPolygonKey(!showPolygonKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showPolygonKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://polygon.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  polygon.io
+                </a>
+                {" "}• End-of-day data, no credit card required
+              </p>
+            </div>
+
+            {/* Twelve Data Key */}
+            <div className="space-y-2">
+              <Label htmlFor="twelve-data-key" className="text-text-primary flex items-center gap-2">
+                Twelve Data API Key
+                <span className="text-xs text-success font-normal">(8 calls/min, 800/day free) ⭐</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="twelve-data-key"
+                  type={showTwelveDataKey ? "text" : "password"}
+                  value={settings.twelve_data_api_key}
+                  onChange={(e) => handleChange("twelve_data_api_key", e.target.value)}
+                  placeholder="Recommended - real-time data, best free tier"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTwelveDataKey(!showTwelveDataKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showTwelveDataKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://twelvedata.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  twelvedata.com
+                </a>
+                {" "}• Real-time quotes ~170ms, stocks/forex/crypto
               </p>
             </div>
           </CardContent>
