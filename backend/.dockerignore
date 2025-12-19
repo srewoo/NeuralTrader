@@ -1,0 +1,72 @@
+# Python
+__pycache__
+**/__pycache__
+*.pyc
+**/*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.hypothesis
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+*.pid
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+chroma_db/
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Tests
+tests/
+*.test.py
+test_*.py
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Misc
+*.bak
+*.tmp
+*.temp
+.cache/

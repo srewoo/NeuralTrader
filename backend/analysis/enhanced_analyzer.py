@@ -21,6 +21,7 @@ import asyncio
 
 from .market_regime import MarketRegimeDetector, get_regime_detector
 from .indicators import AdvancedIndicators, get_advanced_indicators
+from .fundamental_screener import FundamentalScreener, get_fundamental_screener
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class EnhancedAnalyzer:
     def __init__(self):
         self.regime_detector = get_regime_detector()
         self.advanced_indicators = get_advanced_indicators()
+        self.screener = get_fundamental_screener()
 
         # Indicator weights based on historical effectiveness
         self.indicator_weights = {
@@ -46,7 +48,8 @@ class EnhancedAnalyzer:
             'ichimoku': 1.4,
             'pattern': 1.5,
             'sentiment': 1.0,
-            'multi_timeframe': 1.6
+            'multi_timeframe': 1.6,
+            'fundamentals': 1.8  # High weight for fundamentals to filter out risky stocks
         }
 
         # Historical accuracy tracking for Bayesian updates
@@ -70,6 +73,7 @@ class EnhancedAnalyzer:
         symbol: str,
         include_patterns: bool = True,
         include_sentiment: bool = True,
+        include_fundamentals: bool = True,
         include_backtest_validation: bool = True
     ) -> Dict[str, Any]:
         """
@@ -129,9 +133,20 @@ class EnhancedAnalyzer:
             if include_backtest_validation:
                 backtest_validation = await self._validate_with_backtest(symbol, signals)
 
+            # Fundamental Analysis
+            fundamental_data = None
+            fundamental_score = 0
+            if include_fundamentals:
+                fundamental_data = await self.screener.get_stock_fundamentals(symbol)
+                if fundamental_data and 'error' not in fundamental_data:
+                    fundamental_score = self._calculate_fundamental_score(fundamental_data)
+                else:
+                    logger.warning(f"Fundamental analysis failed for {symbol}: {fundamental_data.get('error') if fundamental_data else 'No data'}")
+                    fundamental_score = 50  # Neutral if data missing
+
             # Calculate Bayesian confidence
             confidence, confidence_breakdown = self._calculate_bayesian_confidence(
-                signals, scores, confluence, regime_info, pattern_signals, sentiment_data
+                signals, scores, confluence, regime_info, pattern_signals, sentiment_data, fundamental_score
             )
 
             # Determine recommendation
@@ -161,6 +176,8 @@ class EnhancedAnalyzer:
                 "recommendation": recommendation,
                 "confidence": confidence,
                 "confidence_breakdown": confidence_breakdown,
+                "fundamental_score": fundamental_score,
+                "fundamentals": fundamental_data,
                 "current_price": round(float(df['Close'].iloc[-1]), 2),
                 "price_targets": price_targets,
                 "risk_reward": risk_reward,
@@ -181,6 +198,8 @@ class EnhancedAnalyzer:
             }
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logger.error(f"Analysis failed for {symbol}: {e}")
             return self._create_error_result(symbol, str(e))
 
@@ -710,7 +729,8 @@ class EnhancedAnalyzer:
         confluence: Dict[str, Any],
         regime_info: Dict[str, Any],
         patterns: List[Dict],
-        sentiment: Optional[Dict]
+        sentiment: Optional[Dict],
+        fundamental_score: float = 50
     ) -> Tuple[float, Dict[str, Any]]:
         """Calculate Bayesian confidence score"""
 
@@ -786,6 +806,27 @@ class EnhancedAnalyzer:
                  (signal_direction == 'sell' and sentiment_score > 0.2):
                 sentiment_bonus = -3
 
+        # Fundamental adjustment
+        # If technicals say BUY but fundamentals are trash (<40), heavily penalize
+        # If technicals say BUY and fundamentals are great (>70), boost
+        fundamental_bonus = 0
+        if signal_direction == 'buy':
+            if fundamental_score > 70:
+                fundamental_bonus = 10
+            elif fundamental_score > 60:
+                fundamental_bonus = 5
+            elif fundamental_score < 30:
+                fundamental_bonus = -20  # Critical penalty for junk stocks
+            elif fundamental_score < 40:
+                fundamental_bonus = -10
+        elif signal_direction == 'sell':
+            # Selling good fundamentals should be harder? Maybe not for trading.
+            # But selling bad fundamentals should be easier.
+            if fundamental_score < 30:
+                fundamental_bonus = 5
+            elif fundamental_score > 70:
+                fundamental_bonus = -5  # Careful selling quality
+
         # Calculate final confidence
         # Start from base, add weighted signal strength
         signal_contribution = min(30, weighted_diff * 2)
@@ -796,6 +837,7 @@ class EnhancedAnalyzer:
         confidence *= regime_multiplier
         confidence += pattern_bonus
         confidence += sentiment_bonus
+        confidence += fundamental_bonus
 
         # Clamp between 30 and 95
         confidence = max(30, min(95, confidence))
@@ -808,7 +850,8 @@ class EnhancedAnalyzer:
             'regime_multiplier': regime_multiplier,
             'pattern_bonus': pattern_bonus,
             'sentiment_bonus': sentiment_bonus,
-            'formula': 'base + signals * prior * confluence * regime + patterns + sentiment'
+            'fundamental_bonus': fundamental_bonus,
+            'formula': 'base + signals * prior * confluence * regime * 10 + patterns + sentiment + fundamentals'
         }
 
         return round(confidence, 1), breakdown
@@ -943,6 +986,24 @@ class EnhancedAnalyzer:
             'minimum_required': 2.0,
             'message': 'Good risk-reward' if is_valid else 'Risk-reward below 2:1 threshold'
         }
+
+    def _calculate_fundamental_score(self, fundamentals: Dict[str, Any]) -> float:
+        """
+        Calculate a composite fundamental score (0-100)
+        Combines Valuation and Quality scores.
+        """
+        try:
+            val_score = fundamentals.get('valuation_score', 50) or 50
+            qual_score = fundamentals.get('quality_score', 50) or 50
+
+            # Weighted average: Quality is slightly more important for safety
+            composite_score = (val_score * 0.4) + (qual_score * 0.6)
+
+            return round(composite_score, 1)
+
+        except Exception as e:
+            logger.error(f"Fundamental score calculation failed: {e}")
+            return 50.0
 
     async def _calculate_sector_strength(
         self,

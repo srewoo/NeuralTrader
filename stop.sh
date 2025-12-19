@@ -41,16 +41,16 @@ if [ ! -z "$UVICORN_PIDS" ]; then
     done
 fi
 
-# Stop processes on port 8000
-PORT_8000_PIDS=$(lsof -ti:8000 2>/dev/null || true)
-if [ ! -z "$PORT_8000_PIDS" ]; then
-    echo "$PORT_8000_PIDS" | while read pid; do
-        kill $pid 2>/dev/null && echo -e "${GREEN}✅ Killed process on port 8000 (PID: $pid)${NC}"
+# Stop processes on port 8005
+PORT_8005_PIDS=$(lsof -ti:8005 2>/dev/null || true)
+if [ ! -z "$PORT_8005_PIDS" ]; then
+    echo "$PORT_8005_PIDS" | while read pid; do
+        kill $pid 2>/dev/null && echo -e "${GREEN}✅ Killed process on port 8005 (PID: $pid)${NC}"
         STOPPED_ANY=true
     done
 fi
 
-if ! pgrep -f "uvicorn.*backend.server:app" > /dev/null && [ -z "$(lsof -ti:8000 2>/dev/null || true)" ]; then
+if ! pgrep -f "uvicorn.*backend.server:app" > /dev/null && [ -z "$(lsof -ti:8005 2>/dev/null || true)" ]; then
     if [ "$STOPPED_ANY" = false ]; then
         echo -e "${YELLOW}ℹ️  Backend server was not running${NC}"
     fi
@@ -81,16 +81,16 @@ if [ ! -z "$REACT_PIDS" ]; then
     done
 fi
 
-# Kill any node processes on port 3000
-PORT_3000_PIDS=$(lsof -ti:3000 2>/dev/null || true)
-if [ ! -z "$PORT_3000_PIDS" ]; then
-    echo "$PORT_3000_PIDS" | while read pid; do
-        kill $pid 2>/dev/null && echo -e "${GREEN}✅ Killed process on port 3000 (PID: $pid)${NC}"
+# Kill any node processes on port 3005
+PORT_3005_PIDS=$(lsof -ti:3005 2>/dev/null || true)
+if [ ! -z "$PORT_3005_PIDS" ]; then
+    echo "$PORT_3005_PIDS" | while read pid; do
+        kill $pid 2>/dev/null && echo -e "${GREEN}✅ Killed process on port 3005 (PID: $pid)${NC}"
         STOPPED_ANY=true
     done
 fi
 
-if ! pgrep -f "react-scripts start" > /dev/null && [ -z "$(lsof -ti:3000 2>/dev/null || true)" ]; then
+if ! pgrep -f "react-scripts start" > /dev/null && [ -z "$(lsof -ti:3005 2>/dev/null || true)" ]; then
     if [ "$STOPPED_ANY" = false ]; then
         echo -e "${YELLOW}ℹ️  Frontend server was not running${NC}"
     fi
@@ -109,14 +109,14 @@ echo -e "${BLUE}========================================${NC}"
 BACKEND_RUNNING=false
 FRONTEND_RUNNING=false
 
-if pgrep -f "uvicorn.*backend.server:app" > /dev/null || [ ! -z "$(lsof -ti:8000 2>/dev/null || true)" ]; then
+if pgrep -f "uvicorn.*backend.server:app" > /dev/null || [ ! -z "$(lsof -ti:8005 2>/dev/null || true)" ]; then
     echo -e "${RED}⚠️  Backend may still be running${NC}"
     BACKEND_RUNNING=true
 else
     echo -e "${GREEN}✅ Backend: Stopped${NC}"
 fi
 
-if pgrep -f "react-scripts start" > /dev/null || [ ! -z "$(lsof -ti:3000 2>/dev/null || true)" ]; then
+if pgrep -f "react-scripts start" > /dev/null || [ ! -z "$(lsof -ti:3005 2>/dev/null || true)" ]; then
     echo -e "${RED}⚠️  Frontend may still be running${NC}"
     FRONTEND_RUNNING=true
 else

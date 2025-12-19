@@ -51,7 +51,7 @@ class AdvancedIndicators:
         indicators = {}
 
         # Standard Momentum Indicators
-        indicators.update(self._calculate_momentum_indicators(high, low, close))
+        indicators.update(self._calculate_momentum_indicators(high, low, close, volume))
 
         # Standard Trend Indicators
         indicators.update(self._calculate_trend_indicators(close))
@@ -76,7 +76,8 @@ class AdvancedIndicators:
         self,
         high: pd.Series,
         low: pd.Series,
-        close: pd.Series
+        close: pd.Series,
+        volume: pd.Series
     ) -> Dict[str, Any]:
         """Calculate momentum indicators"""
         result = {}
@@ -108,7 +109,7 @@ class AdvancedIndicators:
         result['cci'] = self._safe_float(cci.iloc[-1])
 
         # Money Flow Index
-        mfi = ta.volume.MFIIndicator(high, low, close, close.index.to_series().diff().fillna(1).astype(int).abs() * 1000000, window=14)
+        mfi = ta.volume.MFIIndicator(high, low, close, volume, window=14)
         # MFI requires volume, use close as proxy if needed
         try:
             mfi_indicator = ta.volume.MFIIndicator(high, low, close, pd.Series([1000000] * len(close)), window=14)

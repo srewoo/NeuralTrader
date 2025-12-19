@@ -83,7 +83,7 @@ multidict==6.7.0
 multitasking==0.0.12
 mypy==1.19.0
 mypy_extensions==1.1.0
-networkx==3.6.1
+networkx==3.4.2
 numpy==2.3.5
 oauthlib==3.3.1
 onnxruntime==1.23.2

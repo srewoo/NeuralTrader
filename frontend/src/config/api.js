@@ -13,7 +13,7 @@ const getBackendURL = () => {
   }
   
   // Default to localhost for local development
-  return 'http://localhost:8000';
+  return 'http://localhost:8005';
 };
 
 export const BACKEND_URL = getBackendURL();

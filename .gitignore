@@ -87,3 +87,4 @@ android-sdk/
 /logs/*
 logs/
 logs
+*.md

@@ -1,2 +1,409 @@
 INFO:     Will watch for changes in these directories: ['/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend']
-ERROR:    [Errno 48] Address already in use
+INFO:     Uvicorn running on http://0.0.0.0:8005 (Press CTRL+C to quit)
+INFO:     Started reloader process [93959] using WatchFiles
+INFO:     Started server process [93975]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63687 - "GET /api/recommendations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "GET /api/recommendations HTTP/1.1" 200 OK
+2025-12-18 20:35:55,678 - server - INFO - Generating AI recommendations for 100 stocks
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+2025-12-18 20:36:28,220 - analysis.enhanced_analyzer - WARNING - Data quality issues for SHREECEM: ['Low liquidity: avg volume 34,048']
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+2025-12-18 20:36:43,460 - yfinance - ERROR - $ZOMATO.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:36:44,854 - yfinance - ERROR - $ZOMATO.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:36:44,855 - server - WARNING - Enhanced analysis failed for ZOMATO: No data available
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+2025-12-18 20:36:51,350 - yfinance - ERROR - $MCDOWELL-N.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:36:52,740 - yfinance - ERROR - $MCDOWELL-N.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:36:52,741 - server - WARNING - Enhanced analysis failed for MCDOWELL-N: No data available
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+2025-12-18 20:37:01,001 - yfinance - ERROR - $PEL.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:37:02,351 - yfinance - ERROR - $PEL.BO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-18 20:37:02,353 - server - WARNING - Enhanced analysis failed for PEL: No data available
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/analysis/indicators.py:359: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+  monthly_df = df.resample('M').agg({
+2025-12-18 20:37:14,855 - server - INFO - Generated recommendations: 11 buy, 2 sell
+INFO:     127.0.0.1:63687 - "POST /api/recommendations/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63747 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63748 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63747 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63751 - "GET /api/watchlist HTTP/1.1" 200 OK
