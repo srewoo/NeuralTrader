@@ -257,7 +257,7 @@ export default function Dashboard() {
     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6" data-testid="dashboard">
       {/* Market Indices Overview */}
       <div className="mb-8">
-        <MarketIndices />
+        <MarketIndices onStockSelect={selectStock} />
       </div>
 
       {/* Search Section */}

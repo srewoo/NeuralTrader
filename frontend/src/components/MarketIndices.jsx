@@ -15,15 +15,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config/api";
 
-const MarketIndices = () => {
+const MarketIndices = ({ onStockSelect }) => {
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState("NIFTY_50");
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  const fetchMarketData = async () => {
+  const fetchMarketData = async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const response = await axios.get(`${API_URL}/market/overview`);
       setMarketData(response.data);
       setLastUpdate(new Date());
@@ -31,13 +36,14 @@ const MarketIndices = () => {
       console.error("Error fetching market data:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchMarketData();
+    fetchMarketData(true); // Initial load
     // Refresh every 30 seconds for real-time market data
-    const interval = setInterval(fetchMarketData, 30000);
+    const interval = setInterval(() => fetchMarketData(false), 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -68,18 +74,26 @@ const MarketIndices = () => {
     <div className="space-y-4">
       {/* Header with Refresh */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-heading font-bold text-text-primary flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" />
-          Indian Market Overview
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-heading font-bold text-text-primary flex items-center gap-2">
+            <Activity className="w-5 h-5 text-primary" />
+            Indian Market Overview
+          </h2>
+          {isRefreshing && (
+            <Badge variant="outline" className="gap-1.5 text-xs animate-pulse">
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              Updating...
+            </Badge>
+          )}
+        </div>
         <Button
-          onClick={fetchMarketData}
-          disabled={loading}
+          onClick={() => fetchMarketData(false)}
+          disabled={isRefreshing}
           size="sm"
           variant="outline"
           className="gap-2"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
@@ -152,7 +166,8 @@ const MarketIndices = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-surface-highlight hover:bg-surface-hover transition-colors"
+                    onClick={() => onStockSelect && onStockSelect(stock.symbol.replace('.NS', '').replace('.BO', ''))}
+                    className="flex items-center justify-between p-3 rounded-lg bg-surface-highlight hover:bg-surface-hover transition-colors cursor-pointer"
                   >
                     <div className="flex-1">
                       <div className="font-medium text-text-primary">
@@ -173,9 +188,13 @@ const MarketIndices = () => {
                     </div>
                   </motion.div>
                 ))
+              ) : loading && !marketData ? (
+                <div className="text-center text-text-secondary py-8">
+                  Loading...
+                </div>
               ) : (
                 <div className="text-center text-text-secondary py-8">
-                  {loading ? "Loading..." : "No data available"}
+                  No data available
                 </div>
               )}
             </div>
@@ -199,7 +218,8 @@ const MarketIndices = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-surface-highlight hover:bg-surface-hover transition-colors"
+                    onClick={() => onStockSelect && onStockSelect(stock.symbol.replace('.NS', '').replace('.BO', ''))}
+                    className="flex items-center justify-between p-3 rounded-lg bg-surface-highlight hover:bg-surface-hover transition-colors cursor-pointer"
                   >
                     <div className="flex-1">
                       <div className="font-medium text-text-primary">
@@ -220,9 +240,13 @@ const MarketIndices = () => {
                     </div>
                   </motion.div>
                 ))
+              ) : loading && !marketData ? (
+                <div className="text-center text-text-secondary py-8">
+                  Loading...
+                </div>
               ) : (
                 <div className="text-center text-text-secondary py-8">
-                  {loading ? "Loading..." : "No data available"}
+                  No data available
                 </div>
               )}
             </div>

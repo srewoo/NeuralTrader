@@ -8,6 +8,8 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 import logging
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -67,17 +69,14 @@ class IndianIndicesData:
     def __init__(self):
         self.indices = INDIAN_INDICES
         self.constituents = INDEX_CONSTITUENTS
+        self.executor = ThreadPoolExecutor(max_workers=10)
 
-    async def get_index_data(self, index_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Get current data for a specific index
+        # Cache for market overview (to avoid Yahoo Finance rate limits)
+        self._cache = {}
+        self._cache_ttl = 30  # seconds
 
-        Args:
-            index_name: Name of the index (e.g., 'NIFTY_50', 'SENSEX')
-
-        Returns:
-            Dictionary with index data
-        """
+    def _get_index_data_sync(self, index_name: str) -> Optional[Dict[str, Any]]:
+        """Synchronous version for thread pool execution"""
         try:
             symbol = self.indices.get(index_name)
             if not symbol:
@@ -91,7 +90,7 @@ class IndianIndicesData:
             # If Yahoo Finance doesn't have the index, calculate synthetic index from constituents
             if hist.empty and index_name == "NIFTY_METAL":
                 logger.info(f"Calculating synthetic {index_name} from constituents")
-                return await self._calculate_synthetic_metal_index()
+                return self._calculate_synthetic_metal_index_sync()
 
             if hist.empty:
                 logger.error(f"No data for {index_name}")
@@ -119,10 +118,15 @@ class IndianIndicesData:
             logger.error(f"Error fetching {index_name}: {e}")
             # Fallback to synthetic calculation for NIFTY_METAL
             if index_name == "NIFTY_METAL":
-                return await self._calculate_synthetic_metal_index()
+                return self._calculate_synthetic_metal_index_sync()
             return None
 
-    async def _calculate_synthetic_metal_index(self) -> Optional[Dict[str, Any]]:
+    async def get_index_data(self, index_name: str) -> Optional[Dict[str, Any]]:
+        """Async wrapper that runs sync code in thread pool"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(self.executor, self._get_index_data_sync, index_name)
+
+    def _calculate_synthetic_metal_index_sync(self) -> Optional[Dict[str, Any]]:
         """Calculate NIFTY METAL index from constituent stocks when Yahoo Finance doesn't have it"""
         try:
             symbols = self.constituents.get("NIFTY_METAL", [])
@@ -192,16 +196,8 @@ class IndianIndicesData:
 
         return indices_data
 
-    async def get_constituents_performance(self, index_name: str) -> Dict[str, Any]:
-        """
-        Get performance of all stocks in an index
-
-        Args:
-            index_name: Name of the index
-
-        Returns:
-            Dictionary with gainers and losers
-        """
+    def _get_constituents_performance_sync(self, index_name: str) -> Dict[str, Any]:
+        """Synchronous version for thread pool execution"""
         try:
             symbols = self.constituents.get(index_name, [])
             if not symbols:
@@ -261,39 +257,80 @@ class IndianIndicesData:
             logger.error(f"Error fetching constituents for {index_name}: {e}")
             return {"gainers": [], "losers": []}
 
+    async def get_constituents_performance(self, index_name: str) -> Dict[str, Any]:
+        """Async wrapper that runs sync code in thread pool"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(self.executor, self._get_constituents_performance_sync, index_name)
+
     async def get_market_overview(self) -> Dict[str, Any]:
         """
         Get complete market overview with all indices and top gainers/losers
+        Optimized to fetch only displayed indices and make concurrent requests
+        Includes caching to avoid Yahoo Finance rate limits
 
         Returns:
             Dictionary with market overview data
         """
         try:
-            # Get all indices
-            indices = await self.get_all_indices()
+            # Check cache
+            cache_key = "market_overview"
+            if cache_key in self._cache:
+                cached_data, cached_time = self._cache[cache_key]
+                if (datetime.now() - cached_time).total_seconds() < self._cache_ttl:
+                    logger.info("Returning cached market overview")
+                    return cached_data
 
-            # Get gainers/losers for major indices
-            nifty_50_performance = await self.get_constituents_performance("NIFTY_50")
-            bank_nifty_performance = await self.get_constituents_performance("NIFTY_BANK")
-            nifty_metal_performance = await self.get_constituents_performance("NIFTY_METAL")
-            sensex_performance = await self.get_constituents_performance("SENSEX")
+            # Only fetch the 4 major indices displayed in the UI
+            major_indices = ["NIFTY_50", "SENSEX", "NIFTY_BANK", "NIFTY_METAL"]
 
-            return {
+            # Fetch all data concurrently for better performance
+            indices_tasks = [self.get_index_data(idx) for idx in major_indices]
+            movers_tasks = [self.get_constituents_performance(idx) for idx in major_indices]
+
+            # Execute all tasks concurrently
+            indices_results, movers_results = await asyncio.gather(
+                asyncio.gather(*indices_tasks, return_exceptions=True),
+                asyncio.gather(*movers_tasks, return_exceptions=True)
+            )
+
+            # Filter out None and error results
+            indices = [idx for idx in indices_results if idx and not isinstance(idx, Exception)]
+
+            # Build market movers dict
+            market_movers = {}
+            for idx_name, movers in zip(major_indices, movers_results):
+                if movers and not isinstance(movers, Exception):
+                    market_movers[idx_name] = movers
+                else:
+                    market_movers[idx_name] = {"gainers": [], "losers": []}
+
+            result = {
                 "indices": indices,
-                "market_movers": {
-                    "NIFTY_50": nifty_50_performance,
-                    "NIFTY_BANK": bank_nifty_performance,
-                    "NIFTY_METAL": nifty_metal_performance,
-                    "SENSEX": sensex_performance
-                },
+                "market_movers": market_movers,
                 "timestamp": datetime.now().isoformat()
             }
 
+            # Cache the result
+            self._cache[cache_key] = (result, datetime.now())
+
+            return result
+
         except Exception as e:
             logger.error(f"Error fetching market overview: {e}")
+            # Return cached data if available, even if expired
+            if cache_key in self._cache:
+                cached_data, _ = self._cache[cache_key]
+                logger.warning("Returning expired cached data due to error")
+                return cached_data
             return {"indices": [], "market_movers": {}}
 
 
+# Singleton instance to preserve cache
+_indices_data_instance = None
+
 def get_indian_indices_data() -> IndianIndicesData:
-    """Factory function to create IndianIndicesData instance"""
-    return IndianIndicesData()
+    """Factory function to create/return singleton IndianIndicesData instance"""
+    global _indices_data_instance
+    if _indices_data_instance is None:
+        _indices_data_instance = IndianIndicesData()
+    return _indices_data_instance

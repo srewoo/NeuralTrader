@@ -1,362 +1,1123 @@
 INFO:     Will watch for changes in these directories: ['/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8005 (Press CTRL+C to quit)
-INFO:     Started reloader process [33089] using WatchFiles
-INFO:     Started server process [33116]
+INFO:     Started reloader process [42848] using WatchFiles
+INFO:     Started server process [42875]
 INFO:     Waiting for application startup.
-2025-12-19 16:41:18,790 - server - INFO - MongoDB indexes created successfully
-2025-12-19 16:41:18,790 - realtime.market_stream - INFO - Market Stream Started
-2025-12-19 16:41:18,960 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 226
-2025-12-19 16:41:18,960 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
-2025-12-19 16:41:18,984 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
-2025-12-19 16:41:18,984 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-2025-12-19 16:41:22,778 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+2025-12-19 17:06:09,564 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:06:09,564 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:06:09,723 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 0
+2025-12-19 17:06:09,723 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:06:09,746 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:06:09,746 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:06:13,470 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
 INFO:     Application startup complete.
-INFO:     127.0.0.1:64703 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:64702 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64703 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64701 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64703 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:64702 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64703 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64702 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64826 - "OPTIONS /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64826 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64826 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64826 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:64837 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64839 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64826 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:64841 - "GET /api/watchlist HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64837 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'backend/market_data/__init__.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2025-12-19 16:41:38,535 - realtime.market_stream - INFO - Market Stream Stopped
-INFO:     Application shutdown complete.
-INFO:     Finished server process [33116]
-INFO:     Started server process [33446]
-INFO:     Waiting for application startup.
-2025-12-19 16:41:45,373 - server - INFO - MongoDB indexes created successfully
-2025-12-19 16:41:45,373 - realtime.market_stream - INFO - Market Stream Started
-2025-12-19 16:41:45,457 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 226
-2025-12-19 16:41:45,457 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
-2025-12-19 16:41:45,470 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
-2025-12-19 16:41:45,470 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-2025-12-19 16:41:49,094 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
-INFO:     Application startup complete.
-INFO:     127.0.0.1:64876 - "GET /api/recommendations HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64883 - "GET /api/recommendations HTTP/1.1" 200 OK
-2025-12-19 16:41:53,100 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0046)
+INFO:     127.0.0.1:53061 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53085 - "GET /api/settings HTTP/1.1" 200 OK
+2025-12-19 17:06:25,482 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0059)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:41:54,388 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:41:54,451 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:41:54,517 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:41:54,563 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:41:54,569 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
-2025-12-19 16:41:54,569 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:41:54,571 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:41:54,721 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:41:54,728 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-2025-12-19 16:41:55,842 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0004)
+2025-12-19 17:06:26,997 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:27,048 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:27,096 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:27,139 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:27,152 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-19 17:06:27,152 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:06:27,155 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:06:27,296 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:06:27,305 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:06:33,659 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0006)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:41:56,042 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:41:56,079 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:41:56,110 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:41:56,138 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:41:56,138 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
-2025-12-19 16:41:56,140 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
-2025-12-19 16:41:56,426 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
-2025-12-19 16:41:56,430 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
-2025-12-19 16:41:57,049 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0008)
+2025-12-19 17:06:33,769 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:33,810 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:33,840 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:33,870 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:33,870 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:06:33,872 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:06:33,886 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:06:33,891 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:06:42,822 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0066)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:41:57,276 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:41:57,316 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:41:57,341 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:41:57,372 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:41:57,372 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
-2025-12-19 16:41:57,374 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
-2025-12-19 16:41:57,635 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
-2025-12-19 16:41:57,640 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
-2025-12-19 16:41:58,143 - server - INFO - Starting batch analysis for 20 stocks
+2025-12-19 17:06:43,239 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:43,286 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:43,313 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:43,355 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:43,355 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:06:43,357 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:06:43,620 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:06:43,625 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:06:47,367 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0021)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:06:47,477 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:47,517 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:47,547 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:47,579 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:47,579 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:06:47,580 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:06:47,592 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:06:47,596 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:06:52,463 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0012)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:06:52,693 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:52,737 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:52,761 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:52,792 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:52,792 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
+2025-12-19 17:06:52,793 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-19 17:06:52,948 - backtesting.price_cache - INFO - Cached 125 records for TCS
+2025-12-19 17:06:52,953 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
+2025-12-19 17:06:54,476 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: -0.0010)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:06:54,713 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:06:54,753 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:06:54,790 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:06:54,827 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:06:54,827 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
+2025-12-19 17:06:54,830 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
+2025-12-19 17:06:54,983 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
+2025-12-19 17:06:54,987 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
+2025-12-19 17:06:55,654 - rag.embeddings - INFO - Generated embeddings for 1 texts
+2025-12-19 17:06:55,733 - rag.vector_store - INFO - Added 1 documents to vector store
+2025-12-19 17:06:55,733 - rag.ingestion - INFO - Successfully ingested document: 00932a9d67d17ac8392bad821baee10c
+2025-12-19 17:07:00,414 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0037)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
-  self._psar[i] = high2
-2025-12-19 16:42:12,752 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:42:12,774 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:42:12,774 - rag.ingestion - INFO - Successfully ingested document: 81a71714649fe655264974ebdad737bd
+2025-12-19 17:07:00,662 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:07:00,711 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:07:00,741 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:07:00,815 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:07:00,815 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:07:00,817 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:07:00,833 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:07:00,838 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:07:08,840 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:08,840 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:07:09,688 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:09,689 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:07:10,302 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:10,303 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:07:10,704 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:10,704 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:07:11,073 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:11,073 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:07:11,560 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:11,560 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:07:39,114 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53150 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53148 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53149 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-19 17:07:56,532 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:56,533 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:07:57,125 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:57,125 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:07:57,533 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:57,533 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:07:57,936 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:57,936 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:07:58,485 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:58,485 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:07:58,928 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:07:58,928 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:08:22,452 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53165 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53150 - "GET /api/settings HTTP/1.1" 200 OK
+2025-12-19 17:08:36,845 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:36,845 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:08:37,883 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:37,883 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:08:38,442 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:38,442 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:08:38,804 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:38,805 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:08:39,288 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:39,288 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:08:39,681 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:08:39,682 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:09:07,265 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53165 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:09:24,300 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:24,300 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:09:25,017 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:25,018 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:09:25,315 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:25,315 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:09:25,592 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:25,593 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:09:25,891 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:25,891 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:09:26,191 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:09:26,191 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:09:48,339 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53425 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:10:04,463 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:04,464 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:10:05,477 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:05,478 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:10:06,012 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:06,012 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:10:06,367 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:06,367 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:10:06,710 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:06,710 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:10:07,284 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:07,284 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:10:35,590 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53431 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:10:53,748 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:53,748 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:10:54,465 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:54,465 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:10:54,856 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:54,857 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:10:55,148 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:55,148 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:10:55,582 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:55,582 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:10:55,864 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:10:55,864 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:11:18,694 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53460 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53433 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53452 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53435 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53431 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-19 17:11:33,856 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:33,857 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:11:34,666 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:34,666 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:11:35,017 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:35,018 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:11:35,403 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:35,403 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:11:35,790 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:35,791 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:11:36,154 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:11:36,155 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:12:05,611 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53452 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:12:23,554 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:23,554 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:12:24,287 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:24,287 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:12:24,705 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:24,706 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:12:25,015 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:25,015 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:12:25,419 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:25,420 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:12:25,690 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:12:25,691 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:12:49,670 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53431 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:13:04,374 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:04,374 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:13:05,161 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:05,161 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:13:05,642 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:05,642 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:13:06,154 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:06,155 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:13:07,117 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:07,117 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:13:07,852 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:07,852 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:13:35,501 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53611 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:13:56,916 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:56,916 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:13:57,547 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:57,547 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:13:57,995 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:57,995 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:13:58,307 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:58,307 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:13:58,761 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:58,761 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:13:59,051 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:13:59,051 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:14:21,530 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53615 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:14:36,862 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:36,863 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:14:37,588 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:37,589 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:14:38,088 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:38,089 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:14:38,733 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:38,734 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:14:39,410 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:39,411 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:14:39,772 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:14:39,772 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:15:08,344 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53611 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:15:25,342 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:25,342 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:15:26,315 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:26,316 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:15:26,614 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:26,615 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:15:26,897 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:26,897 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:15:27,290 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:27,290 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:15:27,729 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:15:27,730 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:15:49,789 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:53615 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:16:04,427 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:04,428 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:16:05,139 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:05,139 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:16:05,496 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:05,497 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:16:05,920 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:05,921 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:16:06,519 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:06,519 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:16:06,936 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:06,937 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:16:34,492 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54179 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:16:51,727 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:51,728 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:16:52,435 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:52,435 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:16:52,863 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:52,864 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:16:53,175 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:53,176 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:16:53,483 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:53,483 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:16:53,841 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:16:53,842 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:17:17,602 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54205 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54225 - "GET /api/stocks/search?q=sail HTTP/1.1" 200 OK
+2025-12-19 17:17:32,464 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:32,465 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:17:33,511 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:33,512 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:17:34,277 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:34,277 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:17:34,646 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:34,646 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:17:35,014 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:35,014 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:17:35,376 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:17:35,376 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:18:01,431 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54248 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:18:17,935 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:17,936 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:18:18,620 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:18,621 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:18:18,953 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:18,953 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:18:19,242 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:19,242 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:18:19,672 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:19,673 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:18:19,973 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:19,974 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:18:42,749 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54225 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:18:56,537 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:56,538 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:18:57,262 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:57,263 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:18:57,620 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:57,620 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:18:57,981 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:57,981 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:18:58,557 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:58,557 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:18:59,026 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:18:59,026 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:19:26,328 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54248 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:19:43,028 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:43,029 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:19:44,130 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:44,130 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:19:44,413 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:44,413 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:19:44,919 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:44,919 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:19:45,214 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:45,214 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:19:45,658 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:19:45,658 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:20:08,866 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54225 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54205 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54208 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54209 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-19 17:20:24,760 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:24,761 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:20:25,522 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:25,522 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:20:25,877 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:25,878 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:20:26,228 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:26,228 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:20:26,978 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:26,979 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:20:27,433 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:20:27,434 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
+2025-12-19 17:20:55,793 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:54248 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:21:12,556 - yfinance - ERROR - $NIFTY_IT.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:12,556 - market_data.indian_indices - ERROR - No data for NIFTY_IT
+2025-12-19 17:21:13,450 - yfinance - ERROR - $NIFTY_PHARMA.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:13,450 - market_data.indian_indices - ERROR - No data for NIFTY_PHARMA
+2025-12-19 17:21:13,831 - yfinance - ERROR - $NIFTY_AUTO.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:13,831 - market_data.indian_indices - ERROR - No data for NIFTY_AUTO
+2025-12-19 17:21:14,240 - yfinance - ERROR - $NIFTY_FMCG.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:14,240 - market_data.indian_indices - ERROR - No data for NIFTY_FMCG
+2025-12-19 17:21:14,571 - yfinance - ERROR - $NIFTY_REALTY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:14,572 - market_data.indian_indices - ERROR - No data for NIFTY_REALTY
+2025-12-19 17:21:14,973 - yfinance - ERROR - $NIFTY_ENERGY.NS: possibly delisted; no price data found  (period=2d)
+2025-12-19 17:21:14,973 - market_data.indian_indices - ERROR - No data for NIFTY_ENERGY
 WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
-2025-12-19 16:42:24,664 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:42:24,687 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:42:24,687 - rag.ingestion - INFO - Successfully ingested document: 558b67abbb3d4d5aa0320df7708d9759
-2025-12-19 16:42:24,727 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:42:24,736 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:42:24,736 - rag.ingestion - INFO - Successfully ingested document: 7ec9e5f6c93b18aa9d0c3c2b6004652a
+2025-12-19 17:21:37,606 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:      - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-19 17:21:50,517 - realtime.market_stream - INFO - Market Stream Stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42875]
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+Process SpawnProcess-2:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 56, in <module>
+    from market_data.indian_indices import get_indian_indices_data
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/market_data/indian_indices.py", line 89
+    return await self._calculate_synthetic_metal_index()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: 'await' outside async function
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+Process SpawnProcess-3:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 56, in <module>
+    from market_data.indian_indices import get_indian_indices_data
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/market_data/indian_indices.py", line 89
+    return await self._calculate_synthetic_metal_index()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: 'await' outside async function
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+Process SpawnProcess-4:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 71, in serve
+    await self._serve(sockets)
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in _serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 439, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/server.py", line 56, in <module>
+    from market_data.indian_indices import get_indian_indices_data
+  File "/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/market_data/indian_indices.py", line 117
+    return await self._calculate_synthetic_metal_index()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: 'await' outside async function
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+INFO:     Started server process [47422]
+INFO:     Waiting for application startup.
+2025-12-19 17:22:23,814 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:22:23,814 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:22:23,930 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:22:23,930 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:22:23,950 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:22:23,950 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:22:27,900 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+INFO:     Started server process [47490]
+INFO:     Waiting for application startup.
+2025-12-19 17:22:37,766 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:22:37,766 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:22:37,961 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:22:37,962 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:22:37,976 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:22:37,976 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:22:42,011 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+INFO:     Started server process [47599]
+INFO:     Waiting for application startup.
+2025-12-19 17:22:48,972 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:22:48,972 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:22:49,084 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:22:49,084 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:22:49,098 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:22:49,098 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:22:52,824 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+INFO:     Started server process [47677]
+INFO:     Waiting for application startup.
+2025-12-19 17:22:58,579 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:22:58,579 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:22:58,641 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:22:58,641 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:22:58,653 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:22:58,653 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:23:02,378 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54706 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54714 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54713 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54715 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-19 17:23:06,383 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0009)
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+2025-12-19 17:23:06,698 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:23:06,754 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:23:06,795 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:23:06,839 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:23:06,843 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-19 17:23:06,843 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
+2025-12-19 17:23:06,846 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
+2025-12-19 17:23:07,103 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
+2025-12-19 17:23:07,118 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
+2025-12-19 17:23:07,201 - analysis.enhanced_analyzer - WARNING - Sector strength calculation failed: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:54710 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54714 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54711 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54715 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54713 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54706 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:23:11,469 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:11,485 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:11,487 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:11,488 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55338 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:23:18,406 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0055)
+2025-12-19 17:23:29,419 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0064)
+2025-12-19 17:23:35,953 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:35,973 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:35,973 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:35,976 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:36,424 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0058)
+2025-12-19 17:23:37,427 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0057)
+2025-12-19 17:23:37,427 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: -0.0054)
+INFO:     127.0.0.1:55369 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:23:41,433 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0017)
+2025-12-19 17:23:41,561 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:41,573 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:41,574 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:41,575 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55414 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55447 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55448 - "GET /api/watchlist HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55457 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55456 - "GET /api/analysis/history?limit=5 HTTP/1.1" 200 OK
+2025-12-19 17:23:46,983 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:46,997 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:46,997 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:47,000 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:47,001 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:47,001 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:47,003 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:23:47,004 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55446 - "GET /api/market/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55445 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:24:00,456 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: -0.0039)
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-19 17:24:06,247 - realtime.market_stream - INFO - Market Stream Stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [47677]
+INFO:     Started server process [48058]
+INFO:     Waiting for application startup.
+2025-12-19 17:24:13,393 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:24:13,393 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:24:13,486 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:24:13,486 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:24:13,509 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:24:13,509 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:24:17,229 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+2025-12-19 17:24:17,588 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:17,654 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:17,669 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:17,670 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55539 - "GET /api/market/overview HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-19 17:24:25,026 - realtime.market_stream - INFO - Market Stream Stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [48058]
+INFO:     Started server process [48154]
+INFO:     Waiting for application startup.
+2025-12-19 17:24:33,890 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:24:33,890 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:24:34,002 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:24:34,003 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:24:34,024 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:24:34,024 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:24:38,243 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+INFO:     Application startup complete.
+2025-12-19 17:24:43,254 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0050)
+2025-12-19 17:24:44,257 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0006)
+2025-12-19 17:24:47,603 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:47,626 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:47,627 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:24:47,628 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55604 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:24:50,268 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0051)
+2025-12-19 17:24:50,268 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0055)
+2025-12-19 17:24:53,272 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0054)
+2025-12-19 17:24:57,279 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0016)
+2025-12-19 17:25:07,294 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0056)
+2025-12-19 17:25:09,297 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0002)
+2025-12-19 17:25:11,299 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0064)
+2025-12-19 17:25:17,612 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:25:17,630 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:25:17,630 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:25:17,668 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55636 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:25:22,314 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0054)
+2025-12-19 17:25:29,323 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0054)
+2025-12-19 17:25:51,345 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0015)
+2025-12-19 17:25:54,646 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:55667 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:26:18,398 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0059)
+2025-12-19 17:26:24,268 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-19 17:26:26,412 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0055)
+WARNING:  WatchFiles detected changes in 'market_data/indian_indices.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for connections to close. (CTRL+C to force quit)
-2025-12-19 16:42:45,499 - server - INFO - Generated recommendations: 2 buy, 0 sell
-INFO:     127.0.0.1:64910 - "POST /api/recommendations/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55699 - "GET /api/market/overview HTTP/1.1" 200 OK
 INFO:     Waiting for application shutdown.
-2025-12-19 16:42:45,600 - realtime.market_stream - INFO - Market Stream Stopped
+2025-12-19 17:26:31,623 - realtime.market_stream - INFO - Market Stream Stopped
 INFO:     Application shutdown complete.
-INFO:     Finished server process [33446]
-INFO:     Started server process [33797]
+INFO:     Finished server process [48154]
+INFO:     Started server process [48688]
 INFO:     Waiting for application startup.
-2025-12-19 16:42:52,654 - server - INFO - MongoDB indexes created successfully
-2025-12-19 16:42:52,654 - realtime.market_stream - INFO - Market Stream Started
-2025-12-19 16:42:52,749 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 229
-2025-12-19 16:42:52,749 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
-2025-12-19 16:42:52,769 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
-2025-12-19 16:42:52,769 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-2025-12-19 16:42:56,402 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
+2025-12-19 17:26:37,916 - server - INFO - MongoDB indexes created successfully
+2025-12-19 17:26:37,916 - realtime.market_stream - INFO - Market Stream Started
+2025-12-19 17:26:37,979 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 1
+2025-12-19 17:26:37,980 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
+2025-12-19 17:26:37,996 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-12-19 17:26:37,996 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-12-19 17:26:42,210 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
 INFO:     Application startup complete.
-INFO:     127.0.0.1:65097 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-2025-12-19 16:43:04,411 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0041)
+2025-12-19 17:26:47,607 - market_data.indian_indices - ERROR - Error fetching NIFTY_50: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:26:47,668 - market_data.indian_indices - ERROR - Error fetching NIFTY_BANK: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:26:47,684 - market_data.indian_indices - ERROR - Error fetching NIFTY_METAL: Too Many Requests. Rate limited. Try after a while.
+2025-12-19 17:26:47,685 - market_data.indian_indices - ERROR - Error fetching SENSEX: Too Many Requests. Rate limited. Try after a while.
+INFO:     127.0.0.1:55802 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:26:51,223 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: -0.0048)
+2025-12-19 17:26:52,224 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0025)
+2025-12-19 17:26:58,232 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0055)
+2025-12-19 17:27:04,243 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0070)
+2025-12-19 17:27:15,259 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0010)
+2025-12-19 17:27:20,270 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0051)
+2025-12-19 17:27:34,294 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0052)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:05,295 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:43:05,345 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:43:05,396 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:43:05,446 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:43:05,450 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
-2025-12-19 16:43:05,450 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
-2025-12-19 16:43:05,453 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
-2025-12-19 16:43:05,608 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
-2025-12-19 16:43:05,616 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
-2025-12-19 16:43:05,826 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:43:05,837 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:43:05,837 - rag.ingestion - INFO - Successfully ingested document: 478e152a8517c23b9f7cdb2affe61fdf
-INFO:     127.0.0.1:65166 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65166 - "GET /api/settings HTTP/1.1" 200 OK
-2025-12-19 16:43:23,269 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0061)
+2025-12-19 17:27:35,029 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:35,078 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:35,143 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:35,187 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:35,191 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
+2025-12-19 17:27:35,191 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
+2025-12-19 17:27:35,192 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
+2025-12-19 17:27:35,348 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
+2025-12-19 17:27:35,355 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
+2025-12-19 17:27:38,063 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0055)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:23,529 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:43:23,584 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:43:23,611 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:43:23,701 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:43:23,701 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:43:23,705 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:43:23,875 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:43:23,880 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-2025-12-19 16:43:24,846 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: -0.0051)
+2025-12-19 17:27:38,304 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:38,343 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:38,366 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:38,395 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:38,395 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:27:38,397 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:27:38,539 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:27:38,543 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:27:45,843 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-19 17:27:48,497 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0077)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:25,097 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:43:25,157 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:43:25,199 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:43:25,235 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:43:25,236 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
-2025-12-19 16:43:25,239 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
-2025-12-19 16:43:25,398 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
-2025-12-19 16:43:25,403 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
-2025-12-19 16:43:26,149 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0002)
+2025-12-19 17:27:48,624 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:48,665 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:48,695 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:48,727 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:48,727 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:27:48,729 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:27:48,743 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:27:48,748 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:27:49,499 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0056)
+2025-12-19 17:27:49,500 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0051)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:26,359 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:43:26,400 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:43:26,432 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:43:26,469 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:43:26,469 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
-2025-12-19 16:43:26,471 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
-2025-12-19 16:43:26,630 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
-2025-12-19 16:43:26,634 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
-2025-12-19 16:43:29,262 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0028)
+2025-12-19 17:27:49,736 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:49,782 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:49,812 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:49,842 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:49,842 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
+2025-12-19 17:27:49,844 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
+2025-12-19 17:27:49,982 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
+2025-12-19 17:27:49,987 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
+2025-12-19 17:27:50,530 - rag.embeddings - INFO - Generated embeddings for 1 texts
+2025-12-19 17:27:50,546 - rag.vector_store - INFO - Added 1 documents to vector store
+2025-12-19 17:27:50,546 - rag.ingestion - INFO - Successfully ingested document: 0167f9b1aac98da604b890c136f824e1
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:29,376 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:43:29,416 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:43:29,440 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:43:29,470 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:43:29,470 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:43:29,473 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:43:29,488 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:43:29,492 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-INFO:     127.0.0.1:65170 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65170 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65170 - "GET /api/recommendations HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65198 - "GET /api/recommendations HTTP/1.1" 200 OK
-2025-12-19 16:43:36,789 - server - INFO - Starting batch analysis for 20 stocks
+2025-12-19 17:27:51,288 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:51,337 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:51,401 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:51,430 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:51,430 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:27:51,433 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:27:51,460 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:27:51,465 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+INFO:     127.0.0.1:55961 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:27:54,104 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: -0.0053)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:27:54,218 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:54,267 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:54,298 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:54,329 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:54,329 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
+2025-12-19 17:27:54,331 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
+2025-12-19 17:27:54,360 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
+2025-12-19 17:27:54,366 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
+2025-12-19 17:27:54,466 - rag.embeddings - INFO - Generated embeddings for 1 texts
+2025-12-19 17:27:54,473 - rag.vector_store - INFO - Added 1 documents to vector store
+2025-12-19 17:27:54,473 - rag.ingestion - INFO - Successfully ingested document: c1482c609da45535b3ffd18483e956a9
+2025-12-19 17:27:55,106 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0052)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:27:55,228 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:27:55,264 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:27:55,290 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:27:55,318 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:27:55,319 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:27:55,319 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:27:55,337 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:27:55,342 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:28:04,123 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0051)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:04,354 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:04,389 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:04,415 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:04,445 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:04,445 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:28:04,447 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:28:04,464 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:28:04,468 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:28:09,400 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0002)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:09,747 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:09,805 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:09,841 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:09,879 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:09,879 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:28:09,881 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:28:10,147 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:28:10,151 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:28:12,308 - market_data.indian_indices - INFO - Returning cached market overview
+INFO:     127.0.0.1:56118 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:28:19,697 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0052)
+2025-12-19 17:28:19,698 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0027)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:19,962 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:20,007 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:20,049 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:20,089 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:20,089 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
+2025-12-19 17:28:20,091 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
+2025-12-19 17:28:20,115 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
+2025-12-19 17:28:20,121 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
+2025-12-19 17:28:20,460 - rag.embeddings - INFO - Generated embeddings for 1 texts
+2025-12-19 17:28:20,479 - rag.vector_store - INFO - Added 1 documents to vector store
+2025-12-19 17:28:20,480 - rag.ingestion - INFO - Successfully ingested document: 16e17542c7042a79b9a980ddf873a8f4
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:21,904 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:21,943 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:21,974 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:22,004 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:22,004 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
+2025-12-19 17:28:22,005 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-19 17:28:23,522 - backtesting.price_cache - INFO - Cached 125 records for TCS
+2025-12-19 17:28:23,527 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
+2025-12-19 17:28:25,998 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0053)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:26,236 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:26,328 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:26,355 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:26,405 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:26,405 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:28:26,406 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:28:26,419 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:28:26,423 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:28:32,045 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0061)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:32,279 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:32,320 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:32,345 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:32,376 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:32,376 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:28:32,378 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:28:32,392 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:28:32,397 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:28:34,379 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+INFO:     127.0.0.1:56156 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:28:42,064 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0066)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:42,296 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:42,353 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:42,382 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:42,487 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:42,488 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:28:42,490 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:28:42,633 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:28:42,638 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:28:45,490 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-19 17:28:52,313 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0055)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:52,438 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:52,471 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:52,512 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:52,553 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:52,555 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:28:52,556 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:28:52,573 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:28:52,577 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+INFO:     127.0.0.1:56226 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:28:58,326 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0065)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:28:58,681 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:28:58,727 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:28:58,760 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:28:58,807 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:28:58,807 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:28:58,808 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:28:58,830 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:28:58,835 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:29:06,435 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0054)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:06,553 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:06,587 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:06,615 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:06,639 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:06,639 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:29:06,641 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:29:06,658 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:29:06,662 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:29:07,438 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0011)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:07,660 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:07,717 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:07,749 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:07,778 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:07,778 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
+2025-12-19 17:29:07,779 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
+2025-12-19 17:29:07,932 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
+2025-12-19 17:29:07,937 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
+2025-12-19 17:29:22,159 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0050)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:22,393 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:22,448 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:22,486 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:22,531 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:22,531 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:29:22,533 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:29:22,557 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:29:22,561 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:29:26,895 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0052)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:27,016 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:27,075 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:27,165 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:27,198 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:27,198 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:29:27,200 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:29:27,222 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:29:27,227 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:29:27,897 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for RELIANCE (Shock: 0.0004)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:28,143 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:28,201 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:28,225 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:28,266 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:28,266 - backtesting.engine - INFO - Running backtest for RELIANCE with Trend Following
+2025-12-19 17:29:28,268 - backtesting.price_cache - INFO - Fetching RELIANCE from yfinance
+2025-12-19 17:29:28,424 - backtesting.price_cache - INFO - Cached 125 records for RELIANCE
+2025-12-19 17:29:28,428 - backtesting.engine - INFO - Backtest complete: 5.5% return, 2 trades
+2025-12-19 17:29:28,750 - rag.embeddings - INFO - Generated embeddings for 1 texts
+2025-12-19 17:29:28,769 - rag.vector_store - INFO - Added 1 documents to vector store
+2025-12-19 17:29:28,769 - rag.ingestion - INFO - Successfully ingested document: 8992bc6973c9f57da8415f424d9394a5
+2025-12-19 17:29:31,516 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0032)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:31,965 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:32,007 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:32,033 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:32,060 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:32,061 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:29:32,062 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:29:32,212 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:29:32,221 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:29:44,095 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-12-19 17:29:48,074 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: -0.0052)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:48,705 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:48,756 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:48,780 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:48,822 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:48,823 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:29:48,825 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:29:48,962 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:29:48,966 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+INFO:     127.0.0.1:56361 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:29:52,071 - market_data.indian_indices - INFO - Returning cached market overview
+INFO:     127.0.0.1:56383 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:29:53,732 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for HDFCBANK (Shock: 0.0012)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
+2025-12-19 17:29:53,952 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:53,993 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:54,022 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:54,063 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:54,063 - backtesting.engine - INFO - Running backtest for HDFCBANK with Mean Reversion
+2025-12-19 17:29:54,064 - backtesting.price_cache - INFO - Fetching HDFCBANK from yfinance
+2025-12-19 17:29:54,236 - backtesting.price_cache - INFO - Cached 125 records for HDFCBANK
+2025-12-19 17:29:54,240 - backtesting.engine - INFO - Backtest complete: 4.99% return, 1 trades
+INFO:     127.0.0.1:56361 - "GET /api/stocks/POWERGRID/indicators HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56383 - "GET /api/stocks/POWERGRID HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56389 - "GET /api/stocks/POWERGRID/history?period=6mo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56389 - "GET /api/patterns/POWERGRID?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56383 - "GET /api/patterns/POWERGRID?days=30 HTTP/1.1" 200 OK
+2025-12-19 17:29:58,766 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0011)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:43:49,302 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:43:49,313 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:43:49,313 - rag.ingestion - INFO - Successfully ingested document: cf321f98f387b8ceaa9470f314b1c708
-2025-12-19 16:44:01,615 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:44:01,627 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:44:01,627 - rag.ingestion - INFO - Successfully ingested document: 8d7df9bac83f7ac70faab13af633f7f1
-2025-12-19 16:44:01,658 - rag.embeddings - INFO - Generated embeddings for 1 texts
-2025-12-19 16:44:01,667 - rag.vector_store - INFO - Added 1 documents to vector store
-2025-12-19 16:44:01,667 - rag.ingestion - INFO - Successfully ingested document: 8f4b95aa8c2363b0b8b17ec37e7f4856
-WARNING:  WatchFiles detected changes in 'backend/server.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for connections to close. (CTRL+C to force quit)
-2025-12-19 16:44:22,321 - server - INFO - Generated recommendations: 2 buy, 0 sell
-INFO:     127.0.0.1:65198 - "POST /api/recommendations/generate HTTP/1.1" 200 OK
-INFO:     Waiting for application shutdown.
-2025-12-19 16:44:22,422 - realtime.market_stream - INFO - Market Stream Stopped
-INFO:     Application shutdown complete.
-INFO:     Finished server process [33797]
-INFO:     Started server process [34374]
-INFO:     Waiting for application startup.
-2025-12-19 16:44:30,462 - server - INFO - MongoDB indexes created successfully
-2025-12-19 16:44:30,462 - realtime.market_stream - INFO - Market Stream Started
-2025-12-19 16:44:30,578 - rag.vector_store - INFO - ChromaDB initialized successfully. Collection size: 233
-2025-12-19 16:44:30,578 - rag.embeddings - INFO - Loading embedding model: all-MiniLM-L6-v2
-2025-12-19 16:44:30,600 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
-2025-12-19 16:44:30,600 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-2025-12-19 16:44:34,310 - rag.embeddings - INFO - Model loaded successfully. Embedding dimension: 384
-INFO:     Application startup complete.
-INFO:     127.0.0.1:65421 - "GET /api/market/overview HTTP/1.1" 404 Not Found
-2025-12-19 16:44:35,312 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0014)
+2025-12-19 17:29:58,993 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:29:59,065 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:29:59,114 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:29:59,141 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:29:59,142 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
+2025-12-19 17:29:59,144 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-19 17:29:59,296 - backtesting.price_cache - INFO - Cached 125 records for TCS
+2025-12-19 17:29:59,301 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
+2025-12-19 17:30:17,513 - market_data.indian_indices - INFO - Returning cached market overview
+INFO:     127.0.0.1:56410 - "GET /api/market/overview HTTP/1.1" 200 OK
+2025-12-19 17:30:20,070 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: -0.0039)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:44:36,295 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:44:36,356 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:44:36,399 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:44:36,476 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:44:36,480 - backtesting.price_cache - INFO - Price cache database initialized at price_cache.db
-2025-12-19 16:44:36,481 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
-2025-12-19 16:44:36,482 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
-2025-12-19 16:44:36,625 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
-2025-12-19 16:44:36,636 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
-2025-12-19 16:44:42,114 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: -0.0027)
+2025-12-19 17:30:20,343 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:20,394 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:20,444 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:20,483 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:20,483 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:30:20,485 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:30:20,501 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:30:20,505 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:30:21,446 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: -0.0004)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:44:42,250 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:44:42,293 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:44:42,325 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:44:42,354 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:44:42,354 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
-2025-12-19 16:44:42,356 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
-2025-12-19 16:44:42,374 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
-2025-12-19 16:44:42,379 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
-2025-12-19 16:44:47,121 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0054)
+2025-12-19 17:30:21,557 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:21,596 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:21,626 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:21,655 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:21,655 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:30:21,656 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:30:21,667 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:30:21,672 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:30:27,452 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: 0.0065)
+2025-12-19 17:30:27,453 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for ICICIBANK (Shock: 0.0007)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:44:47,342 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:44:47,377 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:44:47,402 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:44:47,431 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:44:47,432 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:44:47,433 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:44:47,586 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:44:47,594 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-2025-12-19 16:44:56,464 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0052)
+2025-12-19 17:30:27,688 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:27,729 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:27,753 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:27,777 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:27,777 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:30:27,779 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:30:28,015 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:30:28,020 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:44:56,589 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:44:56,671 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:44:56,705 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:44:56,751 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:44:56,751 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:44:56,753 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:44:56,779 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:44:56,783 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-2025-12-19 16:45:09,565 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0015)
+2025-12-19 17:30:28,940 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:28,981 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:29,006 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:29,036 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:29,036 - backtesting.engine - INFO - Running backtest for ICICIBANK with Mean Reversion
+2025-12-19 17:30:29,038 - backtesting.price_cache - INFO - Fetching ICICIBANK from yfinance
+2025-12-19 17:30:29,052 - backtesting.price_cache - INFO - Cached 125 records for ICICIBANK
+2025-12-19 17:30:29,057 - backtesting.engine - INFO - Backtest complete: -0.45% return, 1 trades
+2025-12-19 17:30:35,758 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: -0.0003)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:45:09,781 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:45:09,825 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:45:09,872 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:45:09,903 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:45:09,903 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
-2025-12-19 16:45:09,905 - backtesting.price_cache - INFO - Fetching TCS from yfinance
-2025-12-19 16:45:10,112 - backtesting.price_cache - INFO - Cached 125 records for TCS
-2025-12-19 16:45:10,116 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
-2025-12-19 16:45:19,685 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0071)
+2025-12-19 17:30:36,153 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:36,268 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:36,301 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:36,349 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:36,349 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
+2025-12-19 17:30:36,350 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-19 17:30:36,377 - backtesting.price_cache - INFO - Cached 125 records for TCS
+2025-12-19 17:30:36,381 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
+2025-12-19 17:30:42,228 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for TCS (Shock: 0.0013)
 /Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
   self._psar[i] = high2
-2025-12-19 16:45:19,912 - news.sources - INFO - Fetched 0 articles from moneycontrol
-2025-12-19 16:45:19,971 - news.sources - INFO - Fetched 0 articles from economic_times
-2025-12-19 16:45:20,002 - news.sources - INFO - Fetched 0 articles from business_standard
-2025-12-19 16:45:20,044 - news.sources - INFO - Fetched 0 articles from livemint
-2025-12-19 16:45:20,044 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
-2025-12-19 16:45:20,046 - backtesting.price_cache - INFO - Fetching INFY from yfinance
-2025-12-19 16:45:20,067 - backtesting.price_cache - INFO - Cached 125 records for INFY
-2025-12-19 16:45:20,072 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2025-12-19 16:45:24,331 - realtime.market_stream - INFO - Market Stream Stopped
-INFO:     Application shutdown complete.
-INFO:     Finished server process [34374]
-INFO:     Stopping reloader process [33089]
-/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:324: UserWarning: resource_tracker: There appear to be 2 leaked semaphore objects to clean up at shutdown: {'/loky-33446-cd_g0nhy', '/loky-33797-6rehxeir'}
-  warnings.warn(
+2025-12-19 17:30:42,349 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:42,388 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:42,418 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:42,444 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:42,444 - backtesting.engine - INFO - Running backtest for TCS with Trend Following
+2025-12-19 17:30:42,446 - backtesting.price_cache - INFO - Fetching TCS from yfinance
+2025-12-19 17:30:42,464 - backtesting.price_cache - INFO - Cached 125 records for TCS
+2025-12-19 17:30:42,468 - backtesting.engine - INFO - Backtest complete: -0.94% return, 2 trades
+2025-12-19 17:30:55,241 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0081)
+2025-12-19 17:30:55,302 - yfinance - ERROR - $WELSPUNIND.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+2025-12-19 17:30:55,484 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:30:55,542 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:30:55,624 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:30:55,665 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:30:55,665 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:30:55,667 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:30:55,680 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:30:55,684 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+2025-12-19 17:31:00,911 - realtime.market_stream - INFO - ⚡ Triggering Live Analysis for INFY (Shock: -0.0051)
+/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend/venv/lib/python3.13/site-packages/ta/trend.py:1030: FutureWarning: Series.__setitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To set a value by position, use `ser.iloc[pos] = value`
+  self._psar[i] = high2
+2025-12-19 17:31:01,037 - news.sources - INFO - Fetched 0 articles from moneycontrol
+2025-12-19 17:31:01,075 - news.sources - INFO - Fetched 0 articles from economic_times
+2025-12-19 17:31:01,111 - news.sources - INFO - Fetched 0 articles from business_standard
+2025-12-19 17:31:01,152 - news.sources - INFO - Fetched 0 articles from livemint
+2025-12-19 17:31:01,152 - backtesting.engine - INFO - Running backtest for INFY with Trend Following
+2025-12-19 17:31:01,155 - backtesting.price_cache - INFO - Fetching INFY from yfinance
+2025-12-19 17:31:01,180 - backtesting.price_cache - INFO - Cached 125 records for INFY
+2025-12-19 17:31:01,184 - backtesting.engine - INFO - Backtest complete: 8.46% return, 2 trades
+INFO:     127.0.0.1:56450 - "GET /api/market/overview HTTP/1.1" 200 OK
