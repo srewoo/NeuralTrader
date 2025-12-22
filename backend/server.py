@@ -55,6 +55,12 @@ from cost_tracking import get_cost_tracker
 # Import Indian Market Indices
 from market_data.indian_indices import get_indian_indices_data
 
+# Import Paper Trading, Alerts, TVScreener, Risk Management
+from portfolio.paper_trading import get_paper_trading_engine, OrderSide, OrderType, OrderStatus as PaperOrderStatus
+from alerts.alert_manager import get_alert_manager, PriceCondition, DeliveryChannel, AlertStatus as AlertStatusEnum
+from data_providers.tvscreener_provider import get_tvscreener_provider
+from portfolio.risk_manager import get_risk_manager
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -100,6 +106,26 @@ class Settings(BaseModel):
     iex_api_key: Optional[str] = None
     polygon_api_key: Optional[str] = None
     twelve_data_api_key: Optional[str] = None
+    # Telegram Bot (for alerts)
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    # Email SMTP (for email alerts)
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    # Webhook URL (for custom integrations)
+    webhook_url: Optional[str] = None
+    # Slack (for alerts)
+    slack_webhook_url: Optional[str] = None
+    # WhatsApp via Twilio (for alerts)
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_whatsapp_number: Optional[str] = None
+    user_whatsapp_number: Optional[str] = None
+    # TVScreener (FREE - no key needed!)
+    use_tvscreener: bool = True
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -115,6 +141,15 @@ class SettingsCreate(BaseModel):
     iex_api_key: Optional[str] = None
     polygon_api_key: Optional[str] = None
     twelve_data_api_key: Optional[str] = None
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    webhook_url: Optional[str] = None
+    use_tvscreener: bool = True
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
 
@@ -1370,6 +1405,11 @@ async def search_stocks(q: str):
     return [{"symbol": s["symbol"], "name": s["name"], "exchange": "NSE"} for s in results[:10]]
 
 # Stock data endpoints
+@api_router.get("/stocks/quote/{symbol}")
+async def get_stock_quote_fast(symbol: str):
+    """Get quick stock quote (alias for /stocks/{symbol})"""
+    return await get_stock(symbol)
+
 @api_router.get("/stocks/{symbol}")
 async def get_stock(symbol: str):
     """Get current stock data with automatic provider fallback"""
@@ -2401,36 +2441,37 @@ async def get_stock_fundamentals(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.post("/screener/screen")
-async def screen_stocks(request: ScreenerRequest):
-    """
-    Screen stocks based on fundamental criteria.
-    Example filters: [{"metric": "pe_ratio", "operator": "lt", "value": 20}]
-    """
-    try:
-        screener = get_fundamental_screener()
-
-        # Use provided symbols or default to NIFTY 100
-        symbols = request.symbols or [s['symbol'] for s in NIFTY_100_STOCKS]
-
-        result = await screener.screen_stocks(
-            symbols=symbols,
-            filters=request.filters,
-            sort_by=request.sort_by,
-            sort_order=request.sort_order,
-            limit=request.limit
-        )
-
-        if 'error' in result:
-            raise HTTPException(status_code=500, detail=result['error'])
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Screening failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+# COMMENTED OUT: Duplicate endpoint - using the simpler one below instead
+# @api_router.post("/screener/screen")
+# async def screen_stocks(request: ScreenerRequest):
+#     """
+#     Screen stocks based on fundamental criteria.
+#     Example filters: [{"metric": "pe_ratio", "operator": "lt", "value": 20}]
+#     """
+#     try:
+#         screener = get_fundamental_screener()
+#
+#         # Use provided symbols or default to NIFTY 100
+#         symbols = request.symbols or [s['symbol'] for s in NIFTY_100_STOCKS]
+#
+#         result = await screener.screen_stocks(
+#             symbols=symbols,
+#             filters=request.filters,
+#             sort_by=request.sort_by,
+#             sort_order=request.sort_order,
+#             limit=request.limit
+#         )
+#
+#         if 'error' in result:
+#             raise HTTPException(status_code=500, detail=result['error'])
+#
+#         return result
+#
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logger.error(f"Screening failed: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.get("/screener/presets")
@@ -3386,6 +3427,644 @@ async def get_market_overview():
 
     except Exception as e:
         logger.error(f"Failed to get market overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# HELPER FUNCTION FOR SETTINGS
+# ============================================================================
+
+async def get_settings_from_db():
+    """Helper to get settings from database"""
+    try:
+        settings_doc = await db.settings.find_one({"user": "default"})
+        if settings_doc:
+            return settings_doc
+        return {}
+    except Exception as e:
+        logger.error(f"Failed to get settings: {e}")
+        return {}
+
+
+# ============================================================================
+# PAPER TRADING ENDPOINTS
+# ============================================================================
+
+@api_router.post("/paper-trading/order")
+async def place_paper_order(
+    symbol: str,
+    side: str,
+    quantity: int,
+    current_price: float,
+    order_type: str = "MARKET",
+    limit_price: Optional[float] = None,
+    user_id: str = "default"
+):
+    """
+    Place paper trading order
+
+    Args:
+        symbol: Stock symbol (e.g., 'RELIANCE')
+        side: 'BUY' or 'SELL'
+        quantity: Number of shares
+        current_price: Current market price
+        order_type: 'MARKET', 'LIMIT', 'STOP_LOSS'
+        limit_price: Limit price for LIMIT orders
+        user_id: User identifier
+    """
+    try:
+        engine = get_paper_trading_engine(user_id)
+
+        order = engine.place_order(
+            symbol=symbol,
+            side=OrderSide(side),
+            quantity=quantity,
+            order_type=OrderType(order_type),
+            limit_price=limit_price,
+            current_price=current_price
+        )
+
+        logger.info(f"Paper order placed: {order.order_id}")
+        return order.to_dict()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to place paper order: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/paper-trading/portfolio")
+async def get_paper_portfolio(user_id: str = "default"):
+    """
+    Get paper trading portfolio summary and positions
+    """
+    try:
+        engine = get_paper_trading_engine(user_id)
+
+        # Get current prices for all positions
+        current_prices = {}
+        for symbol in engine.positions.keys():
+            # Try to get current price from data provider
+            try:
+                # Use TVScreener provider for free real-time data
+                provider = get_tvscreener_provider()
+                if provider.is_available:
+                    stock_data = await provider.get_quote(symbol)
+                    if stock_data:
+                        current_prices[symbol] = stock_data.current_price
+                    else:
+                        current_prices[symbol] = 0.0
+                else:
+                    current_prices[symbol] = 0.0
+            except Exception as e:
+                logger.error(f"Error getting price for {symbol}: {e}")
+                current_prices[symbol] = 0.0
+
+        summary = engine.get_portfolio_summary(current_prices)
+        positions = engine.get_all_positions(current_prices)
+
+        return {
+            "summary": summary,
+            "positions": positions,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get paper portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/paper-trading/trades")
+async def get_paper_trades(user_id: str = "default", limit: int = 50):
+    """Get paper trading trade history"""
+    try:
+        engine = get_paper_trading_engine(user_id)
+        trades = engine.get_trade_history(limit=limit)
+        return {"trades": trades, "count": len(trades)}
+
+    except Exception as e:
+        logger.error(f"Failed to get paper trades: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/paper-trading/orders")
+async def get_paper_orders(
+    user_id: str = "default",
+    status: Optional[str] = None,
+    limit: int = 50
+):
+    """Get paper trading order history"""
+    try:
+        engine = get_paper_trading_engine(user_id)
+        orders = engine.get_order_history(
+            status=PaperOrderStatus(status) if status else None,
+            limit=limit
+        )
+        return {"orders": orders, "count": len(orders)}
+
+    except Exception as e:
+        logger.error(f"Failed to get paper orders: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/paper-trading/reset")
+async def reset_paper_account(user_id: str = "default"):
+    """Reset paper trading account to initial capital"""
+    try:
+        engine = get_paper_trading_engine(user_id)
+        engine.reset()
+        return {"message": "Paper trading account reset successfully"}
+
+    except Exception as e:
+        logger.error(f"Failed to reset paper account: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# ALERT MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@api_router.post("/alerts/price")
+async def create_price_alert(
+    user_id: str,
+    symbol: str,
+    condition: str,
+    target_price: float,
+    delivery_channels: List[str],
+    percent_change: Optional[float] = None
+):
+    """
+    Create price alert
+
+    Args:
+        condition: 'ABOVE', 'BELOW', 'CROSSES_ABOVE', 'CROSSES_BELOW',
+                   'PERCENT_CHANGE_ABOVE', 'PERCENT_CHANGE_BELOW'
+        delivery_channels: ['TELEGRAM', 'EMAIL', 'WEBHOOK']
+    """
+    try:
+        # Get alert manager with settings
+        settings = await get_settings_from_db()
+        alert_mgr = get_alert_manager(
+            telegram_bot_token=settings.get('telegram_bot_token'),
+            telegram_chat_id=settings.get('telegram_chat_id'),
+            slack_webhook_url=settings.get('slack_webhook_url'),
+            twilio_config={
+                'account_sid': settings.get('twilio_account_sid'),
+                'auth_token': settings.get('twilio_auth_token'),
+                'whatsapp_number': settings.get('twilio_whatsapp_number'),
+                'user_whatsapp_number': settings.get('user_whatsapp_number')
+            }
+        )
+
+        alert = alert_mgr.create_price_alert(
+            user_id=user_id,
+            symbol=symbol,
+            condition=PriceCondition(condition),
+            target_price=target_price,
+            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels],
+            percent_change=percent_change
+        )
+
+        logger.info(f"Price alert created: {alert.alert_id}")
+        return alert.to_dict()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to create price alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/alerts/pattern")
+async def create_pattern_alert(
+    user_id: str,
+    symbol: str,
+    pattern_types: List[str],
+    delivery_channels: List[str]
+):
+    """Create candlestick pattern alert"""
+    try:
+        settings = await get_settings_from_db()
+        alert_mgr = get_alert_manager(
+            telegram_bot_token=settings.get('telegram_bot_token'),
+            telegram_chat_id=settings.get('telegram_chat_id'),
+            slack_webhook_url=settings.get('slack_webhook_url'),
+            twilio_config={
+                'account_sid': settings.get('twilio_account_sid'),
+                'auth_token': settings.get('twilio_auth_token'),
+                'whatsapp_number': settings.get('twilio_whatsapp_number'),
+                'user_whatsapp_number': settings.get('user_whatsapp_number')
+            }
+        )
+
+        alert = alert_mgr.create_pattern_alert(
+            user_id=user_id,
+            symbol=symbol,
+            pattern_types=pattern_types,
+            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels]
+        )
+
+        return alert.to_dict()
+
+    except Exception as e:
+        logger.error(f"Failed to create pattern alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/alerts/portfolio")
+async def create_portfolio_alert(
+    user_id: str,
+    metric: str,
+    threshold: float,
+    condition: str,
+    delivery_channels: List[str]
+):
+    """
+    Create portfolio alert
+
+    Args:
+        metric: 'drawdown', 'total_pnl', 'total_return_pct'
+        condition: 'above' or 'below'
+    """
+    try:
+        settings = await get_settings_from_db()
+        alert_mgr = get_alert_manager(
+            telegram_bot_token=settings.get('telegram_bot_token'),
+            telegram_chat_id=settings.get('telegram_chat_id'),
+            slack_webhook_url=settings.get('slack_webhook_url'),
+            twilio_config={
+                'account_sid': settings.get('twilio_account_sid'),
+                'auth_token': settings.get('twilio_auth_token'),
+                'whatsapp_number': settings.get('twilio_whatsapp_number'),
+                'user_whatsapp_number': settings.get('user_whatsapp_number')
+            }
+        )
+
+        alert = alert_mgr.create_portfolio_alert(
+            user_id=user_id,
+            metric=metric,
+            threshold=threshold,
+            condition=condition,
+            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels]
+        )
+
+        return alert.to_dict()
+
+    except Exception as e:
+        logger.error(f"Failed to create portfolio alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/alerts")
+async def get_user_alerts(user_id: str, status: Optional[str] = None):
+    """Get all alerts for a user"""
+    try:
+        settings = await get_settings_from_db()
+        alert_mgr = get_alert_manager(
+            telegram_bot_token=settings.get('telegram_bot_token'),
+            telegram_chat_id=settings.get('telegram_chat_id'),
+            slack_webhook_url=settings.get('slack_webhook_url'),
+            twilio_config={
+                'account_sid': settings.get('twilio_account_sid'),
+                'auth_token': settings.get('twilio_auth_token'),
+                'whatsapp_number': settings.get('twilio_whatsapp_number'),
+                'user_whatsapp_number': settings.get('user_whatsapp_number')
+            }
+        )
+
+        alerts = alert_mgr.get_user_alerts(
+            user_id=user_id,
+            status=AlertStatusEnum(status) if status else None
+        )
+
+        return {"alerts": [alert.to_dict() for alert in alerts], "count": len(alerts)}
+
+    except Exception as e:
+        logger.error(f"Failed to get alerts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/alerts/{alert_id}")
+async def cancel_alert(alert_id: str):
+    """Cancel an alert"""
+    try:
+        settings = await get_settings_from_db()
+        alert_mgr = get_alert_manager(
+            telegram_bot_token=settings.get('telegram_bot_token'),
+            telegram_chat_id=settings.get('telegram_chat_id'),
+            slack_webhook_url=settings.get('slack_webhook_url'),
+            twilio_config={
+                'account_sid': settings.get('twilio_account_sid'),
+                'auth_token': settings.get('twilio_auth_token'),
+                'whatsapp_number': settings.get('twilio_whatsapp_number'),
+                'user_whatsapp_number': settings.get('user_whatsapp_number')
+            }
+        )
+
+        success = alert_mgr.cancel_alert(alert_id)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="Alert not found or already cancelled")
+
+        return {"message": "Alert cancelled successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# TVSCREENER ENDPOINTS (FREE REAL-TIME DATA!)
+# ============================================================================
+
+@api_router.get("/screener/quote/{symbol}")
+async def get_screener_quote(symbol: str):
+    """Get real-time quote from TVScreener (FREE - NO API KEY!)"""
+    try:
+        provider = get_tvscreener_provider()
+
+        if not provider.is_available:
+            raise HTTPException(status_code=503, detail="TVScreener not available")
+
+        data = provider.get_quote(symbol)
+
+        if not data:
+            raise HTTPException(status_code=404, detail=f"Symbol {symbol} not found")
+
+        return {
+            "symbol": data.symbol,
+            "current_price": data.current_price,
+            "change": data.change,
+            "change_percent": data.change_percent,
+            "open": data.open,
+            "high": data.high,
+            "low": data.low,
+            "volume": data.volume,
+            "market_cap": data.market_cap,
+            "pe_ratio": data.pe_ratio,
+            "timestamp": data.timestamp.isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get screener quote: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/screener/fundamentals/{symbol}")
+async def get_screener_fundamentals(symbol: str):
+    """Get fundamental data from TVScreener"""
+    try:
+        provider = get_tvscreener_provider()
+
+        if not provider.is_available:
+            raise HTTPException(status_code=503, detail="TVScreener not available")
+
+        fundamentals = provider.get_fundamentals(symbol)
+
+        if not fundamentals:
+            raise HTTPException(status_code=404, detail=f"Fundamentals for {symbol} not found")
+
+        return fundamentals
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get fundamentals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/screener/screen")
+async def screen_stocks(
+    pe_max: Optional[float] = None,
+    roe_min: Optional[float] = None,
+    debt_to_equity_max: Optional[float] = None,
+    market_cap_min: Optional[float] = None,
+    dividend_yield_min: Optional[float] = None,
+    profit_margin_min: Optional[float] = None,
+    limit: int = 50
+):
+    """
+    Screen stocks by fundamental criteria
+
+    Example:
+        POST /api/screener/screen
+        {
+            "pe_max": 15,
+            "roe_min": 20,
+            "debt_to_equity_max": 0.5,
+            "market_cap_min": 1000,
+            "limit": 50
+        }
+    """
+    try:
+        provider = get_tvscreener_provider()
+
+        if not provider.is_available:
+            raise HTTPException(status_code=503, detail="TVScreener not available")
+
+        stocks = provider.screen_stocks(
+            pe_max=pe_max,
+            roe_min=roe_min,
+            debt_to_equity_max=debt_to_equity_max,
+            market_cap_min=market_cap_min,
+            dividend_yield_min=dividend_yield_min,
+            profit_margin_min=profit_margin_min,
+            limit=limit
+        )
+
+        return {"stocks": stocks, "count": len(stocks)}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to screen stocks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/screener/search")
+async def search_screener_symbols(q: str, limit: int = 20):
+    """Search stocks on TVScreener"""
+    try:
+        provider = get_tvscreener_provider()
+
+        if not provider.is_available:
+            raise HTTPException(status_code=503, detail="TVScreener not available")
+
+        results = provider.search_symbol(q)
+
+        return {"results": results[:limit], "count": len(results)}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to search symbols: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# RISK MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@api_router.post("/risk/position-size/kelly")
+async def calculate_kelly_position_size(
+    portfolio_value: float,
+    win_rate: float,
+    avg_win: float,
+    avg_loss: float
+):
+    """
+    Calculate optimal position size using Kelly Criterion
+
+    Args:
+        portfolio_value: Total portfolio value
+        win_rate: Historical win rate (0-1, e.g., 0.60 for 60%)
+        avg_win: Average win amount
+        avg_loss: Average loss amount
+    """
+    try:
+        risk_mgr = get_risk_manager()
+
+        position_size = risk_mgr.calculate_position_size_kelly(
+            portfolio_value=portfolio_value,
+            win_rate=win_rate,
+            avg_win=avg_win,
+            avg_loss=avg_loss
+        )
+
+        position_pct = (position_size / portfolio_value) * 100 if portfolio_value > 0 else 0
+
+        return {
+            "position_size": round(position_size, 2),
+            "position_pct": round(position_pct, 2),
+            "method": "Kelly Criterion",
+            "kelly_fraction": risk_mgr.kelly_fraction
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to calculate Kelly position: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/risk/position-size/fixed-fractional")
+async def calculate_fixed_fractional_position_size(
+    portfolio_value: float,
+    risk_per_trade: float,
+    entry_price: float,
+    stop_loss_price: float
+):
+    """
+    Calculate position size using fixed fractional method
+
+    Args:
+        portfolio_value: Total portfolio value
+        risk_per_trade: Risk per trade (0.02 for 2%)
+        entry_price: Entry price per share
+        stop_loss_price: Stop loss price per share
+    """
+    try:
+        risk_mgr = get_risk_manager()
+
+        shares = risk_mgr.calculate_position_size_fixed_fractional(
+            portfolio_value=portfolio_value,
+            risk_per_trade=risk_per_trade,
+            entry_price=entry_price,
+            stop_loss_price=stop_loss_price
+        )
+
+        position_value = shares * entry_price
+        position_pct = (position_value / portfolio_value) * 100 if portfolio_value > 0 else 0
+
+        return {
+            "shares": shares,
+            "position_value": round(position_value, 2),
+            "position_pct": round(position_pct, 2),
+            "method": "Fixed Fractional",
+            "risk_per_trade_pct": risk_per_trade * 100
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to calculate fixed fractional position: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/risk/stop-loss/atr")
+async def calculate_atr_stop_loss(
+    entry_price: float,
+    atr: float,
+    side: str = "BUY"
+):
+    """Calculate ATR-based stop loss"""
+    try:
+        risk_mgr = get_risk_manager()
+
+        stop_loss = risk_mgr.calculate_stop_loss_atr(
+            entry_price=entry_price,
+            atr=atr,
+            side=side
+        )
+
+        risk_per_share = abs(entry_price - stop_loss)
+        risk_pct = (risk_per_share / entry_price) * 100
+
+        return {
+            "stop_loss_price": round(stop_loss, 2),
+            "risk_per_share": round(risk_per_share, 2),
+            "risk_pct": round(risk_pct, 2),
+            "atr": atr,
+            "atr_multiplier": risk_mgr.atr_multiplier
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to calculate ATR stop loss: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/risk/risk-reward-ratio")
+async def calculate_risk_reward(
+    entry_price: float,
+    target_price: float,
+    stop_loss_price: float
+):
+    """Calculate risk/reward ratio for a trade"""
+    try:
+        risk_mgr = get_risk_manager()
+
+        ratio = risk_mgr.calculate_risk_reward_ratio(
+            entry_price=entry_price,
+            target_price=target_price,
+            stop_loss_price=stop_loss_price
+        )
+
+        potential_reward = abs(target_price - entry_price)
+        potential_risk = abs(entry_price - stop_loss_price)
+
+        return {
+            "risk_reward_ratio": round(ratio, 2),
+            "potential_reward": round(potential_reward, 2),
+            "potential_risk": round(potential_risk, 2),
+            "reward_pct": round((potential_reward / entry_price) * 100, 2),
+            "risk_pct": round((potential_risk / entry_price) * 100, 2)
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to calculate risk/reward ratio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/risk/summary")
+async def get_risk_summary():
+    """Get risk management configuration summary"""
+    try:
+        risk_mgr = get_risk_manager()
+        return risk_mgr.get_risk_summary()
+
+    except Exception as e:
+        logger.error(f"Failed to get risk summary: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

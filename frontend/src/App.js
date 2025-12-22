@@ -8,6 +8,9 @@ import StockDetail from "@/pages/StockDetail";
 import Backtesting from "@/pages/Backtesting";
 import AIRecommends from "@/pages/AIRecommends";
 import Help from "@/pages/Help";
+import PaperTrading from "@/pages/PaperTrading";
+import Alerts from "@/pages/Alerts";
+import Screener from "@/pages/Screener";
 import Layout from "@/components/Layout";
 
 function App() {
@@ -18,6 +21,9 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="ai-recommends" element={<AIRecommends />} />
+            <Route path="paper-trading" element={<PaperTrading />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="screener" element={<Screener />} />
             <Route path="settings" element={<Settings />} />
             <Route path="history" element={<AnalysisHistory />} />
             <Route path="backtesting" element={<Backtesting />} />
