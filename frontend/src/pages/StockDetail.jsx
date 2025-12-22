@@ -252,9 +252,9 @@ export default function StockDetail() {
 
     setIsReloading(true);
     try {
-      // Request a new analysis
-      toast.info("Generating new analysis...");
-      const analyzeResponse = await axios.post(`${API_URL}/analyze`, {
+      // Request a new ensemble analysis
+      toast.info("Generating ensemble analysis with multiple AI models...");
+      const analyzeResponse = await axios.post(`${API_URL}/analyze/ensemble`, {
         symbol: targetSymbol
       });
 
@@ -272,7 +272,7 @@ export default function StockDetail() {
         setPriceHistory(historyResponse.data);
         setTechnicalIndicators(indicatorsResponse.data);
 
-        toast.success("Analysis updated successfully");
+        toast.success("Ensemble analysis complete!");
       }
     } catch (error) {
       console.error("Error reloading analysis:", error);
@@ -416,7 +416,9 @@ export default function StockDetail() {
                   <div>
                     <p className="text-xs text-text-secondary">52W Range</p>
                     <p className="font-data text-sm text-text-primary">
-                      ₹{displayData.week_52_low} - ₹{displayData.week_52_high}
+                      {displayData.week_52_low && displayData.week_52_high
+                        ? `₹${displayData.week_52_low?.toFixed(2)} - ₹${displayData.week_52_high?.toFixed(2)}`
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -588,6 +590,23 @@ export default function StockDetail() {
 
                 {/* Actions */}
                 <div className="space-y-2">
+                  <Button
+                    onClick={reloadAnalysis}
+                    disabled={isReloading}
+                    className="w-full bg-ai-accent hover:bg-ai-accent/80 text-white"
+                  >
+                    {isReloading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Regenerating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Regenerate Analysis
+                      </>
+                    )}
+                  </Button>
                   <Button
                     onClick={exportAnalysis}
                     variant="outline"

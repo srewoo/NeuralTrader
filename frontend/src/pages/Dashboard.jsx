@@ -33,16 +33,7 @@ import AgentWorkflow from "@/components/AgentWorkflow";
 import ReasoningLog from "@/components/ReasoningLog";
 import CandlestickPatterns from "@/components/CandlestickPatterns";
 import MarketIndices from "@/components/MarketIndices";
-import { getSetting } from "@/utils/settingsStorage";
 import { API_URL } from "@/config/api";
-
-const MODELS = [
-  { value: "gpt-4.1", label: "GPT-4.1", provider: "openai" },
-  { value: "gpt-4o", label: "GPT-4o", provider: "openai" },
-  { value: "o3-mini", label: "o3-mini (Fast)", provider: "openai" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" },
-];
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -53,7 +44,6 @@ export default function Dashboard() {
   const [technicalIndicators, setTechnicalIndicators] = useState(null);
   const [priceHistory, setPriceHistory] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [selectedModel, setSelectedModel] = useState("gpt-4.1");
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
@@ -63,9 +53,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchWatchlist();
     fetchRecentAnalyses();
-    // Load default model from localStorage if available
-    const defaultModel = getSetting('selected_model', 'gpt-4.1');
-    setSelectedModel(defaultModel);
   }, []);
 
   const fetchWatchlist = async () => {
@@ -138,25 +125,18 @@ export default function Dashboard() {
       return;
     }
 
-    const model = MODELS.find(m => m.value === selectedModel);
-    if (!model) {
-      toast.error("Please select a model");
-      return;
-    }
-
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
-      const response = await axios.post(`${API_URL}/analyze`, {
-        symbol: selectedStock,
-        model: model.value,
-        provider: model.provider
+      toast.info("Running ensemble analysis with multiple AI models...");
+      const response = await axios.post(`${API_URL}/analyze/ensemble`, {
+        symbol: selectedStock
       });
 
       setAnalysisResult(response.data);
       fetchRecentAnalyses();
-      toast.success("Analysis complete!");
+      toast.success("Ensemble analysis complete!");
     } catch (error) {
       const errorMsg = error.response?.data?.detail || "Analysis failed";
       toast.error(errorMsg);
@@ -450,7 +430,9 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs text-text-secondary">52W Range</p>
                       <p className="font-data text-text-primary">
-                        ₹{stockData.week_52_low} - ₹{stockData.week_52_high}
+                        {stockData.week_52_low && stockData.week_52_high
+                          ? `₹${stockData.week_52_low?.toFixed(2)} - ₹${stockData.week_52_high?.toFixed(2)}`
+                          : "N/A"}
                       </p>
                     </div>
                   </div>
@@ -522,21 +504,12 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-heading flex items-center gap-2">
                       <Brain className="w-4 h-4 text-ai-accent" />
-                      AI Analysis
+                      AI Ensemble Analysis
                     </CardTitle>
                     <div className="flex items-center gap-3">
-                      <Select value={selectedModel} onValueChange={setSelectedModel}>
-                        <SelectTrigger className="w-[180px] bg-surface-highlight border-[#1F1F1F]" data-testid="model-select">
-                          <SelectValue placeholder="Select Model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MODELS.map((model) => (
-                            <SelectItem key={model.value} value={model.value}>
-                              {model.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <span className="text-xs text-text-secondary">
+                        Multi-model consensus (OpenAI + Gemini + Claude)
+                      </span>
                       <Button
                         onClick={runAnalysis}
                         disabled={isAnalyzing}
@@ -655,7 +628,10 @@ export default function Dashboard() {
                     <div className="text-center py-12">
                       <Brain className="w-12 h-12 mx-auto text-ai-accent/50 mb-4" />
                       <p className="text-text-secondary">
-                        Select a model and click "Run Analysis" to get AI-powered trading signals
+                        Click "Run Analysis" to get AI ensemble recommendations
+                      </p>
+                      <p className="text-xs text-text-secondary/70 mt-2">
+                        Powered by OpenAI, Gemini & Claude
                       </p>
                     </div>
                   )}

@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from enum import Enum
 import logging
 
+from . import paper_trading_db
+
 logger = logging.getLogger(__name__)
 
 
@@ -193,7 +195,7 @@ class PaperTradingEngine:
         max_position_size: float = 0.20,  # 20% max per position
         user_id: Optional[str] = None
     ):
-        self.user_id = user_id
+        self.user_id = user_id or "default"
         self.initial_capital = initial_capital
         self.cash = initial_capital
         self.commission_rate = commission_rate
@@ -206,7 +208,124 @@ class PaperTradingEngine:
         self.order_counter = 0
         self.trade_counter = 0
 
-        logger.info(f"Paper trading engine initialized with ${initial_capital:,.2f}")
+        # Load from database
+        self._load_from_db()
+
+        logger.info(f"Paper trading engine initialized with ${self.cash:,.2f} cash")
+
+    def _load_from_db(self):
+        """Load portfolio state from database"""
+        try:
+            # Load portfolio state
+            state = paper_trading_db.load_portfolio_state(self.user_id)
+            if state:
+                self.initial_capital = state['initial_capital']
+                self.cash = state['cash']
+                self.commission_rate = state['commission_rate']
+                self.slippage_bps = state['slippage_bps']
+                self.max_position_size = state['max_position_size']
+                self.order_counter = state['order_counter']
+                self.trade_counter = state['trade_counter']
+                logger.info(f"Loaded portfolio state for user {self.user_id}")
+
+            # Load positions
+            positions_data = paper_trading_db.load_positions(self.user_id)
+            for pos_data in positions_data:
+                position = Position(pos_data['symbol'])
+                position.quantity = pos_data['quantity']
+                position.average_price = pos_data['average_price']
+                position.realized_pnl = pos_data['realized_pnl']
+                self.positions[pos_data['symbol']] = position
+
+            # Load orders
+            orders_data = paper_trading_db.load_orders(self.user_id)
+            for order_data in orders_data:
+                order = Order(
+                    order_id=order_data['order_id'],
+                    symbol=order_data['symbol'],
+                    side=OrderSide(order_data['side']),
+                    order_type=OrderType(order_data['order_type']),
+                    quantity=order_data['quantity'],
+                    price=order_data['price'],
+                    stop_price=order_data['stop_price'],
+                    timestamp=datetime.fromisoformat(order_data['timestamp'])
+                )
+                order.filled_quantity = order_data['filled_quantity']
+                order.average_price = order_data['average_price']
+                order.status = OrderStatus(order_data['status'])
+                if order_data['filled_timestamp']:
+                    order.filled_timestamp = datetime.fromisoformat(order_data['filled_timestamp'])
+                self.orders[order_data['order_id']] = order
+
+            # Load trades
+            trades_data = paper_trading_db.load_trades(self.user_id)
+            for trade_data in trades_data:
+                trade = Trade(
+                    trade_id=trade_data['trade_id'],
+                    order_id=trade_data['order_id'],
+                    symbol=trade_data['symbol'],
+                    side=OrderSide(trade_data['side']),
+                    quantity=trade_data['quantity'],
+                    price=trade_data['price'],
+                    commission=trade_data['commission'],
+                    slippage=trade_data['slippage'],
+                    timestamp=datetime.fromisoformat(trade_data['timestamp'])
+                )
+                self.trades.append(trade)
+
+            logger.info(f"Loaded {len(self.positions)} positions, {len(self.orders)} orders, {len(self.trades)} trades")
+        except Exception as e:
+            logger.error(f"Failed to load portfolio from database: {e}")
+
+    def _save_state_to_db(self):
+        """Save portfolio state to database"""
+        try:
+            state = {
+                'initial_capital': self.initial_capital,
+                'cash': self.cash,
+                'commission_rate': self.commission_rate,
+                'slippage_bps': self.slippage_bps,
+                'max_position_size': self.max_position_size,
+                'order_counter': self.order_counter,
+                'trade_counter': self.trade_counter
+            }
+            paper_trading_db.save_portfolio_state(self.user_id, state)
+        except Exception as e:
+            logger.error(f"Failed to save portfolio state: {e}")
+
+    def _save_position_to_db(self, position: Position):
+        """Save position to database"""
+        try:
+            pos_data = {
+                'symbol': position.symbol,
+                'quantity': position.quantity,
+                'average_price': position.average_price,
+                'realized_pnl': position.realized_pnl
+            }
+            paper_trading_db.save_position(self.user_id, pos_data)
+        except Exception as e:
+            logger.error(f"Failed to save position: {e}")
+
+    def _delete_position_from_db(self, symbol: str):
+        """Delete position from database"""
+        try:
+            paper_trading_db.delete_position(self.user_id, symbol)
+        except Exception as e:
+            logger.error(f"Failed to delete position: {e}")
+
+    def _save_order_to_db(self, order: Order):
+        """Save order to database"""
+        try:
+            paper_trading_db.save_order(self.user_id, order.to_dict())
+        except Exception as e:
+            logger.error(f"Failed to save order: {e}")
+
+    def _save_trade_to_db(self, trade: Trade):
+        """Save trade to database"""
+        try:
+            paper_trading_db.save_trade(self.user_id, trade.to_dict())
+        except Exception as e:
+            logger.error(f"Failed to save trade: {e}")
 
     def _generate_order_id(self) -> str:
         """Generate unique order ID"""
@@ -304,6 +423,8 @@ class PaperTradingEngine:
             self._execute_order(order, current_price)
 
         self.orders[order_id] = order
+        self._save_order_to_db(order)
+        self._save_state_to_db()
         return order
 
     def _execute_order(self, order: Order, execution_price: float):
@@ -345,6 +466,14 @@ class PaperTradingEngine:
         order.filled_timestamp = datetime.now(timezone.utc)
 
         self.trades.append(trade)
+
+        # Save to database
+        self._save_trade_to_db(trade)
+        self._save_position_to_db(position)
+
+        # Delete position from DB if quantity is zero
+        if position.quantity == 0:
+            self._delete_position_from_db(position.symbol)
 
         logger.info(f"Order {order.order_id} executed: {order.side.value} {order.quantity} {order.symbol} @ ${final_price:.2f}")
         logger.info(f"Commission: ${commission:.2f}, Slippage: ${slippage * order.quantity:.2f}")
@@ -432,6 +561,10 @@ class PaperTradingEngine:
         self.trades.clear()
         self.order_counter = 0
         self.trade_counter = 0
+
+        # Clear database
+        paper_trading_db.reset_user_portfolio(self.user_id)
+
         logger.info(f"Paper trading account reset to ${self.initial_capital:,.2f}")
 
 

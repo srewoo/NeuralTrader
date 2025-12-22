@@ -137,13 +137,22 @@ class DataProviderFactory:
 
                     if info and "regularMarketPrice" in info:
                         logger.info(f"Quote from yfinance: {symbol}")
+                        current_price = info.get("regularMarketPrice")
+                        previous_close = info.get("previousClose", current_price)
                         return {
-                            "symbol": symbol,
-                            "price": info.get("regularMarketPrice"),
-                            "change": info.get("regularMarketChange"),
-                            "change_percent": info.get("regularMarketChangePercent"),
+                            "symbol": symbol.replace('.NS', '').replace('.BO', ''),
+                            "name": info.get("longName", info.get("shortName", symbol)),
+                            "current_price": round(current_price, 2) if current_price else None,
+                            "previous_close": round(previous_close, 2) if previous_close else None,
+                            "change": round(info.get("regularMarketChange", 0), 2),
+                            "change_percent": round(info.get("regularMarketChangePercent", 0), 2),
                             "volume": info.get("volume"),
                             "market_cap": info.get("marketCap"),
+                            "pe_ratio": info.get("trailingPE"),
+                            "week_52_high": info.get("fiftyTwoWeekHigh"),
+                            "week_52_low": info.get("fiftyTwoWeekLow"),
+                            "sector": info.get("sector", "N/A"),
+                            "industry": info.get("industry", "N/A"),
                             "source": "yfinance"
                         }
 

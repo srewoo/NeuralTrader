@@ -11,6 +11,8 @@ import asyncio
 from dataclasses import dataclass, asdict
 import requests
 
+from . import alert_db
+
 logger = logging.getLogger(__name__)
 
 
@@ -301,6 +303,41 @@ class AlertManager:
         # Price tracking for cross alerts
         self.price_history: Dict[str, List[float]] = {}
 
+        # Load alerts from database
+        self._load_alerts_from_db()
+
+    def _load_alerts_from_db(self):
+        """Load alerts from database on startup"""
+        try:
+            alert_data_list = alert_db.load_all_alerts()
+            for alert_data in alert_data_list:
+                # Reconstruct Alert object from database data
+                alert = Alert(
+                    alert_id=alert_data['alert_id'],
+                    user_id=alert_data['user_id'],
+                    alert_type=AlertType(alert_data['alert_type']),
+                    symbol=alert_data['symbol'],
+                    condition=alert_data['condition'],
+                    message=alert_data['message'],
+                    delivery_channels=[DeliveryChannel(ch) for ch in alert_data['delivery_channels']],
+                    status=AlertStatus(alert_data['status']),
+                    created_at=datetime.fromisoformat(alert_data['created_at']),
+                    triggered_at=datetime.fromisoformat(alert_data['triggered_at']) if alert_data.get('triggered_at') else None,
+                    expires_at=datetime.fromisoformat(alert_data['expires_at']) if alert_data.get('expires_at') else None,
+                    metadata=alert_data.get('metadata')
+                )
+                self.alerts[alert.alert_id] = alert
+
+            # Set counter to max existing ID
+            self.alert_counter = alert_db.get_max_alert_counter()
+            logger.info(f"Loaded {len(self.alerts)} alerts from database, counter at {self.alert_counter}")
+        except Exception as e:
+            logger.error(f"Failed to load alerts from database: {e}")
+
+    def _save_alert_to_db(self, alert: Alert):
+        """Save alert to database"""
+        alert_db.save_alert(alert.to_dict())
+
     def _generate_alert_id(self) -> str:
         """Generate unique alert ID"""
         self.alert_counter += 1
@@ -355,6 +392,7 @@ class AlertManager:
         )
 
         self.alerts[alert.alert_id] = alert
+        self._save_alert_to_db(alert)
         logger.info(f"Price alert created: {symbol} {condition.value} ₹{target_price}")
         return alert
 
@@ -392,6 +430,7 @@ class AlertManager:
         )
 
         self.alerts[alert.alert_id] = alert
+        self._save_alert_to_db(alert)
         logger.info(f"Pattern alert created: {symbol} watching for {patterns_str}")
         return alert
 
@@ -430,6 +469,7 @@ class AlertManager:
         )
 
         self.alerts[alert.alert_id] = alert
+        self._save_alert_to_db(alert)
         logger.info(f"News alert created: watching for {keywords_str}")
         return alert
 
@@ -469,6 +509,7 @@ class AlertManager:
         )
 
         self.alerts[alert.alert_id] = alert
+        self._save_alert_to_db(alert)
         logger.info(f"Portfolio alert created: {metric} {condition} {threshold}%")
         return alert
 
@@ -509,6 +550,7 @@ class AlertManager:
         )
 
         self.alerts[alert.alert_id] = alert
+        self._save_alert_to_db(alert)
         logger.info(f"Technical alert created: {symbol} {indicator} {condition} {threshold}")
         return alert
 
@@ -552,6 +594,13 @@ class AlertManager:
         """Trigger an alert and send notifications"""
         alert.status = AlertStatus.TRIGGERED
         alert.triggered_at = datetime.now(timezone.utc)
+
+        # Update database
+        alert_db.update_alert_status(
+            alert.alert_id,
+            AlertStatus.TRIGGERED.value,
+            alert.triggered_at.isoformat()
+        )
 
         logger.info(f"Alert triggered: {alert.alert_id} - {alert.message}")
 
@@ -599,6 +648,7 @@ class AlertManager:
             return False
 
         alert.status = AlertStatus.CANCELLED
+        alert_db.update_alert_status(alert_id, AlertStatus.CANCELLED.value)
         logger.info(f"Alert cancelled: {alert_id}")
         return True
 
@@ -608,6 +658,7 @@ class AlertManager:
             return False
 
         del self.alerts[alert_id]
+        alert_db.delete_alert(alert_id)
         logger.info(f"Alert deleted: {alert_id}")
         return True
 
@@ -634,6 +685,7 @@ class AlertManager:
 
         for alert_id in expired_ids:
             del self.alerts[alert_id]
+            alert_db.delete_alert(alert_id)
 
         if expired_ids:
             logger.info(f"Cleaned up {len(expired_ids)} expired alerts")

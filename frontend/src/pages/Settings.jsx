@@ -53,6 +53,7 @@ export default function Settings() {
   const [settings, setSettings] = useState({
     openai_api_key: "",
     gemini_api_key: "",
+    anthropic_api_key: "",
     finnhub_api_key: "",
     alpaca_api_key: "",
     alpaca_api_secret: "",
@@ -60,6 +61,8 @@ export default function Settings() {
     iex_api_key: "",
     polygon_api_key: "",
     twelve_data_api_key: "",
+    newsapi_key: "",
+    alphavantage_api_key: "",
     telegram_bot_token: "",
     telegram_chat_id: "",
     smtp_host: "",
@@ -82,6 +85,7 @@ export default function Settings() {
   const normalizeSettings = (data) => ({
     openai_api_key: data?.openai_api_key || "",
     gemini_api_key: data?.gemini_api_key || "",
+    anthropic_api_key: data?.anthropic_api_key || "",
     finnhub_api_key: data?.finnhub_api_key || "",
     alpaca_api_key: data?.alpaca_api_key || "",
     alpaca_api_secret: data?.alpaca_api_secret || "",
@@ -89,6 +93,8 @@ export default function Settings() {
     iex_api_key: data?.iex_api_key || "",
     polygon_api_key: data?.polygon_api_key || "",
     twelve_data_api_key: data?.twelve_data_api_key || "",
+    newsapi_key: data?.newsapi_key || "",
+    alphavantage_api_key: data?.alphavantage_api_key || "",
     telegram_bot_token: data?.telegram_bot_token || "",
     telegram_chat_id: data?.telegram_chat_id || "",
     smtp_host: data?.smtp_host || "",
@@ -108,6 +114,7 @@ export default function Settings() {
   });
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
   const [showFinnhubKey, setShowFinnhubKey] = useState(false);
   const [showAlpacaKey, setShowAlpacaKey] = useState(false);
   const [showAlpacaSecret, setShowAlpacaSecret] = useState(false);
@@ -115,6 +122,8 @@ export default function Settings() {
   const [showIEXKey, setShowIEXKey] = useState(false);
   const [showPolygonKey, setShowPolygonKey] = useState(false);
   const [showTwelveDataKey, setShowTwelveDataKey] = useState(false);
+  const [showNewsAPIKey, setShowNewsAPIKey] = useState(false);
+  const [showAlphaVantageKey, setShowAlphaVantageKey] = useState(false);
   const [showTelegramToken, setShowTelegramToken] = useState(false);
   const [showSMTPPassword, setShowSMTPPassword] = useState(false);
   const [showTwilioAuthToken, setShowTwilioAuthToken] = useState(false);
@@ -270,14 +279,48 @@ export default function Settings() {
               </div>
               <p className="text-xs text-text-secondary">
                 Get your API key from{" "}
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
                   aistudio.google.com
                 </a>
+              </p>
+            </div>
+
+            {/* Anthropic Key */}
+            <div className="space-y-2">
+              <Label htmlFor="anthropic-key" className="text-text-primary">Anthropic API Key (Claude)</Label>
+              <div className="relative">
+                <Input
+                  id="anthropic-key"
+                  type={showAnthropicKey ? "text" : "password"}
+                  value={settings.anthropic_api_key}
+                  onChange={(e) => handleChange("anthropic_api_key", e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAnthropicKey(!showAnthropicKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showAnthropicKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get your API key from{" "}
+                <a
+                  href="https://console.anthropic.com/settings/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  console.anthropic.com
+                </a>
+                {" "}• For ensemble analysis
               </p>
             </div>
           </CardContent>
@@ -541,6 +584,80 @@ export default function Settings() {
                   twelvedata.com
                 </a>
                 {" "}• Real-time quotes ~170ms, stocks/forex/crypto
+              </p>
+            </div>
+
+            {/* NewsAPI Key */}
+            <div className="space-y-2">
+              <Label htmlFor="newsapi-key" className="text-text-primary flex items-center gap-2">
+                NewsAPI Key
+                <span className="text-xs text-success font-normal">(100 calls/day free)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="newsapi-key"
+                  type={showNewsAPIKey ? "text" : "password"}
+                  value={settings.newsapi_key}
+                  onChange={(e) => handleChange("newsapi_key", e.target.value)}
+                  placeholder="Optional - for news sentiment analysis"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewsAPIKey(!showNewsAPIKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showNewsAPIKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://newsapi.org/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  newsapi.org
+                </a>
+                {" "}• Financial news headlines and sentiment
+              </p>
+            </div>
+
+            {/* AlphaVantage Key */}
+            <div className="space-y-2">
+              <Label htmlFor="alphavantage-key" className="text-text-primary flex items-center gap-2">
+                Alpha Vantage API Key
+                <span className="text-xs text-success font-normal">(25 calls/day free)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="alphavantage-key"
+                  type={showAlphaVantageKey ? "text" : "password"}
+                  value={settings.alphavantage_api_key}
+                  onChange={(e) => handleChange("alphavantage_api_key", e.target.value)}
+                  placeholder="Optional - news + market data"
+                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAlphaVantageKey(!showAlphaVantageKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showAlphaVantageKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-text-secondary">
+                Get free API key from{" "}
+                <a
+                  href="https://www.alphavantage.co/support/#api-key"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  alphavantage.co
+                </a>
+                {" "}• News sentiment + technical indicators
               </p>
             </div>
           </CardContent>

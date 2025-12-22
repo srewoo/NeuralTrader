@@ -64,16 +64,30 @@ export default function AIRecommends() {
     }
   };
 
-  // Generate fresh recommendations
+  // Generate fresh ENHANCED recommendations
   const generateRecommendations = async () => {
     setGenerating(true);
     setError(null);
 
     try {
-      toast.info("Analyzing 100 stocks... This may take a minute.");
-      const response = await axios.post(`${API_URL}/recommendations/generate`);
+      toast.info("🔍 Analyzing NIFTY stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 30-60 seconds...");
+
+      const response = await axios.post(`${API_URL}/recommendations/generate/enhanced`, null, {
+        params: {
+          limit: 30,
+          min_confidence: 65.0,
+          enable_sentiment: true,
+          enable_backtest: true
+        }
+      });
+
       setRecommendations(response.data);
-      toast.success(`Analysis complete! Found ${response.data.summary.total_buy_signals} buy and ${response.data.summary.total_sell_signals} sell signals.`);
+
+      const summary = response.data.summary;
+      toast.success(
+        `✅ Enhanced analysis complete!\n📈 ${summary.total_buy_signals} BUY (${summary.avg_buy_confidence}% avg)\n📉 ${summary.total_sell_signals} SELL (${summary.avg_sell_confidence}% avg)\n💹 Market: ${summary.market_sentiment}`,
+        { duration: 5000 }
+      );
     } catch (err) {
       console.error("Error generating recommendations:", err);
       setError(err.response?.data?.detail || "Failed to generate recommendations");

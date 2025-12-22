@@ -79,10 +79,12 @@ class EnsembleLLMAnalyzer:
         "gpt-3.5-turbo": 0.7,
         "gemini-1.5-pro": 0.95,
         "gemini-1.5-flash": 0.8,
-        "gemini-2.0-flash": 0.85,
+        "gemini-2.0-flash": 0.95,
+        "gemini-2.0-flash-exp": 1.0,  # Latest Gemini 2.0
         "claude-3-opus": 1.0,
         "claude-3-sonnet": 0.9,
         "claude-3-haiku": 0.75,
+        "claude-sonnet-4-20250514": 1.0,  # Claude Sonnet 4.5
     }
 
     def __init__(
@@ -115,21 +117,19 @@ class EnsembleLLMAnalyzer:
         """
         available = []
 
-        if self.openai_api_key:
-            available.extend([
-                ("gpt-4o", "openai"),
-                ("gpt-4o-mini", "openai"),
-            ])
-
         if self.gemini_api_key:
             available.extend([
-                ("gemini-2.0-flash", "gemini"),
-                ("gemini-1.5-pro", "gemini"),
+                ("gemini-1.5-flash", "gemini"),  # Gemini 1.5 Flash (stable, works with Indian stocks)
             ])
 
         if self.anthropic_api_key:
             available.extend([
-                ("claude-3-sonnet-20240229", "anthropic"),
+                ("claude-sonnet-4-20250514", "anthropic"),  # Claude Sonnet 4.5
+            ])
+
+        if self.openai_api_key:
+            available.extend([
+                ("gpt-4o", "openai"),  # Latest GPT-4 Omni
             ])
 
         return available
@@ -242,61 +242,126 @@ class EnsembleLLMAnalyzer:
 
         current_price = indicators.get('current_price', stock_data.get('current_price'))
 
-        prompt = f"""You are an expert stock analyst. Analyze the following stock data and provide a trading recommendation.
+        # Calculate key price levels for the prompt
+        week_52_high = stock_data.get('week_52_high', current_price)
+        week_52_low = stock_data.get('week_52_low', current_price)
+        price_range = week_52_high - week_52_low if week_52_high and week_52_low else 0
+        price_position = ((current_price - week_52_low) / price_range * 100) if price_range > 0 else 50
+
+        prompt = f"""You are a senior quantitative analyst specializing in Indian equity markets (NSE/BSE) with 15+ years of experience in technical analysis, risk management, and algorithmic trading.
 
 {rag_context if rag_context else ""}
 
-=== STOCK DATA ===
-Stock: {stock_data.get('name', symbol)} ({symbol})
-Sector: {stock_data.get('sector', 'Unknown')}
-Industry: {stock_data.get('industry', 'Unknown')}
+=== MARKET DATA: {stock_data.get('name', symbol)} ({symbol}) ===
 
-Price Data:
-- Current Price: ₹{current_price}
-- Previous Close: ₹{stock_data.get('previous_close', 'N/A')}
-- Change: {stock_data.get('change_percent', 'N/A')}%
-- Volume: {stock_data.get('volume', 'N/A')}
+**Company Overview:**
+- Sector: {stock_data.get('sector', 'Unknown')}
+- Industry: {stock_data.get('industry', 'Unknown')}
 - Market Cap: {stock_data.get('market_cap', 'N/A')}
 - P/E Ratio: {stock_data.get('pe_ratio', 'N/A')}
-- 52W High: ₹{stock_data.get('week_52_high', 'N/A')}
-- 52W Low: ₹{stock_data.get('week_52_low', 'N/A')}
 
-Technical Indicators:
-- RSI (14): {indicators.get('rsi', 'N/A')} - Signal: {signals.get('rsi', 'N/A')}
-- MACD: {indicators.get('macd', 'N/A')} / Signal: {indicators.get('macd_signal', 'N/A')}
-- SMA 20: ₹{indicators.get('sma_20', 'N/A')}
-- SMA 50: ₹{indicators.get('sma_50', 'N/A')}
-- SMA 200: ₹{indicators.get('sma_200', 'N/A')}
-- Bollinger Bands: ₹{indicators.get('bb_upper', 'N/A')} / ₹{indicators.get('bb_middle', 'N/A')} / ₹{indicators.get('bb_lower', 'N/A')}
-- ATR: {indicators.get('atr', 'N/A')}
-- Stochastic K/D: {indicators.get('stochastic_k', 'N/A')} / {indicators.get('stochastic_d', 'N/A')}
-- ADX: {indicators.get('adx', 'N/A')}
+**Price Action:**
+- Current Price: ₹{current_price:.2f}
+- Previous Close: ₹{stock_data.get('previous_close', 'N/A')}
+- Daily Change: {stock_data.get('change_percent', 'N/A')}%
+- Volume: {stock_data.get('volume', 'N/A')}
+- 52-Week High: ₹{week_52_high}
+- 52-Week Low: ₹{week_52_low}
+- Position in Range: {price_position:.1f}% (0%=low, 100%=high)
 
-Trend Analysis:
-- Overall Trend: {signals.get('trend', 'N/A')}
-- Momentum: {signals.get('momentum', 'N/A')}
+**Technical Indicators:**
+- RSI(14): {indicators.get('rsi', 'N/A')} → {signals.get('rsi', 'N/A')}
+- MACD: {indicators.get('macd', 'N/A')} / Signal: {indicators.get('macd_signal', 'N/A')} → {signals.get('macd', 'N/A')}
+- ADX: {indicators.get('adx', 'N/A')} (Trend Strength)
+- Stochastic: K={indicators.get('stochastic_k', 'N/A')} D={indicators.get('stochastic_d', 'N/A')}
 
-Percentile Context:
+**Moving Averages:**
+- SMA(20): ₹{indicators.get('sma_20', 'N/A')} - Price vs MA20: {((current_price / indicators.get('sma_20', current_price) - 1) * 100) if indicators.get('sma_20') else 0:.2f}%
+- SMA(50): ₹{indicators.get('sma_50', 'N/A')} - Price vs MA50: {((current_price / indicators.get('sma_50', current_price) - 1) * 100) if indicators.get('sma_50') else 0:.2f}%
+- SMA(200): ₹{indicators.get('sma_200', 'N/A')} - Price vs MA200: {((current_price / indicators.get('sma_200', current_price) - 1) * 100) if indicators.get('sma_200') else 0:.2f}%
+- Trend Classification: {signals.get('trend', 'N/A')}
+
+**Volatility & Support/Resistance:**
+- ATR(14): {indicators.get('atr', 'N/A')} (Average True Range)
+- Bollinger Bands (20,2):
+  * Upper: ₹{indicators.get('bb_upper', 'N/A')} (+{((indicators.get('bb_upper', current_price) / current_price - 1) * 100) if indicators.get('bb_upper') else 0:.1f}%)
+  * Middle: ₹{indicators.get('bb_middle', 'N/A')}
+  * Lower: ₹{indicators.get('bb_lower', 'N/A')} (-{((1 - indicators.get('bb_lower', current_price) / current_price) * 100) if indicators.get('bb_lower') else 0:.1f}%)
+  * Width: {((indicators.get('bb_upper', current_price) - indicators.get('bb_lower', current_price)) / indicators.get('bb_middle', current_price) * 100) if indicators.get('bb_middle') else 0:.1f}%
+
+**Market Context:**
 - Composite Score: {percentile_scores.get('composite_score', 'N/A')}/100
-- RSI Interpretation: {percentile_scores.get('rsi_interpretation', 'N/A')}
-- Volume Interpretation: {percentile_scores.get('volume_interpretation', 'N/A')}
+- RSI Context: {percentile_scores.get('rsi_interpretation', 'N/A')}
+- Volume Analysis: {percentile_scores.get('volume_interpretation', 'N/A')}
 
-=== ANALYSIS INSTRUCTIONS ===
-Perform a comprehensive technical analysis and provide your recommendation in the following JSON format:
+=== ANALYSIS FRAMEWORK ===
+
+**Your Task:** Provide a professional trading recommendation following institutional-grade analysis standards.
+
+**Analysis Requirements:**
+
+1. **Multi-Timeframe Confirmation:**
+   - Analyze alignment across short-term (SMA20), medium-term (SMA50), and long-term (SMA200) trends
+   - Identify trend strength using ADX (>25 = strong trend, <20 = weak/ranging)
+
+2. **Support & Resistance Identification:**
+   - Use Bollinger Bands, 52W high/low, and moving averages to identify key price levels
+   - Current price position relative to these levels determines entry/exit zones
+
+3. **Momentum & Oscillator Analysis:**
+   - RSI: <30 oversold, >70 overbought, 40-60 neutral zone
+   - Stochastic: Crossovers and divergence signals
+   - MACD: Histogram momentum and signal line crosses
+
+4. **Volume Confirmation:**
+   - Volume should confirm price moves (strong volume on breakouts = valid signal)
+   - Low volume on rallies = weak/suspect moves
+
+5. **Risk Management (CRITICAL):**
+   - Stop Loss: Must be based on ATR or technical support/resistance (NOT arbitrary)
+   - Risk-Reward Ratio: Minimum 2:1 (target profit ≥ 2x stop loss distance)
+   - Entry Price: Specify optimal entry zone (not just current price)
+   - Position Sizing: Consider volatility (ATR) for position risk
+
+6. **Confidence Calibration:**
+   - 80-100%: Multiple strong confirmations, clear trend, high conviction
+   - 60-79%: Good technical setup with minor concerns
+   - 40-59%: Mixed signals, borderline setup
+   - 20-39%: Weak setup, many conflicting signals
+   - 0-19%: Poor setup, avoid trading
+
+**Output Format (STRICT JSON):**
 
 {{
-  "recommendation": "BUY" or "SELL" or "HOLD",
-  "confidence": 0-100 (integer),
-  "entry_price": suggested entry price (number),
-  "target_price": price target (number),
-  "stop_loss": stop loss price (number),
-  "risk_reward_ratio": calculated ratio (number),
-  "reasoning": "Your detailed analysis and reasoning",
-  "key_risks": ["risk1", "risk2", "risk3"],
-  "key_opportunities": ["opportunity1", "opportunity2", "opportunity3"]
+  "recommendation": "BUY" | "SELL" | "HOLD",
+  "confidence": <integer 0-100>,
+  "entry_price": <number - optimal entry level, not just current price>,
+  "target_price": <number - realistic based on resistance/support>,
+  "stop_loss": <number - based on ATR or technical level>,
+  "risk_reward_ratio": <number - must be ≥1.5, ideally ≥2.0>,
+  "reasoning": "<3-5 sentences: Synthesize trend, momentum, support/resistance, and volume. Explain WHY this setup is tradeable. Reference specific indicator values.>",
+  "key_risks": [
+    "<Specific technical risk - e.g., 'Breaking below SMA50 at ₹1650 invalidates bullish setup'>",
+    "<Market/volatility risk with numbers - e.g., 'High ATR of 45 indicates 2.7% daily volatility'>",
+    "<Sector/external risk - e.g., 'Sector weakness or adverse news could trigger stop loss'>"
+  ],
+  "key_opportunities": [
+    "<Specific bullish catalyst - e.g., 'Golden cross forming as SMA50 approaches SMA200'>",
+    "<Price level opportunity - e.g., 'Breakout above ₹1750 resistance opens path to ₹1850'>",
+    "<Technical setup - e.g., 'RSI recovery from oversold with positive divergence'>"
+  ]
 }}
 
-Be specific with price levels and percentages. Provide actionable recommendations."""
+**CRITICAL RULES:**
+✓ Entry price must be realistic (within ±2% of current price or at specific trigger level)
+✓ Stop loss must protect capital (3-5% max loss for swing trades, use ATR as guide)
+✓ Target must be achievable (based on nearby resistance, not wishful thinking)
+✓ Risk-reward ratio ≥ 1.5 (reject setups with poor risk-reward)
+✓ Be honest: If setup is unclear → HOLD with lower confidence
+✓ Use actual numbers from data (don't invent values)
+✓ Calculate risk_reward_ratio = (target_price - entry_price) / (entry_price - stop_loss)
+
+Provide your analysis now in valid JSON format only (no additional text)."""
 
         return prompt
 
@@ -318,7 +383,13 @@ Be specific with price levels and percentages. Provide actionable recommendation
             ModelResponse with analysis result
         """
         try:
-            system_message = "You are an expert stock analyst. Always respond with valid JSON matching the requested format exactly."
+            system_message = """You are a senior quantitative analyst and portfolio manager with CFA charter and 15+ years of experience in Indian equity markets (NSE/BSE). Your expertise includes:
+- Technical analysis (price action, indicators, chart patterns)
+- Quantitative risk management (VaR, position sizing, portfolio optimization)
+- Algorithmic trading systems and backtesting
+- Market microstructure and execution algorithms
+
+You provide institutional-grade analysis with precise entry/exit levels, proper risk-reward ratios (minimum 2:1), and realistic price targets based on technical support/resistance levels. You always respond with valid JSON matching the requested format exactly, using actual data values and calculations."""
 
             if provider == "openai":
                 result = await self._call_openai(model, prompt, system_message)
@@ -388,23 +459,27 @@ Be specific with price levels and percentages. Provide actionable recommendation
 
     async def _call_gemini(self, model: str, prompt: str, system_message: str) -> str:
         """Call Google Gemini API"""
-        from google import genai
-        from google.genai import types
+        import google.generativeai as genai
 
-        client = genai.Client(api_key=self.gemini_api_key)
+        genai.configure(api_key=self.gemini_api_key)
 
+        # Create model with system instruction
+        generation_config = {
+            "temperature": 0.7,
+            "response_mime_type": "application/json",
+        }
+
+        gemini_model = genai.GenerativeModel(
+            model_name=model,
+            generation_config=generation_config,
+            system_instruction=system_message
+        )
+
+        # Generate content
         completion = await asyncio.wait_for(
             asyncio.to_thread(
-                client.models.generate_content,
-                model=model,
-                contents=types.Content(
-                    parts=[types.Part(text=prompt)]
-                ),
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    system_instruction=system_message,
-                    response_mime_type="application/json"
-                )
+                gemini_model.generate_content,
+                prompt
             ),
             timeout=self.timeout_seconds
         )

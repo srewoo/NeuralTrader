@@ -754,7 +754,41 @@ async def startup_event():
         await db.api_costs.create_index([("timestamp", -1)])
         await db.api_costs.create_index([("provider", 1), ("model", 1)])
         await db.api_costs.create_index([("user_id", 1), ("timestamp", -1)])
-        logger.info("MongoDB indexes created successfully")
+        # Index for recommendations queries
+        await db.recommendations.create_index([("generated_at", -1)])
+
+        # TTL indexes for automatic data cleanup (data expires after specified seconds)
+        # Analysis history: keep for 30 days (2592000 seconds)
+        try:
+            await db.analysis_history.create_index(
+                "created_at",
+                expireAfterSeconds=30 * 24 * 60 * 60,  # 30 days
+                name="analysis_history_ttl"
+            )
+        except Exception:
+            pass  # Index may already exist with different options
+
+        # Recommendations: keep for 7 days (604800 seconds)
+        try:
+            await db.recommendations.create_index(
+                "generated_at",
+                expireAfterSeconds=7 * 24 * 60 * 60,  # 7 days
+                name="recommendations_ttl"
+            )
+        except Exception:
+            pass  # Index may already exist
+
+        # Backtests: keep for 90 days
+        try:
+            await db.backtests.create_index(
+                "timestamp",
+                expireAfterSeconds=90 * 24 * 60 * 60,  # 90 days
+                name="backtests_ttl"
+            )
+        except Exception:
+            pass
+
+        logger.info("MongoDB indexes and TTL policies created successfully")
     except Exception as e:
         logger.warning(f"Failed to create MongoDB indexes: {e}")
 
@@ -796,6 +830,7 @@ async def get_settings():
     default_settings = {
         "openai_api_key": "",
         "gemini_api_key": "",
+        "anthropic_api_key": "",
         "finnhub_api_key": "",
         "alpaca_api_key": "",
         "alpaca_api_secret": "",
@@ -803,6 +838,22 @@ async def get_settings():
         "iex_api_key": "",
         "polygon_api_key": "",
         "twelve_data_api_key": "",
+        "newsapi_key": "",
+        "alphavantage_api_key": "",
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
+        "smtp_host": "",
+        "smtp_port": "",
+        "smtp_user": "",
+        "smtp_password": "",
+        "smtp_from_email": "",
+        "webhook_url": "",
+        "slack_webhook_url": "",
+        "twilio_account_sid": "",
+        "twilio_auth_token": "",
+        "twilio_whatsapp_number": "",
+        "user_whatsapp_number": "",
+        "use_tvscreener": True,
         "selected_model": "gpt-4.1",
         "selected_provider": "openai"
     }
@@ -823,6 +874,8 @@ async def get_settings():
         merged_settings['openai_api_key'] = mask_key(merged_settings['openai_api_key'])
     if merged_settings.get('gemini_api_key'):
         merged_settings['gemini_api_key'] = mask_key(merged_settings['gemini_api_key'])
+    if merged_settings.get('anthropic_api_key'):
+        merged_settings['anthropic_api_key'] = mask_key(merged_settings['anthropic_api_key'])
     if merged_settings.get('finnhub_api_key'):
         merged_settings['finnhub_api_key'] = mask_key(merged_settings['finnhub_api_key'])
     if merged_settings.get('alpaca_api_key'):
@@ -837,6 +890,16 @@ async def get_settings():
         merged_settings['polygon_api_key'] = mask_key(merged_settings['polygon_api_key'])
     if merged_settings.get('twelve_data_api_key'):
         merged_settings['twelve_data_api_key'] = mask_key(merged_settings['twelve_data_api_key'])
+    if merged_settings.get('newsapi_key'):
+        merged_settings['newsapi_key'] = mask_key(merged_settings['newsapi_key'])
+    if merged_settings.get('alphavantage_api_key'):
+        merged_settings['alphavantage_api_key'] = mask_key(merged_settings['alphavantage_api_key'])
+    if merged_settings.get('telegram_bot_token'):
+        merged_settings['telegram_bot_token'] = mask_key(merged_settings['telegram_bot_token'])
+    if merged_settings.get('smtp_password'):
+        merged_settings['smtp_password'] = mask_key(merged_settings['smtp_password'])
+    if merged_settings.get('twilio_auth_token'):
+        merged_settings['twilio_auth_token'] = mask_key(merged_settings['twilio_auth_token'])
 
     return merged_settings
 
@@ -861,6 +924,9 @@ async def save_settings(settings: SettingsCreate):
     if settings.gemini_api_key and not is_masked(settings.gemini_api_key):
         update_data["gemini_api_key"] = settings.gemini_api_key
 
+    if settings.anthropic_api_key and not is_masked(settings.anthropic_api_key):
+        update_data["anthropic_api_key"] = settings.anthropic_api_key
+
     if settings.finnhub_api_key and not is_masked(settings.finnhub_api_key):
         update_data["finnhub_api_key"] = settings.finnhub_api_key
 
@@ -882,6 +948,49 @@ async def save_settings(settings: SettingsCreate):
     if settings.twelve_data_api_key and not is_masked(settings.twelve_data_api_key):
         update_data["twelve_data_api_key"] = settings.twelve_data_api_key
 
+    if settings.newsapi_key and not is_masked(settings.newsapi_key):
+        update_data["newsapi_key"] = settings.newsapi_key
+
+    if settings.alphavantage_api_key and not is_masked(settings.alphavantage_api_key):
+        update_data["alphavantage_api_key"] = settings.alphavantage_api_key
+
+    # Telegram settings
+    if settings.telegram_bot_token and not is_masked(settings.telegram_bot_token):
+        update_data["telegram_bot_token"] = settings.telegram_bot_token
+    if settings.telegram_chat_id:
+        update_data["telegram_chat_id"] = settings.telegram_chat_id
+
+    # Email SMTP settings
+    if settings.smtp_host:
+        update_data["smtp_host"] = settings.smtp_host
+    if settings.smtp_port:
+        update_data["smtp_port"] = settings.smtp_port
+    if settings.smtp_user:
+        update_data["smtp_user"] = settings.smtp_user
+    if settings.smtp_password and not is_masked(settings.smtp_password):
+        update_data["smtp_password"] = settings.smtp_password
+    if settings.smtp_from_email:
+        update_data["smtp_from_email"] = settings.smtp_from_email
+
+    # Webhook settings
+    if settings.webhook_url:
+        update_data["webhook_url"] = settings.webhook_url
+    if settings.slack_webhook_url:
+        update_data["slack_webhook_url"] = settings.slack_webhook_url
+
+    # Twilio/WhatsApp settings
+    if settings.twilio_account_sid:
+        update_data["twilio_account_sid"] = settings.twilio_account_sid
+    if settings.twilio_auth_token and not is_masked(settings.twilio_auth_token):
+        update_data["twilio_auth_token"] = settings.twilio_auth_token
+    if settings.twilio_whatsapp_number:
+        update_data["twilio_whatsapp_number"] = settings.twilio_whatsapp_number
+    if settings.user_whatsapp_number:
+        update_data["user_whatsapp_number"] = settings.user_whatsapp_number
+
+    # TVScreener setting
+    update_data["use_tvscreener"] = settings.use_tvscreener
+
     if existing:
         await db.settings.update_one({}, {"$set": update_data})
     else:
@@ -890,6 +999,27 @@ async def save_settings(settings: SettingsCreate):
         await db.settings.insert_one(update_data)
 
     return {"message": "Settings saved successfully"}
+
+# Helper function to normalize Indian stock symbols
+def normalize_indian_symbol(symbol: str) -> str:
+    """
+    Add .NS suffix for Indian NSE stocks if not already present.
+    This ensures yfinance and other providers fetch the correct Indian stock data.
+
+    Examples:
+        INFY -> INFY.NS
+        RELIANCE -> RELIANCE.NS
+        INFY.NS -> INFY.NS (no change)
+    """
+    symbol = symbol.upper().strip()
+
+    # If already has exchange suffix, return as-is
+    if '.' in symbol:
+        return symbol
+
+    # For Indian stocks, append .NS for NSE (National Stock Exchange)
+    # You can add .BO for BSE (Bombay Stock Exchange) if needed
+    return f"{symbol}.NS"
 
 # Top 100 NSE/BSE Stocks
 NIFTY_100_STOCKS = [
@@ -993,7 +1123,117 @@ NIFTY_100_STOCKS = [
     {"symbol": "IDFCFIRSTB", "name": "IDFC First Bank Ltd", "sector": "Banking"},
     {"symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "sector": "Banking"},
     {"symbol": "ABCAPITAL", "name": "Aditya Birla Capital", "sector": "Finance"},
+    # Additional 100 stocks for 200 total
+    {"symbol": "MAXHEALTH", "name": "Max Healthcare Institute", "sector": "Healthcare"},
+    {"symbol": "FORTIS", "name": "Fortis Healthcare Ltd", "sector": "Healthcare"},
+    {"symbol": "METROPOLIS", "name": "Metropolis Healthcare", "sector": "Healthcare"},
+    {"symbol": "LALPATHLAB", "name": "Dr Lal PathLabs Ltd", "sector": "Healthcare"},
+    {"symbol": "AUBANK", "name": "AU Small Finance Bank", "sector": "Banking"},
+    {"symbol": "BANDHANBNK", "name": "Bandhan Bank Ltd", "sector": "Banking"},
+    {"symbol": "RBLBANK", "name": "RBL Bank Ltd", "sector": "Banking"},
+    {"symbol": "YESBANK", "name": "Yes Bank Ltd", "sector": "Banking"},
+    {"symbol": "UNIONBANK", "name": "Union Bank of India", "sector": "Banking"},
+    {"symbol": "INDIANB", "name": "Indian Bank", "sector": "Banking"},
+    {"symbol": "BANKINDIA", "name": "Bank of India", "sector": "Banking"},
+    {"symbol": "CENTRALBK", "name": "Central Bank of India", "sector": "Banking"},
+    {"symbol": "UCOBANK", "name": "UCO Bank", "sector": "Banking"},
+    {"symbol": "IOB", "name": "Indian Overseas Bank", "sector": "Banking"},
+    {"symbol": "KARURVYSYA", "name": "Karur Vysya Bank", "sector": "Banking"},
+    {"symbol": "SOUTHBANK", "name": "South Indian Bank", "sector": "Banking"},
+    {"symbol": "TMB", "name": "Tamilnad Mercantile Bank", "sector": "Banking"},
+    {"symbol": "JKCEMENT", "name": "JK Cement Ltd", "sector": "Cement"},
+    {"symbol": "RAMCOCEM", "name": "Ramco Cements Ltd", "sector": "Cement"},
+    {"symbol": "DALBHARAT", "name": "Dalmia Bharat Ltd", "sector": "Cement"},
+    {"symbol": "ACC", "name": "ACC Ltd", "sector": "Cement"},
+    {"symbol": "INDIACEM", "name": "India Cements Ltd", "sector": "Cement"},
+    {"symbol": "PRISMJOINS", "name": "Prism Johnson Ltd", "sector": "Cement"},
+    {"symbol": "ORIENTCEM", "name": "Orient Cement Ltd", "sector": "Cement"},
+    {"symbol": "HEIDELBERG", "name": "Heidelberg Cement India", "sector": "Cement"},
+    {"symbol": "APLLTD", "name": "Alembic Pharmaceuticals", "sector": "Pharma"},
+    {"symbol": "ALKEM", "name": "Alkem Laboratories Ltd", "sector": "Pharma"},
+    {"symbol": "IPCALAB", "name": "Ipca Laboratories Ltd", "sector": "Pharma"},
+    {"symbol": "GLENMARK", "name": "Glenmark Pharmaceuticals", "sector": "Pharma"},
+    {"symbol": "NATCOPHARM", "name": "Natco Pharma Ltd", "sector": "Pharma"},
+    {"symbol": "GRANULES", "name": "Granules India Ltd", "sector": "Pharma"},
+    {"symbol": "LAURUSLABS", "name": "Laurus Labs Ltd", "sector": "Pharma"},
+    {"symbol": "ABBOTINDIA", "name": "Abbott India Ltd", "sector": "Pharma"},
+    {"symbol": "SANOFI", "name": "Sanofi India Ltd", "sector": "Pharma"},
+    {"symbol": "PFIZER", "name": "Pfizer Ltd", "sector": "Pharma"},
+    {"symbol": "GLAXO", "name": "GlaxoSmithKline Pharma", "sector": "Pharma"},
+    {"symbol": "JBCHEPHARM", "name": "JB Chemicals & Pharma", "sector": "Pharma"},
+    {"symbol": "MRF", "name": "MRF Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "APOLLOTYRE", "name": "Apollo Tyres Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "BALKRISIND", "name": "Balkrishna Industries", "sector": "Auto Ancillaries"},
+    {"symbol": "CEATLTD", "name": "CEAT Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "EXIDEIND", "name": "Exide Industries Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "AMARAJABAT", "name": "Amara Raja Energy", "sector": "Auto Ancillaries"},
+    {"symbol": "BOSCHLTD", "name": "Bosch Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "MOTHERSON", "name": "Samvardhana Motherson", "sector": "Auto Ancillaries"},
+    {"symbol": "BHARATFORG", "name": "Bharat Forge Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "ASHOKLEY", "name": "Ashok Leyland Ltd", "sector": "Auto"},
+    {"symbol": "ESCORTS", "name": "Escorts Kubota Ltd", "sector": "Auto"},
+    {"symbol": "TVSMOTOR", "name": "TVS Motor Company Ltd", "sector": "Auto"},
+    {"symbol": "VOLTAS", "name": "Voltas Ltd", "sector": "Consumer Durables"},
+    {"symbol": "WHIRLPOOL", "name": "Whirlpool of India", "sector": "Consumer Durables"},
+    {"symbol": "BLUESTARCO", "name": "Blue Star Ltd", "sector": "Consumer Durables"},
+    {"symbol": "CROMPTON", "name": "Crompton Greaves Consumer", "sector": "Consumer Durables"},
+    {"symbol": "BAJAJELEC", "name": "Bajaj Electricals Ltd", "sector": "Consumer Durables"},
+    {"symbol": "VGUARD", "name": "V-Guard Industries Ltd", "sector": "Consumer Durables"},
+    {"symbol": "DIXON", "name": "Dixon Technologies India", "sector": "Consumer Durables"},
+    {"symbol": "POLYCAB", "name": "Polycab India Ltd", "sector": "Consumer Durables"},
+    {"symbol": "KPRMILL", "name": "K.P.R. Mill Ltd", "sector": "Textiles"},
+    {"symbol": "RAYMOND", "name": "Raymond Ltd", "sector": "Textiles"},
+    {"symbol": "PAGEIND", "name": "Page Industries Ltd", "sector": "Textiles"},
+    {"symbol": "ARVIND", "name": "Arvind Ltd", "sector": "Textiles"},
+    {"symbol": "VMART", "name": "V-Mart Retail Ltd", "sector": "Retail"},
+    {"symbol": "SHOPERSTOP", "name": "Shoppers Stop Ltd", "sector": "Retail"},
+    {"symbol": "DMART", "name": "Avenue Supermarts (DMart)", "sector": "Retail"},
+    {"symbol": "RELAXO", "name": "Relaxo Footwears Ltd", "sector": "Retail"},
+    {"symbol": "BATAINDIA", "name": "Bata India Ltd", "sector": "Retail"},
+    {"symbol": "CONCOR", "name": "Container Corp of India", "sector": "Logistics"},
+    {"symbol": "DELHIVERY", "name": "Delhivery Ltd", "sector": "Logistics"},
+    {"symbol": "MAHINDCIE", "name": "Mahindra CIE Automotive", "sector": "Auto Ancillaries"},
+    {"symbol": "SCHAEFFLER", "name": "Schaeffler India Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "SKFINDIA", "name": "SKF India Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "TIMKEN", "name": "Timken India Ltd", "sector": "Auto Ancillaries"},
+    {"symbol": "CUMMINSIND", "name": "Cummins India Ltd", "sector": "Capital Goods"},
+    {"symbol": "ABB", "name": "ABB India Ltd", "sector": "Capital Goods"},
+    {"symbol": "HONAUT", "name": "Honeywell Automation", "sector": "Capital Goods"},
+    {"symbol": "THERMAX", "name": "Thermax Ltd", "sector": "Capital Goods"},
+    {"symbol": "GRINDWELL", "name": "Grindwell Norton Ltd", "sector": "Capital Goods"},
+    {"symbol": "KAJARIACER", "name": "Kajaria Ceramics Ltd", "sector": "Building Materials"},
+    {"symbol": "SUNTV", "name": "Sun TV Network Ltd", "sector": "Media"},
+    {"symbol": "PVR", "name": "PVR INOX Ltd", "sector": "Media"},
+    {"symbol": "ZEEL", "name": "Zee Entertainment", "sector": "Media"},
+    {"symbol": "NAUKRI", "name": "Info Edge India Ltd", "sector": "Internet"},
+    {"symbol": "POLICYBZR", "name": "PB Fintech Ltd", "sector": "Internet"},
+    {"symbol": "JUSTDIAL", "name": "Just Dial Ltd", "sector": "Internet"},
+    {"symbol": "INDHOTEL", "name": "Indian Hotels Company", "sector": "Hotels"},
+    {"symbol": "LEMON", "name": "Lemon Tree Hotels Ltd", "sector": "Hotels"},
+    {"symbol": "CHALET", "name": "Chalet Hotels Ltd", "sector": "Hotels"},
+    {"symbol": "VBL", "name": "Varun Beverages Ltd", "sector": "Beverages"},
+    {"symbol": "RADICO", "name": "Radico Khaitan Ltd", "sector": "Beverages"},
+    {"symbol": "ATUL", "name": "Atul Ltd", "sector": "Chemicals"},
+    {"symbol": "DEEPAKNTR", "name": "Deepak Nitrite Ltd", "sector": "Chemicals"},
+    {"symbol": "NAVINFLUOR", "name": "Navin Fluorine Intl", "sector": "Chemicals"},
+    {"symbol": "SRF", "name": "SRF Ltd", "sector": "Chemicals"},
+    {"symbol": "AARTIIND", "name": "Aarti Industries Ltd", "sector": "Chemicals"},
+    {"symbol": "CLEAN", "name": "Clean Science & Tech", "sector": "Chemicals"},
+    {"symbol": "FLUOROCHEM", "name": "Gujarat Fluorochemicals", "sector": "Chemicals"},
+    {"symbol": "UPL", "name": "UPL Ltd", "sector": "Chemicals"},
+    {"symbol": "COROMANDEL", "name": "Coromandel International", "sector": "Fertilizers"},
+    {"symbol": "GNFC", "name": "Gujarat Narmada Valley", "sector": "Fertilizers"},
+    {"symbol": "CHAMBLFRTU", "name": "Chambal Fertilizers", "sector": "Fertilizers"},
+    {"symbol": "GODREJPROP", "name": "Godrej Properties Ltd", "sector": "Real Estate"},
+    {"symbol": "OBEROIRLTY", "name": "Oberoi Realty Ltd", "sector": "Real Estate"},
+    {"symbol": "PRESTIGE", "name": "Prestige Estates Projects", "sector": "Real Estate"},
+    {"symbol": "PHOENIXLTD", "name": "Phoenix Mills Ltd", "sector": "Real Estate"},
+    {"symbol": "BRIGADE", "name": "Brigade Enterprises Ltd", "sector": "Real Estate"},
+    {"symbol": "SOBHA", "name": "Sobha Ltd", "sector": "Real Estate"},
 ]
+
+# Rename to NSE_200_STOCKS for clarity (200 stocks)
+NSE_200_STOCKS = NIFTY_100_STOCKS
 
 
 async def analyze_stock_for_recommendation(symbol: str, stock_info: dict, use_enhanced: bool = True) -> Optional[dict]:
@@ -1286,33 +1526,36 @@ async def get_cached_recommendations():
 
 
 @api_router.post("/recommendations/generate")
-async def generate_ai_recommendations(limit: int = 50):
+async def generate_ai_recommendations(
+    limit: int = 200,
+    enhanced: bool = True,
+    min_confidence: float = 65.0,
+    enable_sentiment: bool = True,
+    enable_backtest: bool = True
+):
     """
-    Generate new AI recommendations for NIFTY 100 stocks
-    This is a heavy operation, so it runs in background or with a timeout
+    Generate AI recommendations for NSE 200 stocks.
+
+    Parameters:
+    - limit: Number of stocks to analyze (default: 200)
+    - enhanced: Use enhanced analysis with sentiment & backtest (default: True)
+    - min_confidence: Minimum confidence threshold (default: 65%)
+    - enable_sentiment: Include sentiment analysis (default: True)
+    - enable_backtest: Include backtest validation (default: True)
     """
     try:
-        # Get NIFTY 100 stocks (hardcoded for now, ideally fetch from source)
-        # Using a subset for demo/speed
-        nifty_stocks = [
-            "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", 
-            "HINDUNILVR", "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK",
-            "LTIM", "AXISBANK", "BAJFINANCE", "MARUTI", "ASIANPAINT",
-            "HCLTECH", "TITAN", "SUNPHARMA", "ULTRACEMCO", "WIPRO"
-        ]
-        
-        # Limit the number of stocks to analyze
+        # Use full NSE 200 stocks list
+        nifty_stocks = [s['symbol'] for s in NIFTY_100_STOCKS]
         stocks_to_analyze = nifty_stocks[:limit]
-        
-        logger.info(f"Starting batch analysis for {len(stocks_to_analyze)} stocks")
-        
-        results = []
-        tasks = []
-        
-        # Helper to process single stock
+
+        # Adjust confidence threshold based on mode
+        confidence_threshold = min_confidence if enhanced else 45.0
+
+        logger.info(f"Starting {'ENHANCED' if enhanced else 'BASIC'} analysis for {len(stocks_to_analyze)} stocks with {confidence_threshold}% confidence threshold")
+
         async def process_stock(symbol):
             try:
-                # Get basic info first
+                # Get stock info
                 ticker = get_indian_stock_suffix(symbol)
                 info = yf.Ticker(ticker).info
                 stock_info = {
@@ -1320,58 +1563,154 @@ async def generate_ai_recommendations(limit: int = 50):
                     "name": info.get('longName', symbol),
                     "sector": info.get('sector', 'N/A')
                 }
-                
-                # Analyze
-                result = await analyze_stock_for_recommendation(symbol, stock_info)
-                return result
+
+                # Use enhanced analyzer
+                enhanced_analyzer = get_enhanced_analyzer()
+                result = await enhanced_analyzer.analyze_stock(
+                    symbol,
+                    include_patterns=True,
+                    include_sentiment=enable_sentiment if enhanced else False,
+                    include_backtest_validation=enable_backtest if enhanced else False
+                )
+
+                if result.get('error'):
+                    logger.warning(f"Analysis failed for {symbol}: {result.get('error')}")
+                    return None
+
+                recommendation = result.get('recommendation', 'HOLD')
+                confidence = result.get('confidence', 0)
+
+                # Apply confidence threshold
+                if recommendation == 'HOLD' or confidence < confidence_threshold:
+                    return None
+
+                # Extract signals
+                signals = []
+                for signal in result.get('signals', []):
+                    signals.append(signal.get('description', signal.get('indicator', '')))
+
+                # Add regime and confluence info
+                regime = result.get('market_regime', {})
+                if regime.get('primary_regime'):
+                    signals.insert(0, f"Regime: {regime.get('primary_regime').replace('_', ' ').title()}")
+
+                confluence = result.get('confluence', {})
+                if confluence.get('strength'):
+                    signals.append(f"Confluence: {confluence.get('strength')} ({confluence.get('agreement', 0):.0f}%)")
+
+                # Add backtest results if available
+                backtest = result.get('backtest_validation', {})
+                if backtest and backtest.get('win_rate'):
+                    signals.append(f"Backtest: {backtest.get('win_rate')}% win rate")
+
+                price_targets = result.get('price_targets', {})
+                indicators = result.get('indicators', {})
+
+                return {
+                    "symbol": symbol,
+                    "name": stock_info.get("name", symbol),
+                    "sector": stock_info.get("sector", "N/A"),
+                    "recommendation": recommendation,
+                    "confidence": round(confidence, 1),
+                    "current_price": result.get('current_price', 0),
+                    "target_price": price_targets.get('target'),
+                    "stop_loss": price_targets.get('stop_loss'),
+                    "risk_reward": result.get('risk_reward', {}).get('ratio'),
+                    "signals": signals[:10],
+                    "indicators": {
+                        "rsi": indicators.get('rsi'),
+                        "macd": indicators.get('macd'),
+                        "sma_20": indicators.get('sma_20'),
+                        "sma_50": indicators.get('sma_50'),
+                        "adx": indicators.get('adx'),
+                    },
+                    "market_regime": regime.get('primary_regime', 'unknown'),
+                    "confluence": confluence.get('agreement', 0),
+                    "backtest_validated": bool(backtest),
+                    "sentiment_score": result.get('sentiment', {}).get('score', 0) if enhanced and enable_sentiment else None,
+                    "data_quality": result.get('data_quality', {}),
+                }
+
             except Exception as e:
                 logger.error(f"Error processing {symbol}: {e}")
                 return None
 
-        # Create tasks
-        for symbol in stocks_to_analyze:
-            tasks.append(process_stock(symbol))
-            
-        # Run in parallel with semaphore to avoid rate limits if needed
-        # For now, gather all
+        # Process all stocks in parallel
+        tasks = [process_stock(symbol) for symbol in stocks_to_analyze]
         batch_results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Process results
+
+        # Filter and categorize results
         buy_recs = []
         sell_recs = []
-        
+
         for res in batch_results:
             if isinstance(res, dict):
                 if res['recommendation'] == 'BUY':
                     buy_recs.append(res)
                 elif res['recommendation'] == 'SELL':
                     sell_recs.append(res)
-                    
-        # Sort by confidence
+
+        # Sort by confidence (highest first)
         buy_recs.sort(key=lambda x: x['confidence'], reverse=True)
         sell_recs.sort(key=lambda x: x['confidence'], reverse=True)
-        
-        # Create summary
+
+        # Determine market sentiment
         total_analyzed = len(stocks_to_analyze)
         market_sentiment = "Neutral"
         if len(buy_recs) > len(sell_recs) * 1.5:
             market_sentiment = "Bullish"
         elif len(sell_recs) > len(buy_recs) * 1.5:
             market_sentiment = "Bearish"
-            
+
+        # Calculate average confidence
+        avg_buy_conf = sum(r['confidence'] for r in buy_recs) / len(buy_recs) if buy_recs else 0
+        avg_sell_conf = sum(r['confidence'] for r in sell_recs) / len(sell_recs) if sell_recs else 0
+
         recommendations_data = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "analysis_type": "enhanced" if enhanced else "basic",
+            "total_stocks_analyzed": total_analyzed,
+            "min_confidence_threshold": confidence_threshold,
+            "sentiment_enabled": enable_sentiment if enhanced else False,
+            "backtest_enabled": enable_backtest if enhanced else False,
             "summary": {
-                "total_analyzed": total_analyzed,
-                "market_sentiment": market_sentiment,
                 "total_buy_signals": len(buy_recs),
-                "total_sell_signals": len(sell_recs)
+                "total_sell_signals": len(sell_recs),
+                "market_sentiment": market_sentiment,
+                "avg_buy_confidence": round(avg_buy_conf, 1),
+                "avg_sell_confidence": round(avg_sell_conf, 1),
             },
-            "buy_recommendations": buy_recs[:limit],
-            "sell_recommendations": sell_recs[:limit],
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "buy_recommendations": buy_recs[:20],  # Top 20 buys
+            "sell_recommendations": sell_recs[:15],  # Top 15 sells
         }
 
-        logger.info(f"Generated recommendations: {len(buy_recs)} buy, {len(sell_recs)} sell")
+        # Save to database with upsert logic
+        # If recent recommendation exists (within 1 hour), update it; otherwise insert new
+        try:
+            from datetime import timedelta
+            one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+
+            # Try to find and update recent recommendation
+            existing = await db.recommendations.find_one(
+                {"generated_at": {"$gte": one_hour_ago}},
+                sort=[("generated_at", -1)]
+            )
+
+            if existing:
+                # Update existing recent recommendation
+                await db.recommendations.update_one(
+                    {"_id": existing["_id"]},
+                    {"$set": recommendations_data}
+                )
+                logger.info("Updated existing recommendation")
+            else:
+                # Insert new recommendation
+                await db.recommendations.insert_one(recommendations_data.copy())
+                logger.info("Inserted new recommendation")
+        except Exception as e:
+            logger.warning(f"Failed to cache recommendations: {e}")
+
+        logger.info(f"✅ Recommendations: {len(buy_recs)} BUY ({avg_buy_conf:.1f}% avg), {len(sell_recs)} SELL ({avg_sell_conf:.1f}% avg)")
 
         return recommendations_data
 
@@ -1454,6 +1793,9 @@ async def get_stock_quote_fast(symbol: str):
 @api_router.get("/stocks/{symbol}")
 async def get_stock(symbol: str):
     """Get current stock data with automatic provider fallback"""
+    # Normalize symbol for Indian stocks (add .NS suffix)
+    normalized_symbol = normalize_indian_symbol(symbol)
+
     # Get API keys from settings
     settings = await db.settings.find_one({}, {"_id": 0})
 
@@ -1474,7 +1816,7 @@ async def get_stock(symbol: str):
         try:
             from data_providers.factory import get_data_provider_factory
             factory = get_data_provider_factory(provider_keys)
-            quote = await factory.get_quote(symbol)
+            quote = await factory.get_quote(normalized_symbol)
 
             if quote:
                 return quote
@@ -1482,7 +1824,7 @@ async def get_stock(symbol: str):
             logger.warning(f"Data provider factory failed, falling back to yfinance: {e}")
 
     # Fallback to existing yfinance implementation
-    return await fetch_stock_data(symbol)
+    return await fetch_stock_data(normalized_symbol)
 
 @api_router.get("/stocks/{symbol}/history")
 async def get_stock_history(symbol: str, period: str = "1y"):
@@ -1643,8 +1985,8 @@ class EnsembleAnalysisRequest(BaseModel):
     symbol: str
     use_openai: bool = True
     use_gemini: bool = True
-    use_anthropic: bool = False
-    min_models: int = 2
+    use_anthropic: bool = True  # Enable Claude by default
+    min_models: int = 1  # Allow single model for cases where only one key is valid
 
 
 @api_router.post("/analyze/ensemble")
@@ -1681,6 +2023,9 @@ async def analyze_stock_ensemble(request: EnsembleAnalysisRequest):
         )
 
     try:
+        # Normalize symbol for Indian stocks (add .NS suffix)
+        normalized_symbol = normalize_indian_symbol(request.symbol)
+
         # Get stock data
         data_provider_keys = {
             "finnhub": settings.get('finnhub_api_key'),
@@ -1692,15 +2037,15 @@ async def analyze_stock_ensemble(request: EnsembleAnalysisRequest):
         }
 
         provider_manager = get_provider_manager(data_provider_keys)
-        stock_data_obj = await provider_manager.get_quote(request.symbol)
+        stock_data_obj = await provider_manager.get_quote(normalized_symbol)
 
         if stock_data_obj is None:
-            raise HTTPException(status_code=404, detail=f"Could not fetch data for {request.symbol}")
+            raise HTTPException(status_code=404, detail=f"Could not fetch data for {normalized_symbol}")
 
         stock_data = stock_data_obj.to_dict()
 
         # Get historical data for technical analysis
-        hist = await provider_manager.get_historical_data(request.symbol, period="6mo", interval="1d")
+        hist = await provider_manager.get_historical_data(normalized_symbol, period="6mo", interval="1d")
 
         if hist is None or len(hist) < 50:
             raise HTTPException(status_code=400, detail="Insufficient historical data for analysis")
@@ -1714,8 +2059,11 @@ async def analyze_stock_ensemble(request: EnsembleAnalysisRequest):
         rsi_indicator = ta.momentum.RSIIndicator(close, window=14)
         macd_indicator = ta.trend.MACD(close)
 
+        # Use real-time price from stock_data, fallback to historical data
+        realtime_price = stock_data.get('current_price', float(close.iloc[-1]))
+
         technical_indicators = {
-            "current_price": float(close.iloc[-1]),
+            "current_price": realtime_price,
             "rsi": round(float(rsi_indicator.rsi().iloc[-1]), 2),
             "macd": round(float(macd_indicator.macd().iloc[-1]), 2),
             "macd_signal": round(float(macd_indicator.macd_signal().iloc[-1]), 2),
@@ -4608,6 +4956,177 @@ async def delete_cache_entry(key: str):
         }
     except Exception as e:
         logger.error(f"Failed to delete cache entry: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ DATABASE CLEANUP ENDPOINTS ============
+
+@api_router.get("/admin/db/stats")
+async def get_database_stats():
+    """Get database collection statistics"""
+    try:
+        stats = {}
+        collections = ["settings", "recommendations", "analysis_history", "backtests", "watchlist", "api_costs"]
+
+        for collection_name in collections:
+            collection = db[collection_name]
+            count = await collection.count_documents({})
+
+            # Get oldest and newest document dates if available
+            oldest = await collection.find_one({}, sort=[("created_at", 1)])
+            newest = await collection.find_one({}, sort=[("created_at", -1)])
+
+            # Try alternative date fields
+            if not oldest:
+                oldest = await collection.find_one({}, sort=[("generated_at", 1)])
+            if not newest:
+                newest = await collection.find_one({}, sort=[("generated_at", -1)])
+            if not oldest:
+                oldest = await collection.find_one({}, sort=[("timestamp", 1)])
+            if not newest:
+                newest = await collection.find_one({}, sort=[("timestamp", -1)])
+
+            stats[collection_name] = {
+                "count": count,
+                "oldest": oldest.get("created_at") or oldest.get("generated_at") or oldest.get("timestamp") if oldest else None,
+                "newest": newest.get("created_at") or newest.get("generated_at") or newest.get("timestamp") if newest else None,
+            }
+
+        return {
+            "database": "test_database",
+            "collections": stats,
+            "ttl_policies": {
+                "analysis_history": "30 days",
+                "recommendations": "7 days",
+                "backtests": "90 days"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get database stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/db/cleanup/recommendations")
+async def cleanup_old_recommendations(days: int = 7):
+    """Delete recommendations older than specified days"""
+    try:
+        from datetime import timedelta
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+        result = await db.recommendations.delete_many({"generated_at": {"$lt": cutoff_date}})
+
+        return {
+            "deleted_count": result.deleted_count,
+            "cutoff_date": cutoff_date,
+            "message": f"Deleted {result.deleted_count} recommendations older than {days} days"
+        }
+    except Exception as e:
+        logger.error(f"Failed to cleanup recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/db/cleanup/analysis")
+async def cleanup_old_analysis(days: int = 30):
+    """Delete analysis history older than specified days"""
+    try:
+        from datetime import timedelta
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+        result = await db.analysis_history.delete_many({"created_at": {"$lt": cutoff_date}})
+
+        return {
+            "deleted_count": result.deleted_count,
+            "cutoff_date": cutoff_date,
+            "message": f"Deleted {result.deleted_count} analysis records older than {days} days"
+        }
+    except Exception as e:
+        logger.error(f"Failed to cleanup analysis history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/db/cleanup/backtests")
+async def cleanup_old_backtests(days: int = 90):
+    """Delete backtests older than specified days"""
+    try:
+        from datetime import timedelta
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+        result = await db.backtests.delete_many({"timestamp": {"$lt": cutoff_date}})
+
+        return {
+            "deleted_count": result.deleted_count,
+            "cutoff_date": cutoff_date,
+            "message": f"Deleted {result.deleted_count} backtests older than {days} days"
+        }
+    except Exception as e:
+        logger.error(f"Failed to cleanup backtests: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/db/cleanup/all")
+async def cleanup_all_old_data(
+    recommendations_days: int = 7,
+    analysis_days: int = 30,
+    backtests_days: int = 90
+):
+    """Clean up all old data from database"""
+    try:
+        from datetime import timedelta
+        results = {}
+
+        # Cleanup recommendations
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=recommendations_days)).isoformat()
+        rec_result = await db.recommendations.delete_many({"generated_at": {"$lt": cutoff}})
+        results["recommendations"] = {"deleted": rec_result.deleted_count, "max_age_days": recommendations_days}
+
+        # Cleanup analysis history
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=analysis_days)).isoformat()
+        analysis_result = await db.analysis_history.delete_many({"created_at": {"$lt": cutoff}})
+        results["analysis_history"] = {"deleted": analysis_result.deleted_count, "max_age_days": analysis_days}
+
+        # Cleanup backtests
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=backtests_days)).isoformat()
+        backtest_result = await db.backtests.delete_many({"timestamp": {"$lt": cutoff}})
+        results["backtests"] = {"deleted": backtest_result.deleted_count, "max_age_days": backtests_days}
+
+        total_deleted = sum(r["deleted"] for r in results.values())
+
+        return {
+            "total_deleted": total_deleted,
+            "details": results,
+            "message": f"Cleanup complete. Deleted {total_deleted} total records."
+        }
+    except Exception as e:
+        logger.error(f"Failed to cleanup database: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/admin/db/reset/{collection}")
+async def reset_collection(collection: str, confirm: bool = False):
+    """Reset (delete all documents from) a specific collection. Requires confirm=true."""
+    allowed_collections = ["recommendations", "analysis_history", "backtests", "api_costs"]
+
+    if collection not in allowed_collections:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Collection '{collection}' cannot be reset. Allowed: {allowed_collections}"
+        )
+
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Add ?confirm=true to confirm reset. This will delete ALL data in the collection."
+        )
+
+    try:
+        result = await db[collection].delete_many({})
+        return {
+            "collection": collection,
+            "deleted_count": result.deleted_count,
+            "message": f"Collection '{collection}' has been reset"
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset collection {collection}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
