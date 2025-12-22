@@ -99,6 +99,7 @@ class Settings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None  # For Claude models in ensemble
     finnhub_api_key: Optional[str] = None
     alpaca_api_key: Optional[str] = None
     alpaca_api_secret: Optional[str] = None
@@ -106,6 +107,9 @@ class Settings(BaseModel):
     iex_api_key: Optional[str] = None
     polygon_api_key: Optional[str] = None
     twelve_data_api_key: Optional[str] = None
+    # News API keys
+    newsapi_key: Optional[str] = None  # For NewsAPI.org
+    alphavantage_api_key: Optional[str] = None  # For Alpha Vantage news
     # Telegram Bot (for alerts)
     telegram_bot_token: Optional[str] = None
     telegram_chat_id: Optional[str] = None
@@ -132,8 +136,10 @@ class Settings(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SettingsCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
     finnhub_api_key: Optional[str] = None
     alpaca_api_key: Optional[str] = None
     alpaca_api_secret: Optional[str] = None
@@ -141,6 +147,8 @@ class SettingsCreate(BaseModel):
     iex_api_key: Optional[str] = None
     polygon_api_key: Optional[str] = None
     twelve_data_api_key: Optional[str] = None
+    newsapi_key: Optional[str] = None
+    alphavantage_api_key: Optional[str] = None
     telegram_bot_token: Optional[str] = None
     telegram_chat_id: Optional[str] = None
     smtp_host: Optional[str] = None
@@ -149,9 +157,26 @@ class SettingsCreate(BaseModel):
     smtp_password: Optional[str] = None
     smtp_from_email: Optional[str] = None
     webhook_url: Optional[str] = None
+    slack_webhook_url: Optional[str] = None
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_whatsapp_number: Optional[str] = None
+    user_whatsapp_number: Optional[str] = None
     use_tvscreener: bool = True
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
+
+    # Validator to convert empty strings to None for smtp_port
+    @validator('smtp_port', pre=True, always=True)
+    def empty_str_to_none(cls, v):
+        if v == '' or v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return None
+        return v
 
 class StockData(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -733,6 +758,15 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Failed to create MongoDB indexes: {e}")
 
+    # Initialize Redis cache
+    try:
+        from utils.redis_cache import init_cache
+        redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+        await init_cache(redis_url=redis_url, namespace="neuraltrader")
+        logger.info("Redis cache initialized")
+    except Exception as e:
+        logger.warning(f"Redis cache initialization failed (using memory fallback): {e}")
+
     # Start Market Stream
     stream = get_market_stream()
     asyncio.create_task(stream.start_stream())
@@ -741,6 +775,13 @@ async def startup_event():
 async def shutdown_event():
     stream = get_market_stream()
     await stream.stop_stream()
+
+    # Shutdown Redis cache
+    try:
+        from utils.redis_cache import shutdown_cache
+        await shutdown_cache()
+    except Exception as e:
+        logger.warning(f"Redis cache shutdown error: {e}")
 
 @api_router.get("/")
 async def root():
@@ -1595,6 +1636,200 @@ async def delete_analysis(analysis_id: str):
         raise HTTPException(status_code=404, detail="Analysis not found")
     return {"message": "Analysis deleted successfully"}
 
+
+# ============ ENSEMBLE ANALYSIS ENDPOINTS ============
+
+class EnsembleAnalysisRequest(BaseModel):
+    symbol: str
+    use_openai: bool = True
+    use_gemini: bool = True
+    use_anthropic: bool = False
+    min_models: int = 2
+
+
+@api_router.post("/analyze/ensemble")
+async def analyze_stock_ensemble(request: EnsembleAnalysisRequest):
+    """
+    Run ensemble AI analysis using multiple LLM models
+
+    This endpoint calls multiple AI models in parallel and aggregates their
+    recommendations using weighted voting for higher confidence results.
+    """
+    from agents.ensemble_analyzer import get_ensemble_analyzer
+    from data_providers.provider_manager import get_provider_manager
+    from agents.analysis_agent import TechnicalAnalysisAgent
+    from agents.percentile_scorer import PercentileScorer
+
+    # Get API keys from settings
+    settings = await db.settings.find_one({}, {"_id": 0})
+
+    if not settings:
+        raise HTTPException(status_code=400, detail="Please configure your API keys in Settings first")
+
+    # Check available API keys
+    openai_key = settings.get('openai_api_key') if request.use_openai else None
+    gemini_key = settings.get('gemini_api_key') if request.use_gemini else None
+    anthropic_key = settings.get('anthropic_api_key') if request.use_anthropic else None
+
+    available_count = sum(1 for k in [openai_key, gemini_key, anthropic_key] if k)
+
+    if available_count < request.min_models:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ensemble analysis requires at least {request.min_models} API keys configured. "
+                   f"Currently have {available_count}. Please add more API keys in Settings."
+        )
+
+    try:
+        # Get stock data
+        data_provider_keys = {
+            "finnhub": settings.get('finnhub_api_key'),
+            "alpaca": {
+                "key": settings.get('alpaca_api_key'),
+                "secret": settings.get('alpaca_api_secret')
+            },
+            "fmp": settings.get('fmp_api_key')
+        }
+
+        provider_manager = get_provider_manager(data_provider_keys)
+        stock_data_obj = await provider_manager.get_quote(request.symbol)
+
+        if stock_data_obj is None:
+            raise HTTPException(status_code=404, detail=f"Could not fetch data for {request.symbol}")
+
+        stock_data = stock_data_obj.to_dict()
+
+        # Get historical data for technical analysis
+        hist = await provider_manager.get_historical_data(request.symbol, period="6mo", interval="1d")
+
+        if hist is None or len(hist) < 50:
+            raise HTTPException(status_code=400, detail="Insufficient historical data for analysis")
+
+        # Calculate technical indicators
+        close = hist['Close']
+        high = hist['High']
+        low = hist['Low']
+        volume = hist['Volume']
+
+        rsi_indicator = ta.momentum.RSIIndicator(close, window=14)
+        macd_indicator = ta.trend.MACD(close)
+
+        technical_indicators = {
+            "current_price": float(close.iloc[-1]),
+            "rsi": round(float(rsi_indicator.rsi().iloc[-1]), 2),
+            "macd": round(float(macd_indicator.macd().iloc[-1]), 2),
+            "macd_signal": round(float(macd_indicator.macd_signal().iloc[-1]), 2),
+            "sma_20": round(float(ta.trend.SMAIndicator(close, window=20).sma_indicator().iloc[-1]), 2),
+            "sma_50": round(float(ta.trend.SMAIndicator(close, window=50).sma_indicator().iloc[-1]), 2),
+            "sma_200": round(float(ta.trend.SMAIndicator(close, window=200).sma_indicator().iloc[-1]), 2) if len(hist) >= 200 else None,
+            "atr": round(float(ta.volatility.AverageTrueRange(high, low, close, window=14).average_true_range().iloc[-1]), 2),
+            "stochastic_k": round(float(ta.momentum.StochasticOscillator(high, low, close).stoch().iloc[-1]), 2),
+            "stochastic_d": round(float(ta.momentum.StochasticOscillator(high, low, close).stoch_signal().iloc[-1]), 2),
+            "adx": round(float(ta.trend.ADXIndicator(high, low, close).adx().iloc[-1]), 2),
+        }
+
+        bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
+        technical_indicators.update({
+            "bb_upper": round(float(bb.bollinger_hband().iloc[-1]), 2),
+            "bb_middle": round(float(bb.bollinger_mavg().iloc[-1]), 2),
+            "bb_lower": round(float(bb.bollinger_lband().iloc[-1]), 2),
+        })
+
+        # Generate signals
+        rsi = technical_indicators.get("rsi")
+        technical_signals = {
+            "rsi": "oversold" if rsi and rsi < 30 else ("overbought" if rsi and rsi > 70 else "neutral"),
+            "macd": "bullish" if technical_indicators.get("macd", 0) > technical_indicators.get("macd_signal", 0) else "bearish",
+        }
+
+        current_price = technical_indicators.get("current_price", 0)
+        sma_20 = technical_indicators.get("sma_20", 0)
+        sma_50 = technical_indicators.get("sma_50", 0)
+
+        if current_price > sma_20 > sma_50:
+            technical_signals["trend"] = "strong_uptrend"
+        elif current_price > sma_20:
+            technical_signals["trend"] = "uptrend"
+        elif current_price < sma_20 < sma_50:
+            technical_signals["trend"] = "strong_downtrend"
+        else:
+            technical_signals["trend"] = "downtrend"
+
+        # Calculate percentile scores
+        percentile_scorer = PercentileScorer()
+        percentile_scores = percentile_scorer.calculate_percentiles(hist, technical_indicators)
+
+        # Get RAG context
+        retriever = get_retriever()
+        rag_context = retriever.build_context(
+            query=f"Stock {request.symbol} {technical_signals.get('trend', '')}",
+            n_results=3,
+            max_tokens=1000
+        )
+
+        # Run ensemble analysis
+        ensemble_analyzer = get_ensemble_analyzer(
+            openai_api_key=openai_key,
+            gemini_api_key=gemini_key,
+            anthropic_api_key=anthropic_key
+        )
+
+        ensemble_result = await ensemble_analyzer.analyze_with_ensemble(
+            symbol=request.symbol,
+            stock_data=stock_data,
+            technical_indicators=technical_indicators,
+            technical_signals=technical_signals,
+            percentile_scores=percentile_scores,
+            rag_context=rag_context,
+            min_models=request.min_models
+        )
+
+        # Prepare response
+        result = {
+            "id": str(uuid.uuid4()),
+            "symbol": request.symbol.upper(),
+            "analysis_type": "ensemble",
+            "recommendation": ensemble_result.final_recommendation.value,
+            "confidence": ensemble_result.final_confidence,
+            "consensus_level": ensemble_result.consensus_level,
+            "models_used": ensemble_result.models_used,
+            "models_agreed": ensemble_result.models_agreed,
+            "entry_price": ensemble_result.weighted_entry_price,
+            "target_price": ensemble_result.weighted_target_price,
+            "stop_loss": ensemble_result.weighted_stop_loss,
+            "risk_reward_ratio": ensemble_result.average_risk_reward,
+            "reasoning": ensemble_result.aggregated_reasoning,
+            "key_risks": ensemble_result.aggregated_risks,
+            "key_opportunities": ensemble_result.aggregated_opportunities,
+            "individual_models": [
+                {
+                    "model": r.model,
+                    "provider": r.provider,
+                    "recommendation": r.recommendation.value,
+                    "confidence": r.confidence,
+                    "success": r.success,
+                    "error": r.error
+                }
+                for r in ensemble_result.individual_responses
+            ],
+            "technical_indicators": technical_indicators,
+            "technical_signals": technical_signals,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        # Save to database
+        await db.analysis_history.insert_one(result.copy())
+        result.pop('_id', None)
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ensemble analysis failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Ensemble analysis failed: {str(e)}")
+
+
 # ============ RAG MANAGEMENT ENDPOINTS ============
 
 @api_router.get("/rag/stats")
@@ -2035,16 +2270,16 @@ async def get_symbol_sentiment(symbol: str, days_back: int = 7):
     try:
         news_aggregator = get_news_aggregator()
         sentiment_analyzer = get_sentiment_analyzer()
-        
+
         # Fetch symbol-specific news
         articles = news_aggregator.fetch_latest_news(symbol=symbol, limit=50)
-        
+
         # Analyze sentiment
         articles_with_sentiment = sentiment_analyzer.analyze_articles(articles)
-        
+
         # Get aggregate
         aggregate = sentiment_analyzer.get_aggregate_sentiment(articles_with_sentiment)
-        
+
         return {
             "symbol": symbol,
             "sentiment": aggregate,
@@ -2053,6 +2288,82 @@ async def get_symbol_sentiment(symbol: str, days_back: int = 7):
     except Exception as e:
         logger.error(f"Failed to get sentiment for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/news/comprehensive/{symbol}")
+async def get_comprehensive_news(
+    symbol: str,
+    days: int = 7,
+    use_llm_sentiment: bool = True
+):
+    """
+    Get comprehensive news from all sources with advanced sentiment analysis
+
+    Uses NewsAPI, Alpha Vantage, RSS feeds, and LLM-based sentiment analysis
+    for the most complete news coverage and sentiment understanding.
+    """
+    try:
+        from news.integrated_news import get_integrated_news_service
+
+        # Get API keys from settings
+        settings = await db.settings.find_one({}, {"_id": 0})
+
+        if not settings:
+            settings = {}
+
+        news_service = get_integrated_news_service(
+            newsapi_key=settings.get('newsapi_key'),
+            alphavantage_key=settings.get('alphavantage_api_key'),
+            openai_api_key=settings.get('openai_api_key'),
+            gemini_api_key=settings.get('gemini_api_key')
+        )
+
+        result = await news_service.get_comprehensive_news(
+            symbol=symbol,
+            days=days,
+            include_sentiment=True,
+            use_llm_sentiment=use_llm_sentiment
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Comprehensive news failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/news/market")
+async def get_market_news(
+    category: str = "business",
+    limit: int = 20,
+    include_sentiment: bool = True
+):
+    """
+    Get general market news with sentiment analysis
+    """
+    try:
+        from news.integrated_news import get_integrated_news_service
+
+        settings = await db.settings.find_one({}, {"_id": 0})
+
+        news_service = get_integrated_news_service(
+            newsapi_key=settings.get('newsapi_key') if settings else None,
+            openai_api_key=settings.get('openai_api_key') if settings else None,
+            gemini_api_key=settings.get('gemini_api_key') if settings else None
+        )
+
+        result = await news_service.get_market_news(
+            category=category,
+            limit=limit,
+            include_sentiment=include_sentiment
+        )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Market news failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ============ CANDLESTICK PATTERN ENDPOINTS ============
 
@@ -3104,6 +3415,153 @@ async def optimize_strategy_parameters(request: OptimizationRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class EnhancedOptimizationRequest(BaseModel):
+    symbol: str
+    strategy: str  # e.g., "mean_reversion", "trend_following"
+    method: str = "grid_search"  # "grid_search", "random_search", "genetic_algorithm"
+    start_date: str = "2022-01-01"
+    end_date: str = "2024-01-01"
+    objective: str = "sharpe_ratio"  # "sharpe_ratio", "total_return_pct", "profit_factor"
+    train_pct: float = 0.7
+    # For grid search
+    param_grid: Optional[Dict[str, List[Any]]] = None
+    # For random/genetic
+    param_ranges: Optional[Dict[str, List[float]]] = None  # [[min, max], ...]
+    n_iterations: int = 100
+    # Genetic algorithm specific
+    population_size: int = 50
+    generations: int = 20
+    mutation_rate: float = 0.1
+
+
+@api_router.post("/backtest/optimize/enhanced")
+async def enhanced_strategy_optimization(request: EnhancedOptimizationRequest):
+    """
+    Enhanced strategy optimization with multiple methods:
+    - Grid Search: Exhaustive search over parameter grid
+    - Random Search: Random sampling of parameter space
+    - Genetic Algorithm: Evolution-based optimization
+
+    All methods use realistic Indian market transaction costs.
+    """
+    try:
+        from backtesting.optimizer import get_strategy_optimizer
+
+        optimizer = get_strategy_optimizer(use_realistic_costs=True)
+
+        if request.method == "grid_search":
+            if not request.param_grid:
+                # Use suggested grid if not provided
+                request.param_grid = optimizer.suggest_param_grid(request.strategy)
+
+            if not request.param_grid:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No parameter grid provided and no default available for {request.strategy}"
+                )
+
+            result = optimizer.grid_search(
+                symbol=request.symbol,
+                strategy_name=request.strategy,
+                param_grid=request.param_grid,
+                start_date=request.start_date,
+                end_date=request.end_date,
+                objective=request.objective,
+                train_pct=request.train_pct
+            )
+
+        elif request.method == "random_search":
+            if not request.param_ranges:
+                raise HTTPException(status_code=400, detail="param_ranges required for random search")
+
+            # Convert [[min, max]] to (min, max) tuples
+            param_tuples = {k: tuple(v) for k, v in request.param_ranges.items()}
+
+            result = optimizer.random_search(
+                symbol=request.symbol,
+                strategy_name=request.strategy,
+                param_ranges=param_tuples,
+                start_date=request.start_date,
+                end_date=request.end_date,
+                n_iterations=request.n_iterations,
+                objective=request.objective,
+                train_pct=request.train_pct
+            )
+
+        elif request.method == "genetic_algorithm":
+            if not request.param_ranges:
+                raise HTTPException(status_code=400, detail="param_ranges required for genetic algorithm")
+
+            param_tuples = {k: tuple(v) for k, v in request.param_ranges.items()}
+
+            result = optimizer.genetic_algorithm(
+                symbol=request.symbol,
+                strategy_name=request.strategy,
+                param_ranges=param_tuples,
+                start_date=request.start_date,
+                end_date=request.end_date,
+                population_size=request.population_size,
+                generations=request.generations,
+                mutation_rate=request.mutation_rate,
+                objective=request.objective,
+                train_pct=request.train_pct
+            )
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown optimization method: {request.method}. Use grid_search, random_search, or genetic_algorithm"
+            )
+
+        # Convert result to dict
+        return {
+            "symbol": result.symbol,
+            "strategy": request.strategy,
+            "method": result.optimization_method,
+            "best_params": result.best_params,
+            "best_score": result.best_score,
+            "best_metrics": result.best_metrics,
+            "top_results": result.all_results[:10],
+            "iterations": result.iterations,
+            "period": result.period,
+            "objective": request.objective
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Enhanced optimization failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/backtest/optimize/suggest/{strategy}")
+async def suggest_optimization_params(strategy: str):
+    """Get suggested parameter grid for a strategy"""
+    try:
+        from backtesting.optimizer import get_strategy_optimizer
+
+        optimizer = get_strategy_optimizer()
+        grid = optimizer.suggest_param_grid(strategy)
+
+        if not grid:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No parameter suggestions available for {strategy}"
+            )
+
+        return {
+            "strategy": strategy,
+            "suggested_grid": grid,
+            "total_combinations": np.prod([len(v) for v in grid.values()]) if grid else 0
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get suggestions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============ CONFIDENCE TRACKING ENDPOINTS ============
 
 from tracking.confidence_tracker import get_confidence_tracker
@@ -3585,22 +4043,39 @@ async def reset_paper_account(user_id: str = "default"):
 # ALERT MANAGEMENT ENDPOINTS
 # ============================================================================
 
-@api_router.post("/alerts/price")
-async def create_price_alert(
-    user_id: str,
-    symbol: str,
-    condition: str,
-    target_price: float,
-    delivery_channels: List[str],
+class PriceAlertRequest(BaseModel):
+    user_id: str = "default"
+    symbol: str
+    condition: str
+    target_price: float
+    delivery_channels: List[str]
     percent_change: Optional[float] = None
-):
+
+
+class PatternAlertRequest(BaseModel):
+    user_id: str = "default"
+    symbol: str
+    pattern_types: List[str]
+    delivery_channels: List[str]
+
+
+class PortfolioAlertRequest(BaseModel):
+    user_id: str = "default"
+    metric: str
+    threshold: float
+    condition: str
+    delivery_channels: List[str]
+
+
+@api_router.post("/alerts/price")
+async def create_price_alert(request: PriceAlertRequest):
     """
     Create price alert
 
     Args:
         condition: 'ABOVE', 'BELOW', 'CROSSES_ABOVE', 'CROSSES_BELOW',
                    'PERCENT_CHANGE_ABOVE', 'PERCENT_CHANGE_BELOW'
-        delivery_channels: ['TELEGRAM', 'EMAIL', 'WEBHOOK']
+        delivery_channels: ['TELEGRAM', 'EMAIL', 'WEBHOOK', 'SLACK', 'WHATSAPP']
     """
     try:
         # Get alert manager with settings
@@ -3618,12 +4093,12 @@ async def create_price_alert(
         )
 
         alert = alert_mgr.create_price_alert(
-            user_id=user_id,
-            symbol=symbol,
-            condition=PriceCondition(condition),
-            target_price=target_price,
-            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels],
-            percent_change=percent_change
+            user_id=request.user_id,
+            symbol=request.symbol,
+            condition=PriceCondition(request.condition),
+            target_price=request.target_price,
+            delivery_channels=[DeliveryChannel(ch) for ch in request.delivery_channels],
+            percent_change=request.percent_change
         )
 
         logger.info(f"Price alert created: {alert.alert_id}")
@@ -3637,12 +4112,7 @@ async def create_price_alert(
 
 
 @api_router.post("/alerts/pattern")
-async def create_pattern_alert(
-    user_id: str,
-    symbol: str,
-    pattern_types: List[str],
-    delivery_channels: List[str]
-):
+async def create_pattern_alert(request: PatternAlertRequest):
     """Create candlestick pattern alert"""
     try:
         settings = await get_settings_from_db()
@@ -3659,10 +4129,10 @@ async def create_pattern_alert(
         )
 
         alert = alert_mgr.create_pattern_alert(
-            user_id=user_id,
-            symbol=symbol,
-            pattern_types=pattern_types,
-            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels]
+            user_id=request.user_id,
+            symbol=request.symbol,
+            pattern_types=request.pattern_types,
+            delivery_channels=[DeliveryChannel(ch) for ch in request.delivery_channels]
         )
 
         return alert.to_dict()
@@ -3673,13 +4143,7 @@ async def create_pattern_alert(
 
 
 @api_router.post("/alerts/portfolio")
-async def create_portfolio_alert(
-    user_id: str,
-    metric: str,
-    threshold: float,
-    condition: str,
-    delivery_channels: List[str]
-):
+async def create_portfolio_alert(request: PortfolioAlertRequest):
     """
     Create portfolio alert
 
@@ -3702,11 +4166,11 @@ async def create_portfolio_alert(
         )
 
         alert = alert_mgr.create_portfolio_alert(
-            user_id=user_id,
-            metric=metric,
-            threshold=threshold,
-            condition=condition,
-            delivery_channels=[DeliveryChannel(ch) for ch in delivery_channels]
+            user_id=request.user_id,
+            metric=request.metric,
+            threshold=request.threshold,
+            condition=request.condition,
+            delivery_channels=[DeliveryChannel(ch) for ch in request.delivery_channels]
         )
 
         return alert.to_dict()
@@ -3746,8 +4210,8 @@ async def get_user_alerts(user_id: str, status: Optional[str] = None):
 
 
 @api_router.delete("/alerts/{alert_id}")
-async def cancel_alert(alert_id: str):
-    """Cancel an alert"""
+async def delete_alert(alert_id: str):
+    """Delete an alert permanently"""
     try:
         settings = await get_settings_from_db()
         alert_mgr = get_alert_manager(
@@ -3762,12 +4226,12 @@ async def cancel_alert(alert_id: str):
             }
         )
 
-        success = alert_mgr.cancel_alert(alert_id)
+        success = alert_mgr.delete_alert(alert_id)
 
         if not success:
-            raise HTTPException(status_code=404, detail="Alert not found or already cancelled")
+            raise HTTPException(status_code=404, detail="Alert not found")
 
-        return {"message": "Alert cancelled successfully"}
+        return {"message": "Alert deleted successfully"}
 
     except HTTPException:
         raise
@@ -4065,6 +4529,85 @@ async def get_risk_summary():
 
     except Exception as e:
         logger.error(f"Failed to get risk summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ CACHE MANAGEMENT ENDPOINTS ============
+
+@api_router.get("/cache/stats")
+async def get_cache_stats():
+    """
+    Get cache statistics
+
+    Returns info about Redis connection status, memory usage, and cache size.
+    Falls back to in-memory cache if Redis is unavailable.
+    """
+    try:
+        from utils.redis_cache import get_cache
+        cache = get_cache()
+        stats = await cache.get_stats()
+        return stats
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/cache/clear")
+async def clear_cache(pattern: str = "*"):
+    """
+    Clear cached data
+
+    Args:
+        pattern: Key pattern to clear (default clears all)
+    """
+    try:
+        from utils.redis_cache import get_cache
+        cache = get_cache()
+        count = await cache.clear_namespace(pattern)
+        return {
+            "cleared": count,
+            "pattern": pattern,
+            "message": f"Cleared {count} cache entries"
+        }
+    except Exception as e:
+        logger.error(f"Failed to clear cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/cache/get/{key}")
+async def get_cache_entry(key: str):
+    """Get a specific cache entry (for debugging)"""
+    try:
+        from utils.redis_cache import get_cache
+        cache = get_cache()
+        value = await cache.get(key)
+
+        if value is None:
+            return {"key": key, "found": False, "value": None}
+
+        return {
+            "key": key,
+            "found": True,
+            "value": value
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache entry: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/cache/delete/{key}")
+async def delete_cache_entry(key: str):
+    """Delete a specific cache entry"""
+    try:
+        from utils.redis_cache import get_cache
+        cache = get_cache()
+        success = await cache.delete(key)
+        return {
+            "key": key,
+            "deleted": success
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete cache entry: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

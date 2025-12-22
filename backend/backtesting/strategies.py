@@ -21,31 +21,42 @@ class Strategy(ABC):
     """
     Abstract base class for trading strategies
     """
-    
+
     def __init__(self, name: str, params: Optional[Dict[str, Any]] = None):
         """
         Initialize strategy
-        
+
         Args:
             name: Strategy name
             params: Strategy parameters
         """
         self.name = name
         self.params = params or {}
-    
+
     @abstractmethod
     def generate_signals(self, data: pd.DataFrame) -> pd.Series:
         """
         Generate trading signals from price data
-        
+
         Args:
             data: DataFrame with OHLCV data
-            
+
         Returns:
             Series with signals (BUY/SELL/HOLD)
         """
         pass
-    
+
+    def fit(self, data: pd.DataFrame) -> None:
+        """
+        Fit strategy to training data (optional for strategies that need training)
+
+        Args:
+            data: Training data DataFrame
+
+        Default implementation does nothing - override for adaptive strategies
+        """
+        pass
+
     def get_description(self) -> str:
         """Get strategy description"""
         return f"{self.name} strategy"

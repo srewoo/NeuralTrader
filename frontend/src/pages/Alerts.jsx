@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -17,7 +17,8 @@ import {
   Webhook as WebhookIcon,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Search
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,62 @@ export default function Alerts() {
     whatsapp: false,
     webhook: false
   });
+
+  // Stock search autocomplete state
+  const [stockSearchResults, setStockSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+  const [showPatternDropdown, setShowPatternDropdown] = useState(false);
+  const priceSearchRef = useRef(null);
+  const patternSearchRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+
+  // Debounced stock search
+  const searchStocks = useCallback(async (query, formType) => {
+    if (!query || query.length < 1) {
+      setStockSearchResults([]);
+      return;
+    }
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await axios.get(`${API_URL}/stocks/search?q=${query}`);
+        setStockSearchResults(response.data);
+        if (formType === 'price') {
+          setShowPriceDropdown(true);
+        } else if (formType === 'pattern') {
+          setShowPatternDropdown(true);
+        }
+      } catch (error) {
+        console.error("Stock search failed:", error);
+        setStockSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300); // 300ms debounce
+  }, []);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (priceSearchRef.current && !priceSearchRef.current.contains(event.target)) {
+        setShowPriceDropdown(false);
+      }
+      if (patternSearchRef.current && !patternSearchRef.current.contains(event.target)) {
+        setShowPatternDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchAlerts();
@@ -326,12 +383,37 @@ export default function Alerts() {
 
   const getDeliveryChannelIcons = (channels) => {
     return (
-      <div className="flex items-center gap-1">
-        {channels.includes("TELEGRAM") && <MessageSquare className="w-3 h-3 text-success" />}
-        {channels.includes("EMAIL") && <Mail className="w-3 h-3 text-primary" />}
-        {channels.includes("SLACK") && <MessageSquare className="w-3 h-3 text-purple-500" />}
-        {channels.includes("WHATSAPP") && <MessageSquare className="w-3 h-3 text-success" />}
-        {channels.includes("WEBHOOK") && <WebhookIcon className="w-3 h-3 text-ai-accent" />}
+      <div className="flex flex-wrap items-center gap-2">
+        {channels.includes("TELEGRAM") && (
+          <span className="flex items-center gap-1 text-xs text-success">
+            <MessageSquare className="w-3 h-3" />
+            Telegram
+          </span>
+        )}
+        {channels.includes("EMAIL") && (
+          <span className="flex items-center gap-1 text-xs text-primary">
+            <Mail className="w-3 h-3" />
+            Email
+          </span>
+        )}
+        {channels.includes("SLACK") && (
+          <span className="flex items-center gap-1 text-xs text-purple-500">
+            <MessageSquare className="w-3 h-3" />
+            Slack
+          </span>
+        )}
+        {channels.includes("WHATSAPP") && (
+          <span className="flex items-center gap-1 text-xs text-green-400">
+            <MessageSquare className="w-3 h-3" />
+            WhatsApp
+          </span>
+        )}
+        {channels.includes("WEBHOOK") && (
+          <span className="flex items-center gap-1 text-xs text-ai-accent">
+            <WebhookIcon className="w-3 h-3" />
+            Webhook
+          </span>
+        )}
       </div>
     );
   };
@@ -385,17 +467,58 @@ export default function Alerts() {
               <TabsContent value="price" className="space-y-4 mt-4">
                 <form onSubmit={handleCreatePriceAlert} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-2" ref={priceSearchRef}>
                       <Label htmlFor="price-symbol">Symbol</Label>
-                      <Input
-                        id="price-symbol"
-                        type="text"
-                        placeholder="RELIANCE"
-                        value={priceAlertForm.symbol}
-                        onChange={(e) => setPriceAlertForm({ ...priceAlertForm, symbol: e.target.value.toUpperCase() })}
-                        required
-                        className="bg-surface-highlight border-[#1F1F1F]"
-                      />
+                      <div className="relative">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                          <Input
+                            id="price-symbol"
+                            type="text"
+                            placeholder="Search stocks... (e.g., SBI, RELIANCE)"
+                            value={priceAlertForm.symbol}
+                            onChange={(e) => {
+                              const value = e.target.value.toUpperCase();
+                              setPriceAlertForm({ ...priceAlertForm, symbol: value });
+                              searchStocks(value, 'price');
+                            }}
+                            onFocus={() => {
+                              if (priceAlertForm.symbol) {
+                                searchStocks(priceAlertForm.symbol, 'price');
+                              }
+                            }}
+                            required
+                            className="pl-10 bg-surface-highlight border-[#1F1F1F]"
+                            autoComplete="off"
+                          />
+                          {isSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
+                          )}
+                        </div>
+                        {/* Autocomplete Dropdown */}
+                        {showPriceDropdown && stockSearchResults.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-surface-highlight border border-[#1F1F1F] rounded-md shadow-lg max-h-60 overflow-auto">
+                            {stockSearchResults.map((stock) => (
+                              <button
+                                key={stock.symbol}
+                                type="button"
+                                className="w-full px-4 py-2 text-left hover:bg-primary/10 flex items-center justify-between"
+                                onClick={() => {
+                                  setPriceAlertForm({ ...priceAlertForm, symbol: stock.symbol });
+                                  setShowPriceDropdown(false);
+                                  setStockSearchResults([]);
+                                }}
+                              >
+                                <div>
+                                  <span className="font-medium text-text-primary">{stock.symbol}</span>
+                                  <span className="ml-2 text-sm text-text-secondary">{stock.name}</span>
+                                </div>
+                                <span className="text-xs text-text-secondary">{stock.exchange}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -535,17 +658,58 @@ export default function Alerts() {
               {/* Pattern Alert Form */}
               <TabsContent value="pattern" className="space-y-4 mt-4">
                 <form onSubmit={handleCreatePatternAlert} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2" ref={patternSearchRef}>
                     <Label htmlFor="pattern-symbol">Symbol</Label>
-                    <Input
-                      id="pattern-symbol"
-                      type="text"
-                      placeholder="RELIANCE"
-                      value={patternAlertForm.symbol}
-                      onChange={(e) => setPatternAlertForm({ ...patternAlertForm, symbol: e.target.value.toUpperCase() })}
-                      required
-                      className="bg-surface-highlight border-[#1F1F1F]"
-                    />
+                    <div className="relative">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                        <Input
+                          id="pattern-symbol"
+                          type="text"
+                          placeholder="Search stocks... (e.g., SBI, RELIANCE)"
+                          value={patternAlertForm.symbol}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            setPatternAlertForm({ ...patternAlertForm, symbol: value });
+                            searchStocks(value, 'pattern');
+                          }}
+                          onFocus={() => {
+                            if (patternAlertForm.symbol) {
+                              searchStocks(patternAlertForm.symbol, 'pattern');
+                            }
+                          }}
+                          required
+                          className="pl-10 bg-surface-highlight border-[#1F1F1F]"
+                          autoComplete="off"
+                        />
+                        {isSearching && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
+                        )}
+                      </div>
+                      {/* Autocomplete Dropdown */}
+                      {showPatternDropdown && stockSearchResults.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-surface-highlight border border-[#1F1F1F] rounded-md shadow-lg max-h-60 overflow-auto">
+                          {stockSearchResults.map((stock) => (
+                            <button
+                              key={stock.symbol}
+                              type="button"
+                              className="w-full px-4 py-2 text-left hover:bg-primary/10 flex items-center justify-between"
+                              onClick={() => {
+                                setPatternAlertForm({ ...patternAlertForm, symbol: stock.symbol });
+                                setShowPatternDropdown(false);
+                                setStockSearchResults([]);
+                              }}
+                            >
+                              <div>
+                                <span className="font-medium text-text-primary">{stock.symbol}</span>
+                                <span className="ml-2 text-sm text-text-secondary">{stock.name}</span>
+                              </div>
+                              <span className="text-xs text-text-secondary">{stock.exchange}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">

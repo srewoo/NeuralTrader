@@ -602,6 +602,15 @@ class AlertManager:
         logger.info(f"Alert cancelled: {alert_id}")
         return True
 
+    def delete_alert(self, alert_id: str) -> bool:
+        """Delete an alert permanently"""
+        if alert_id not in self.alerts:
+            return False
+
+        del self.alerts[alert_id]
+        logger.info(f"Alert deleted: {alert_id}")
+        return True
+
     def get_alert(self, alert_id: str) -> Optional[Alert]:
         """Get alert by ID"""
         return self.alerts.get(alert_id)
