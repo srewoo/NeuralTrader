@@ -11,6 +11,7 @@ import Help from "@/pages/Help";
 import PaperTrading from "@/pages/PaperTrading";
 import Alerts from "@/pages/Alerts";
 import Screener from "@/pages/Screener";
+import PerformanceTracking from "@/pages/PerformanceTracking";
 import Layout from "@/components/Layout";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="history" element={<AnalysisHistory />} />
             <Route path="backtesting" element={<Backtesting />} />
+            <Route path="performance" element={<PerformanceTracking />} />
             <Route path="help" element={<Help />} />
             <Route path="stock/:symbol" element={<StockDetail />} />
             <Route path="analysis/:analysisId" element={<StockDetail />} />

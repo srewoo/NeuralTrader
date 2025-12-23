@@ -70,11 +70,12 @@ export default function AIRecommends() {
     setError(null);
 
     try {
-      toast.info("🔍 Analyzing NIFTY stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 30-60 seconds...");
+      toast.info("🔍 Analyzing 200+ NSE stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 2-5 minutes...");
 
-      const response = await axios.post(`${API_URL}/recommendations/generate/enhanced`, null, {
+      const response = await axios.post(`${API_URL}/recommendations/generate`, null, {
         params: {
-          limit: 30,
+          limit: 200,
+          enhanced: true,
           min_confidence: 65.0,
           enable_sentiment: true,
           enable_backtest: true

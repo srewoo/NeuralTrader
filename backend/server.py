@@ -58,7 +58,14 @@ from market_data.indian_indices import get_indian_indices_data
 # Import Paper Trading, Alerts, TVScreener, Risk Management
 from portfolio.paper_trading import get_paper_trading_engine, OrderSide, OrderType, OrderStatus as PaperOrderStatus
 from alerts.alert_manager import get_alert_manager, PriceCondition, DeliveryChannel, AlertStatus as AlertStatusEnum
-from data_providers.tvscreener_provider import get_tvscreener_provider
+from data_providers.tvscreener_provider import (
+    get_tvscreener_provider,
+    get_all_indian_stocks,
+    get_all_indian_stocks_async,
+    search_indian_stocks,
+    get_top_stocks_by_market_cap,
+    clear_stock_cache
+)
 from portfolio.risk_manager import get_risk_manager
 
 ROOT_DIR = Path(__file__).parent
@@ -283,6 +290,17 @@ class PortfolioRequest(BaseModel):
 class OptimizerRequest(BaseModel):
     symbols: List[str]
     risk_free_rate: float = 0.06
+
+
+class PaperOrderRequest(BaseModel):
+    """Request body for paper trading orders"""
+    symbol: str
+    side: str  # 'BUY' or 'SELL'
+    quantity: int
+    current_price: Optional[float] = None  # Optional - will fetch if not provided
+    order_type: str = "MARKET"
+    limit_price: Optional[float] = None
+
 
 # ============ DATA COLLECTION ============
 
@@ -1534,7 +1552,9 @@ async def generate_ai_recommendations(
     enable_backtest: bool = True
 ):
     """
-    Generate AI recommendations for NSE 200 stocks.
+    Generate AI recommendations for Indian stocks (NSE/BSE).
+
+    Dynamically fetches stocks from TradingView Screener (no hardcoded list).
 
     Parameters:
     - limit: Number of stocks to analyze (default: 200)
@@ -1544,9 +1564,20 @@ async def generate_ai_recommendations(
     - enable_backtest: Include backtest validation (default: True)
     """
     try:
-        # Use full NSE 200 stocks list
-        nifty_stocks = [s['symbol'] for s in NIFTY_100_STOCKS]
-        stocks_to_analyze = nifty_stocks[:limit]
+        # Dynamically fetch stocks from TradingView (NSE/BSE)
+        logger.info("Fetching dynamic stock list from TradingView...")
+        dynamic_stocks = await get_all_indian_stocks_async(
+            min_market_cap=100,  # Min 100 Cr market cap
+            max_stocks=limit * 2  # Fetch more to account for filtering
+        )
+
+        if dynamic_stocks:
+            stocks_to_analyze = [s['symbol'] for s in dynamic_stocks[:limit]]
+            logger.info(f"Using {len(stocks_to_analyze)} dynamically fetched stocks")
+        else:
+            # Fallback to hardcoded list if TVScreener fails
+            logger.warning("TVScreener failed, falling back to hardcoded stock list")
+            stocks_to_analyze = [s['symbol'] for s in NIFTY_100_STOCKS[:limit]]
 
         # Adjust confidence threshold based on mode
         confidence_threshold = min_confidence if enhanced else 45.0
@@ -1745,9 +1776,19 @@ async def get_recommendations_history(limit: int = 10):
 async def get_stock_recommendation(symbol: str):
     """Get AI recommendation for a specific stock"""
     try:
-        stock_info = next((s for s in NIFTY_100_STOCKS if s["symbol"].upper() == symbol.upper()), None)
-        if not stock_info:
-            stock_info = {"symbol": symbol.upper(), "name": symbol.upper(), "sector": "N/A"}
+        # Try to find stock in dynamic list first
+        dynamic_results = search_indian_stocks(symbol, limit=1)
+        if dynamic_results and dynamic_results[0].get('symbol', '').upper() == symbol.upper():
+            stock_info = {
+                "symbol": dynamic_results[0].get('symbol'),
+                "name": dynamic_results[0].get('name'),
+                "sector": dynamic_results[0].get('sector', 'N/A')
+            }
+        else:
+            # Fallback to hardcoded list or generic info
+            stock_info = next((s for s in NIFTY_100_STOCKS if s["symbol"].upper() == symbol.upper()), None)
+            if not stock_info:
+                stock_info = {"symbol": symbol.upper(), "name": symbol.upper(), "sector": "N/A"}
 
         result = await analyze_stock_for_recommendation(symbol.upper(), stock_info)
 
@@ -1776,13 +1817,28 @@ async def get_stock_recommendation(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Stock search
+# Stock search - Dynamic search using TradingView data
 @api_router.get("/stocks/search")
 async def search_stocks(q: str):
-    """Search for stocks"""
+    """Search for stocks dynamically from NSE/BSE"""
+    if not q or len(q) < 1:
+        return []
+
+    # Use dynamic search from TVScreener
+    results = search_indian_stocks(q, limit=10)
+
+    if results:
+        return [{
+            "symbol": s.get("symbol", ""),
+            "name": s.get("name", s.get("symbol", "")),
+            "sector": s.get("sector", "N/A"),
+            "exchange": "NSE"
+        } for s in results]
+
+    # Fallback to hardcoded list if TVScreener not available
     query = q.upper()
-    results = [s for s in NIFTY_100_STOCKS if query in s['symbol'] or query in s['name'].upper()]
-    return [{"symbol": s["symbol"], "name": s["name"], "exchange": "NSE"} for s in results[:10]]
+    fallback_results = [s for s in NIFTY_100_STOCKS if query in s['symbol'] or query in s['name'].upper()]
+    return [{"symbol": s["symbol"], "name": s["name"], "sector": s.get("sector", "N/A"), "exchange": "NSE"} for s in fallback_results[:10]]
 
 # Stock data endpoints
 @api_router.get("/stocks/quote/{symbol}")
@@ -4258,35 +4314,41 @@ async def get_settings_from_db():
 
 @api_router.post("/paper-trading/order")
 async def place_paper_order(
-    symbol: str,
-    side: str,
-    quantity: int,
-    current_price: float,
-    order_type: str = "MARKET",
-    limit_price: Optional[float] = None,
+    request: PaperOrderRequest,
     user_id: str = "default"
 ):
     """
     Place paper trading order
 
     Args:
-        symbol: Stock symbol (e.g., 'RELIANCE')
-        side: 'BUY' or 'SELL'
-        quantity: Number of shares
-        current_price: Current market price
-        order_type: 'MARKET', 'LIMIT', 'STOP_LOSS'
-        limit_price: Limit price for LIMIT orders
+        request: Order details (symbol, side, quantity, current_price, order_type, limit_price)
         user_id: User identifier
     """
     try:
         engine = get_paper_trading_engine(user_id)
 
+        # Fetch current price if not provided
+        current_price = request.current_price
+        if not current_price or current_price <= 0:
+            try:
+                # Try yfinance for price
+                ticker_symbol = get_indian_stock_suffix(request.symbol)
+                ticker = yf.Ticker(ticker_symbol)
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    current_price = float(hist['Close'].iloc[-1])
+                else:
+                    raise HTTPException(status_code=400, detail=f"Could not fetch price for {request.symbol}")
+            except Exception as e:
+                logger.error(f"Error fetching price: {e}")
+                raise HTTPException(status_code=400, detail=f"Could not fetch price for {request.symbol}")
+
         order = engine.place_order(
-            symbol=symbol,
-            side=OrderSide(side),
-            quantity=quantity,
-            order_type=OrderType(order_type),
-            limit_price=limit_price,
+            symbol=request.symbol,
+            side=OrderSide(request.side),
+            quantity=request.quantity,
+            order_type=OrderType(request.order_type),
+            limit_price=request.limit_price,
             current_price=current_price
         )
 
@@ -5127,6 +5189,70 @@ async def reset_collection(collection: str, confirm: bool = False):
         }
     except Exception as e:
         logger.error(f"Failed to reset collection {collection}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== Dynamic Stock Management Endpoints ==============
+
+@api_router.get("/admin/stocks/cache")
+async def get_stock_cache_info():
+    """Get information about the dynamic stock cache"""
+    from data_providers.tvscreener_provider import _stock_cache
+
+    return {
+        "cached_stocks": len(_stock_cache.get("stocks", [])),
+        "last_updated": _stock_cache.get("last_updated").isoformat() if _stock_cache.get("last_updated") else None,
+        "cache_duration_hours": _stock_cache.get("cache_duration").total_seconds() / 3600 if _stock_cache.get("cache_duration") else None,
+        "sample_stocks": [s.get("symbol") for s in _stock_cache.get("stocks", [])[:10]]
+    }
+
+
+@api_router.post("/admin/stocks/refresh")
+async def refresh_stock_cache():
+    """Force refresh the dynamic stock cache"""
+    try:
+        clear_stock_cache()
+        stocks = await get_all_indian_stocks_async(force_refresh=True)
+        return {
+            "message": "Stock cache refreshed successfully",
+            "total_stocks": len(stocks),
+            "sample_stocks": [{"symbol": s.get("symbol"), "name": s.get("name")} for s in stocks[:10]]
+        }
+    except Exception as e:
+        logger.error(f"Failed to refresh stock cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/stocks/all")
+async def get_all_stocks(
+    limit: int = 200,
+    sector: Optional[str] = None,
+    min_market_cap: float = 100
+):
+    """
+    Get all available Indian stocks (dynamically fetched).
+
+    Parameters:
+    - limit: Maximum stocks to return (default: 200)
+    - sector: Filter by sector (optional)
+    - min_market_cap: Minimum market cap in crores (default: 100 Cr)
+    """
+    try:
+        stocks = await get_all_indian_stocks_async(
+            min_market_cap=min_market_cap,
+            max_stocks=limit * 2
+        )
+
+        if sector:
+            sector_lower = sector.lower()
+            stocks = [s for s in stocks if sector_lower in s.get('sector', '').lower()]
+
+        return {
+            "total": len(stocks[:limit]),
+            "stocks": stocks[:limit]
+        }
+    except Exception as e:
+        logger.error(f"Failed to get all stocks: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

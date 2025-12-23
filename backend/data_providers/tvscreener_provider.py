@@ -5,9 +5,10 @@ No API key required!
 """
 
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import logging
+import asyncio
 from data_providers.base_provider import BaseDataProvider, StockData
 
 try:
@@ -241,3 +242,239 @@ class TVScreenerProvider(BaseDataProvider):
 def get_tvscreener_provider() -> TVScreenerProvider:
     """Get TVScreener provider instance"""
     return TVScreenerProvider()
+
+
+# ============== Dynamic Stock List Functions ==============
+
+# Cache for stock list
+_stock_cache = {
+    "stocks": [],
+    "last_updated": None,
+    "cache_duration": timedelta(hours=6)  # Refresh every 6 hours
+}
+
+
+def get_all_indian_stocks(
+    min_market_cap: float = 100,  # Minimum market cap in crores
+    max_stocks: int = 2000,
+    force_refresh: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    Fetch all Indian stocks from NSE/BSE using TradingView Screener.
+
+    Args:
+        min_market_cap: Minimum market cap in crores (default 100 Cr)
+        max_stocks: Maximum number of stocks to fetch
+        force_refresh: Force refresh cache
+
+    Returns:
+        List of stock dictionaries with symbol, name, sector, market_cap
+    """
+    global _stock_cache
+
+    # Check cache
+    if not force_refresh and _stock_cache["stocks"]:
+        if _stock_cache["last_updated"]:
+            cache_age = datetime.now() - _stock_cache["last_updated"]
+            if cache_age < _stock_cache["cache_duration"]:
+                logger.info(f"Using cached stock list ({len(_stock_cache['stocks'])} stocks)")
+                return _stock_cache["stocks"]
+
+    if not TV_SCREENER_AVAILABLE:
+        logger.error("tvscreener not available - cannot fetch dynamic stock list")
+        return []
+
+    try:
+        logger.info(f"Fetching all Indian stocks from TradingView (min market cap: {min_market_cap} Cr)...")
+
+        screener = StockScreener()
+        screener.set_markets(Market.INDIA)
+
+        # Select essential fields
+        fields = [
+            StockField.NAME,
+            StockField.DESCRIPTION,
+            StockField.PRICE,
+            StockField.CHANGE,
+            StockField.CHANGE_ABS,
+            StockField.VOLUME,
+            StockField.MARKET_CAPITALIZATION,
+            StockField.SECTOR,
+            StockField.INDUSTRY,
+        ]
+
+        # Add valuation fields if available
+        try:
+            fields.extend([
+                StockField.PRICE_TO_EARNINGS_TTM,
+                StockField.HIGH_52_WEEK,
+                StockField.LOW_52_WEEK,
+            ])
+        except AttributeError:
+            pass
+
+        screener.select(*fields)
+
+        # Fetch in batches
+        all_stocks = []
+        batch_size = 500
+        offset = 0
+        seen_symbols = set()
+
+        while len(all_stocks) < max_stocks:
+            screener.set_range(offset, offset + batch_size)
+            result = screener.get()
+
+            if result.empty:
+                break
+
+            for _, row in result.iterrows():
+                symbol = row.get('Name', '')
+                if not symbol or symbol in seen_symbols:
+                    continue
+
+                # Get market cap (in crores for filtering)
+                market_cap = row.get('Market Capitalization', 0)
+                market_cap_cr = market_cap / 10000000 if market_cap else 0
+
+                # Filter by minimum market cap
+                if market_cap_cr < min_market_cap:
+                    continue
+
+                seen_symbols.add(symbol)
+
+                stock_data = {
+                    "symbol": symbol,
+                    "name": row.get('Description', symbol),
+                    "sector": row.get('Sector', 'N/A'),
+                    "industry": row.get('Industry', 'N/A'),
+                    "market_cap": market_cap,
+                    "market_cap_cr": round(market_cap_cr, 2),
+                    "price": float(row.get('Price', 0)) if row.get('Price') else None,
+                    "change_percent": float(row.get('Change %', 0)) if row.get('Change %') else 0,
+                }
+
+                # Add optional fields
+                try:
+                    stock_data["pe_ratio"] = float(row.get('Price to Earnings Ratio (TTM)', 0)) if row.get('Price to Earnings Ratio (TTM)') else None
+                    stock_data["week_52_high"] = float(row.get('52 Week High', 0)) if row.get('52 Week High') else None
+                    stock_data["week_52_low"] = float(row.get('52 Week Low', 0)) if row.get('52 Week Low') else None
+                except:
+                    pass
+
+                all_stocks.append(stock_data)
+
+                if len(all_stocks) >= max_stocks:
+                    break
+
+            offset += batch_size
+
+            # Safety check - don't loop forever
+            if offset > 5000:
+                break
+
+        # Sort by market cap (largest first)
+        all_stocks.sort(key=lambda x: x.get('market_cap', 0) or 0, reverse=True)
+
+        # Update cache
+        _stock_cache["stocks"] = all_stocks
+        _stock_cache["last_updated"] = datetime.now()
+
+        logger.info(f"Successfully fetched {len(all_stocks)} Indian stocks from TradingView")
+        return all_stocks
+
+    except Exception as e:
+        logger.error(f"Error fetching Indian stocks: {e}", exc_info=True)
+        # Return cached data if available
+        if _stock_cache["stocks"]:
+            logger.info("Returning cached stock list due to error")
+            return _stock_cache["stocks"]
+        return []
+
+
+async def get_all_indian_stocks_async(
+    min_market_cap: float = 100,
+    max_stocks: int = 2000,
+    force_refresh: bool = False
+) -> List[Dict[str, Any]]:
+    """Async wrapper for get_all_indian_stocks"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        lambda: get_all_indian_stocks(min_market_cap, max_stocks, force_refresh)
+    )
+
+
+def search_indian_stocks(query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """
+    Search Indian stocks by symbol or name.
+
+    Args:
+        query: Search query (symbol or name)
+        limit: Maximum results to return
+
+    Returns:
+        List of matching stocks
+    """
+    # Get cached stocks first
+    stocks = get_all_indian_stocks()
+
+    if not stocks:
+        logger.warning("No stocks in cache for search")
+        return []
+
+    query_upper = query.upper().strip()
+
+    # Search by symbol and name
+    results = []
+    exact_matches = []
+    prefix_matches = []
+    contains_matches = []
+
+    for stock in stocks:
+        symbol = stock.get('symbol', '').upper()
+        name = stock.get('name', '').upper()
+
+        # Exact symbol match (highest priority)
+        if symbol == query_upper:
+            exact_matches.append(stock)
+        # Symbol starts with query
+        elif symbol.startswith(query_upper):
+            prefix_matches.append(stock)
+        # Symbol or name contains query
+        elif query_upper in symbol or query_upper in name:
+            contains_matches.append(stock)
+
+    # Combine results with priority
+    results = exact_matches + prefix_matches + contains_matches
+
+    return results[:limit]
+
+
+def get_stocks_by_sector(sector: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Get stocks filtered by sector"""
+    stocks = get_all_indian_stocks()
+
+    sector_lower = sector.lower()
+    filtered = [
+        s for s in stocks
+        if sector_lower in s.get('sector', '').lower() or
+           sector_lower in s.get('industry', '').lower()
+    ]
+
+    return filtered[:limit]
+
+
+def get_top_stocks_by_market_cap(limit: int = 200) -> List[Dict[str, Any]]:
+    """Get top stocks sorted by market cap"""
+    stocks = get_all_indian_stocks()
+    # Already sorted by market cap in get_all_indian_stocks
+    return stocks[:limit]
+
+
+def clear_stock_cache():
+    """Clear the stock cache to force refresh on next call"""
+    global _stock_cache
+    _stock_cache["stocks"] = []
+    _stock_cache["last_updated"] = None
+    logger.info("Stock cache cleared")

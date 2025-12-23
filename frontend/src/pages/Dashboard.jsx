@@ -33,6 +33,10 @@ import AgentWorkflow from "@/components/AgentWorkflow";
 import ReasoningLog from "@/components/ReasoningLog";
 import CandlestickPatterns from "@/components/CandlestickPatterns";
 import MarketIndices from "@/components/MarketIndices";
+import LivePriceWidget from "@/components/LivePriceWidget";
+import NewsWidget from "@/components/NewsWidget";
+import InstitutionalActivity from "@/components/InstitutionalActivity";
+import AIAssistant from "@/components/AIAssistant";
 import { API_URL } from "@/config/api";
 
 export default function Dashboard() {
@@ -285,8 +289,11 @@ export default function Dashboard() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Sidebar - Watchlist & Recent */}
+        {/* Left Sidebar - Live Prices, Watchlist, News, FII/DII */}
         <div className="lg:col-span-3 space-y-6">
+          {/* Live Prices Widget */}
+          <LivePriceWidget onStockSelect={selectStock} />
+
           {/* Watchlist */}
           <Card className="card-surface" data-testid="watchlist-card">
             <CardHeader className="pb-3">
@@ -296,7 +303,7 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[200px]">
+              <ScrollArea className="h-[150px]">
                 {watchlist.length === 0 ? (
                   <p className="text-text-secondary text-sm text-center py-4">
                     No stocks in watchlist
@@ -329,7 +336,7 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[250px]">
+              <ScrollArea className="h-[150px]">
                 {recentAnalyses.length === 0 ? (
                   <p className="text-text-secondary text-sm text-center py-4">
                     No recent analyses
@@ -357,6 +364,12 @@ export default function Dashboard() {
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {/* Market News */}
+          <NewsWidget />
+
+          {/* FII/DII Institutional Activity */}
+          <InstitutionalActivity />
         </div>
 
         {/* Main Content */}
@@ -684,6 +697,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* AI Assistant Floating Chat */}
+      <AIAssistant />
     </div>
   );
 }

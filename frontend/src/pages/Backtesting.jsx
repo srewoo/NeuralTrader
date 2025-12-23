@@ -13,7 +13,11 @@ import {
   Target,
   AlertCircle,
   Search,
-  Brain
+  Brain,
+  Shuffle,
+  RefreshCw,
+  Settings2,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,6 +57,15 @@ export default function Backtesting() {
   const [aiInsights, setAiInsights] = useState(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [history, setHistory] = useState([]);
+
+  // Advanced features state
+  const [activeTab, setActiveTab] = useState("basic");
+  const [monteCarloResult, setMonteCarloResult] = useState(null);
+  const [walkForwardResult, setWalkForwardResult] = useState(null);
+  const [isRunningMonteCarlo, setIsRunningMonteCarlo] = useState(false);
+  const [isRunningWalkForward, setIsRunningWalkForward] = useState(false);
+  const [monteCarloSimulations, setMonteCarloSimulations] = useState(1000);
+  const [walkForwardWindows, setWalkForwardWindows] = useState(5);
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState([]);
@@ -278,6 +291,66 @@ export default function Backtesting() {
     link.click();
     URL.revokeObjectURL(url);
     toast.success("Results exported");
+  };
+
+  // Monte Carlo Simulation
+  const runMonteCarlo = async () => {
+    if (!selectedStrategy) {
+      toast.error("Please select a strategy first");
+      return;
+    }
+
+    setIsRunningMonteCarlo(true);
+    setMonteCarloResult(null);
+
+    try {
+      const response = await axios.post(`${API_URL}/backtest/monte-carlo`, {
+        symbol,
+        strategy: selectedStrategy,
+        start_date: startDate,
+        end_date: endDate,
+        initial_capital: initialCapital,
+        simulations: monteCarloSimulations
+      });
+
+      setMonteCarloResult(response.data);
+      toast.success(`Completed ${monteCarloSimulations} Monte Carlo simulations!`);
+    } catch (error) {
+      console.error("Monte Carlo error:", error);
+      toast.error(error.response?.data?.detail || "Monte Carlo simulation failed");
+    } finally {
+      setIsRunningMonteCarlo(false);
+    }
+  };
+
+  // Walk-Forward Analysis
+  const runWalkForward = async () => {
+    if (!selectedStrategy) {
+      toast.error("Please select a strategy first");
+      return;
+    }
+
+    setIsRunningWalkForward(true);
+    setWalkForwardResult(null);
+
+    try {
+      const response = await axios.post(`${API_URL}/backtest/walk-forward`, {
+        symbol,
+        strategy: selectedStrategy,
+        start_date: startDate,
+        end_date: endDate,
+        initial_capital: initialCapital,
+        windows: walkForwardWindows
+      });
+
+      setWalkForwardResult(response.data);
+      toast.success(`Completed walk-forward analysis with ${walkForwardWindows} windows!`);
+    } catch (error) {
+      console.error("Walk-forward error:", error);
+      toast.error(error.response?.data?.detail || "Walk-forward analysis failed");
+    } finally {
+      setIsRunningWalkForward(false);
+    }
   };
 
   const formatEquityCurve = () => {

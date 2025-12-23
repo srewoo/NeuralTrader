@@ -26,6 +26,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import StockChart from "@/components/StockChart";
 import AgentWorkflow from "@/components/AgentWorkflow";
 import ReasoningLog from "@/components/ReasoningLog";
+import MLPredictions from "@/components/MLPredictions";
+import NewsWidget from "@/components/NewsWidget";
 import { format } from "date-fns";
 import { API_URL } from "@/config/api";
 
@@ -677,6 +679,16 @@ export default function StockDetail() {
                 </ScrollArea>
               </CardContent>
             </Card>
+          )}
+
+          {/* ML Price Predictions */}
+          {(symbol || displayData?.symbol) && (
+            <MLPredictions symbol={symbol || displayData?.symbol} />
+          )}
+
+          {/* Stock News & Sentiment */}
+          {(symbol || displayData?.symbol) && (
+            <NewsWidget symbol={symbol || displayData?.symbol} />
           )}
         </div>
       </div>

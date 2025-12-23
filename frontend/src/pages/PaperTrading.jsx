@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -15,7 +15,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Search
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,11 +58,66 @@ export default function PaperTrading() {
     currentPrice: ""
   });
 
+  // Stock search autocomplete state
+  const [stockSuggestions, setStockSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
+
   useEffect(() => {
     fetchPortfolio();
     fetchTrades();
     fetchOrders();
   }, []);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Search stocks as user types
+  const searchStocks = async (query) => {
+    if (!query || query.length < 1) {
+      setStockSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(`${API_URL}/stocks/search?q=${query}`);
+      setStockSuggestions(response.data.slice(0, 10)); // Limit to 10 suggestions
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error searching stocks:", error);
+      setStockSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (orderForm.symbol) {
+        searchStocks(orderForm.symbol);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [orderForm.symbol]);
+
+  // Handle stock selection from dropdown
+  const handleSelectStock = (stock) => {
+    setOrderForm({ ...orderForm, symbol: stock.symbol });
+    setShowSuggestions(false);
+    setStockSuggestions([]);
+  };
 
   const fetchPortfolio = async () => {
     try {
@@ -135,7 +191,20 @@ export default function PaperTrading() {
       fetchOrders();
     } catch (error) {
       console.error("Error placing order:", error);
-      toast.error(error.response?.data?.detail || "Failed to place order");
+      // Handle FastAPI validation errors (422) which return array of objects
+      const errorDetail = error.response?.data?.detail;
+      let errorMessage = "Failed to place order";
+
+      if (typeof errorDetail === 'string') {
+        errorMessage = errorDetail;
+      } else if (Array.isArray(errorDetail)) {
+        // FastAPI validation error format
+        errorMessage = errorDetail.map(e => e.msg || e.message).join(', ');
+      } else if (errorDetail?.msg) {
+        errorMessage = errorDetail.msg;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -318,18 +387,50 @@ export default function PaperTrading() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePlaceOrder} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+                <div className="space-y-2 relative z-20" ref={searchRef}>
                   <Label htmlFor="symbol">Symbol</Label>
-                  <Input
-                    id="symbol"
-                    type="text"
-                    placeholder="RELIANCE"
-                    value={orderForm.symbol}
-                    onChange={(e) => setOrderForm({ ...orderForm, symbol: e.target.value.toUpperCase() })}
-                    required
-                    className="bg-surface-highlight border-[#1F1F1F]"
-                  />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                    <Input
+                      id="symbol"
+                      type="text"
+                      placeholder="Search stocks..."
+                      value={orderForm.symbol}
+                      onChange={(e) => setOrderForm({ ...orderForm, symbol: e.target.value.toUpperCase() })}
+                      onFocus={() => orderForm.symbol && stockSuggestions.length > 0 && setShowSuggestions(true)}
+                      required
+                      className="bg-surface-highlight border-[#1F1F1F] pl-10"
+                      autoComplete="off"
+                    />
+                    {isSearching && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
+                    )}
+                  </div>
+
+                  {/* Stock Suggestions Dropdown */}
+                  {showSuggestions && stockSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 z-[9999] w-full mt-1 bg-surface-card border border-[#1F1F1F] rounded-lg shadow-2xl max-h-64 overflow-y-auto" style={{ zIndex: 9999 }}>
+                      {stockSuggestions.map((stock, index) => (
+                        <button
+                          key={stock.symbol || index}
+                          type="button"
+                          onClick={() => handleSelectStock(stock)}
+                          className="w-full px-4 py-3 text-left hover:bg-surface-highlight transition-colors border-b border-[#1F1F1F] last:border-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-medium text-text-primary">{stock.symbol}</span>
+                              <p className="text-xs text-text-secondary truncate">{stock.name}</p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {stock.sector || 'NSE'}
+                            </Badge>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

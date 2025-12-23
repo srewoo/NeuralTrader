@@ -11,7 +11,8 @@ import {
   HelpCircle,
   Wallet,
   Bell,
-  Filter
+  Filter,
+  Target
 } from "lucide-react";
 
 export const Layout = () => {
@@ -23,6 +24,7 @@ export const Layout = () => {
     { path: "/screener", icon: Filter, label: "Screener" },
     { path: "/paper-trading", icon: Wallet, label: "Paper Trading" },
     { path: "/alerts", icon: Bell, label: "Alerts" },
+    { path: "/performance", icon: Target, label: "Performance" },
     { path: "/history", icon: History, label: "History" },
     { path: "/backtesting", icon: LineChart, label: "Backtest" },
     { path: "/settings", icon: Settings, label: "Settings" },
