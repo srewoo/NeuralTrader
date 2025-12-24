@@ -109,16 +109,16 @@ export default function InstitutionalActivity() {
                 <>
                   <FlowCard
                     title="FII (Foreign)"
-                    buy={fiiDii.fii?.buy || fiiDii.fii_buy}
-                    sell={fiiDii.fii?.sell || fiiDii.fii_sell}
-                    net={fiiDii.fii?.net || fiiDii.fii_net}
+                    buy={fiiDii.fii?.buy_value || fiiDii.fii?.buy || fiiDii.fii_buy}
+                    sell={fiiDii.fii?.sell_value || fiiDii.fii?.sell || fiiDii.fii_sell}
+                    net={fiiDii.fii?.net_value || fiiDii.fii?.net || fiiDii.fii_net}
                     icon={Building2}
                   />
                   <FlowCard
                     title="DII (Domestic)"
-                    buy={fiiDii.dii?.buy || fiiDii.dii_buy}
-                    sell={fiiDii.dii?.sell || fiiDii.dii_sell}
-                    net={fiiDii.dii?.net || fiiDii.dii_net}
+                    buy={fiiDii.dii?.buy_value || fiiDii.dii?.buy || fiiDii.dii_buy}
+                    sell={fiiDii.dii?.sell_value || fiiDii.dii?.sell || fiiDii.dii_sell}
+                    net={fiiDii.dii?.net_value || fiiDii.dii?.net || fiiDii.dii_net}
                     icon={Building2}
                   />
 
@@ -127,15 +127,15 @@ export default function InstitutionalActivity() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-text-primary">Total Net Flow</span>
                       <div className="flex items-center gap-2">
-                        {((fiiDii.fii?.net || 0) + (fiiDii.dii?.net || 0)) >= 0 ? (
+                        {((fiiDii.fii?.net_value || fiiDii.fii?.net || 0) + (fiiDii.dii?.net_value || fiiDii.dii?.net || 0)) >= 0 ? (
                           <ArrowUpRight className="w-5 h-5 text-success" />
                         ) : (
                           <ArrowDownRight className="w-5 h-5 text-danger" />
                         )}
                         <span className={`font-data font-bold ${
-                          ((fiiDii.fii?.net || 0) + (fiiDii.dii?.net || 0)) >= 0 ? 'text-success' : 'text-danger'
+                          ((fiiDii.fii?.net_value || fiiDii.fii?.net || 0) + (fiiDii.dii?.net_value || fiiDii.dii?.net || 0)) >= 0 ? 'text-success' : 'text-danger'
                         }`}>
-                          {formatCrores((fiiDii.fii?.net || 0) + (fiiDii.dii?.net || 0))}
+                          {formatCrores((fiiDii.fii?.net_value || fiiDii.fii?.net || 0) + (fiiDii.dii?.net_value || fiiDii.dii?.net || 0))}
                         </span>
                       </div>
                     </div>
