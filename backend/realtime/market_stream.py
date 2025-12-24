@@ -27,7 +27,12 @@ class MarketStream:
             "TCS": {"price": 3500.0, "volatility": 0.0015},
             "INFY": {"price": 1500.0, "volatility": 0.0025},
             "HDFCBANK": {"price": 1600.0, "volatility": 0.0018},
-            "ICICIBANK": {"price": 950.0, "volatility": 0.002}
+            "ICICIBANK": {"price": 950.0, "volatility": 0.002},
+            "NTPC": {"price": 322.55, "volatility": 0.0020},
+            "POWERGRID": {"price": 268.05, "volatility": 0.0018},
+            "SBIN": {"price": 780.0, "volatility": 0.0022},
+            "TATAMOTORS": {"price": 750.0, "volatility": 0.0025},
+            "WIPRO": {"price": 450.0, "volatility": 0.0019}
         }
         
     async def start_stream(self):

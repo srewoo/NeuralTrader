@@ -15,8 +15,35 @@ export default function InstitutionalActivity() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
+    loadFromCache();
   }, []);
+
+  const loadFromCache = () => {
+    try {
+      // Load from localStorage first
+      const cached = localStorage.getItem('institutional_activity');
+
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+
+        // Use cached data if less than 30 minutes old (FII/DII updates slowly)
+        if (age < 30 * 60 * 1000) {
+          setFiiDii(data.fiiDii);
+          setBulkDeals(data.bulkDeals || []);
+          setBlockDeals(data.blockDeals || []);
+          setIsLoading(false);
+          return; // Don't fetch from API
+        }
+      }
+
+      // No cache or expired - fetch fresh data
+      fetchData();
+    } catch (error) {
+      console.error("Cache load error:", error);
+      fetchData();
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -26,9 +53,24 @@ export default function InstitutionalActivity() {
         axios.get(`${API_URL}/market/bulk-deals`),
         axios.get(`${API_URL}/market/block-deals`)
       ]);
-      setFiiDii(fiiRes.data);
-      setBulkDeals(bulkRes.data.deals || bulkRes.data || []);
-      setBlockDeals(blockRes.data.deals || blockRes.data || []);
+
+      const fiiData = fiiRes.data;
+      const bulkData = bulkRes.data.deals || bulkRes.data || [];
+      const blockData = blockRes.data.deals || blockRes.data || [];
+
+      setFiiDii(fiiData);
+      setBulkDeals(bulkData);
+      setBlockDeals(blockData);
+
+      // Cache in localStorage
+      localStorage.setItem('institutional_activity', JSON.stringify({
+        data: {
+          fiiDii: fiiData,
+          bulkDeals: bulkData,
+          blockDeals: blockData
+        },
+        timestamp: Date.now()
+      }));
     } catch (error) {
       console.error("Error fetching institutional data:", error);
     } finally {

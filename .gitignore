@@ -64,6 +64,39 @@ chainlit.md
 # Data and databases
 agenthub/agents/youtube/db
 
+# SQLite database files (local/runtime data)
+*.db
+*.sqlite3
+*.sqlite3-journal
+
+# Celery schedule files (runtime, auto-regenerated)
+backend/celerybeat-schedule
+backend/celerybeat-schedule-*
+
+# Vector store / ChromaDB (large binary data, regeneratable)
+backend/chroma_db/
+backend/price_cache.db
+
+# Binary and pickle files (model artifacts, embeddings)
+*.bin
+*.pickle
+backend/*.bin
+backend/*.pickle
+backend/logs/backend.log
+backend/logs/backend.log.*
+backend/logs/backend.log.*.*
+backend/logs/backend.log.*.*.*
+backend/logs/backend.log.*.*.*.*
+backend/logs/backend.log.*.*.*.*.*
+backend/logs/backend.log.*.*.*.*.*.*
+backend/logs/backend.log.*.*.*.*.*.*.*
+backend/logs/backend.log.*.*.*.*.*.*.*.*
+
+# Environment files (CRITICAL: contains secrets!)
+.env
+.env.*
+!.env.example
+
 # Archive files and large assets
 **/*.zip
 **/*.tar.gz

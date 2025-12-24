@@ -64,10 +64,11 @@ class ConnectionManager:
     async def broadcast_ticker(self, symbol: str, data: Dict):
         """Send market data to subscribers of a symbol"""
         if symbol in self.subscriptions:
+            # Flatten the message structure - merge symbol and data at top level
             message = {
                 "type": "ticker",
                 "symbol": symbol,
-                "data": data
+                **data  # Spread data properties at top level (price, change_pct, volume, timestamp)
             }
             subscribers = list(self.subscriptions[symbol])
             for client_id in subscribers:

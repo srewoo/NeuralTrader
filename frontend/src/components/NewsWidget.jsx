@@ -15,12 +15,54 @@ export default function NewsWidget({ symbol = null }) {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("news");
 
+  // Load from localStorage on mount, then fetch in background
   useEffect(() => {
-    fetchNews();
-    if (!symbol) {
-      fetchTrending();
-    }
+    loadFromCache();
   }, [symbol]);
+
+  const loadFromCache = () => {
+    try {
+      // Load news from localStorage
+      const cacheKey = symbol ? `news_${symbol}` : 'news_market';
+      const cached = localStorage.getItem(cacheKey);
+
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+
+        // Use cached data if less than 5 minutes old
+        if (age < 5 * 60 * 1000) {
+          setNews(data);
+          setIsLoading(false);
+          return; // Don't fetch from API
+        }
+      }
+
+      // No cache or expired - fetch fresh data
+      fetchNews();
+
+      if (!symbol) {
+        // Load trending from cache
+        const trendingCached = localStorage.getItem('trending');
+        if (trendingCached) {
+          const { data, timestamp } = JSON.parse(trendingCached);
+          const age = Date.now() - timestamp;
+
+          if (age < 10 * 60 * 1000) { // 10 minutes
+            setTrending(data);
+          } else {
+            fetchTrending();
+          }
+        } else {
+          fetchTrending();
+        }
+      }
+    } catch (error) {
+      console.error("Cache load error:", error);
+      fetchNews();
+      if (!symbol) fetchTrending();
+    }
+  };
 
   const fetchNews = async () => {
     setIsLoading(true);
@@ -31,12 +73,26 @@ export default function NewsWidget({ symbol = null }) {
           axios.get(`${API_URL}/news/comprehensive/${symbol}`),
           axios.get(`${API_URL}/news/sentiment/${symbol}`)
         ]);
-        setNews(newsRes.data.articles || []);
+        const articles = newsRes.data.articles || [];
+        setNews(articles);
         setSentiment(sentimentRes.data);
+
+        // Cache in localStorage
+        localStorage.setItem(`news_${symbol}`, JSON.stringify({
+          data: articles,
+          timestamp: Date.now()
+        }));
       } else {
         // Fetch general market news
         const response = await axios.get(`${API_URL}/news/market`);
-        setNews(response.data.articles || response.data || []);
+        const articles = response.data.articles || response.data || [];
+        setNews(articles);
+
+        // Cache in localStorage
+        localStorage.setItem('news_market', JSON.stringify({
+          data: articles,
+          timestamp: Date.now()
+        }));
       }
     } catch (error) {
       console.error("Error fetching news:", error);
@@ -49,7 +105,14 @@ export default function NewsWidget({ symbol = null }) {
   const fetchTrending = async () => {
     try {
       const response = await axios.get(`${API_URL}/news/trending`);
-      setTrending(response.data.trending || response.data.topics || []);
+      const topics = response.data.trending || response.data.topics || [];
+      setTrending(topics);
+
+      // Cache in localStorage
+      localStorage.setItem('trending', JSON.stringify({
+        data: topics,
+        timestamp: Date.now()
+      }));
     } catch (error) {
       console.error("Error fetching trending:", error);
       setTrending([]);
