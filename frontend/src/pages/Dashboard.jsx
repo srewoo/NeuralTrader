@@ -50,23 +50,14 @@ export default function Dashboard() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [watchlist, setWatchlist] = useState([]);
   const [recentAnalyses, setRecentAnalyses] = useState([]);
+  const [quickSelectStocks, setQuickSelectStocks] = useState([]);
 
-  // Fetch watchlist and recent analyses on mount
+  // Fetch recent analyses on mount
   useEffect(() => {
-    fetchWatchlist();
     fetchRecentAnalyses();
+    fetchQuickSelectStocks();
   }, []);
-
-  const fetchWatchlist = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/watchlist`);
-      setWatchlist(response.data);
-    } catch (error) {
-      console.error("Error fetching watchlist:", error);
-    }
-  };
 
   const fetchRecentAnalyses = async () => {
     try {
@@ -74,6 +65,29 @@ export default function Dashboard() {
       setRecentAnalyses(response.data);
     } catch (error) {
       console.error("Error fetching recent analyses:", error);
+    }
+  };
+
+  const fetchQuickSelectStocks = async () => {
+    try {
+      // Try to get top movers first
+      const response = await axios.get(`${API_URL}/market/top-movers?limit=5`);
+      if (response.data?.gainers) {
+        const symbols = response.data.gainers.slice(0, 5).map(s => s.symbol);
+        setQuickSelectStocks(symbols);
+      }
+    } catch (error) {
+      // Fallback: try to get from watchlist or use defaults
+      try {
+        const watchlistRes = await axios.get(`${API_URL}/watchlist`);
+        if (watchlistRes.data?.length > 0) {
+          setQuickSelectStocks(watchlistRes.data.slice(0, 5).map(s => s.symbol));
+        } else {
+          setQuickSelectStocks(["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]);
+        }
+      } catch {
+        setQuickSelectStocks(["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]);
+      }
     }
   };
 
@@ -153,8 +167,8 @@ export default function Dashboard() {
   const addToWatchlist = async (symbol) => {
     try {
       await axios.post(`${API_URL}/watchlist/${symbol}`);
-      fetchWatchlist();
       toast.success(`${symbol} added to watchlist`);
+      // LivePriceWidget will auto-refresh to show the new stock
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to add to watchlist");
     }
@@ -291,41 +305,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Sidebar - Live Prices, Watchlist, News, FII/DII */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Live Prices Widget */}
+          {/* Live Prices Widget - Shows watchlist stocks with live prices */}
           <LivePriceWidget onStockSelect={selectStock} />
-
-          {/* Watchlist */}
-          <Card className="card-surface" data-testid="watchlist-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-heading flex items-center gap-2">
-                <Star className="w-4 h-4 text-yellow-500" />
-                Watchlist
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[150px]">
-                {watchlist.length === 0 ? (
-                  <p className="text-text-secondary text-sm text-center py-4">
-                    No stocks in watchlist
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {watchlist.map((item) => (
-                      <button
-                        key={item.symbol}
-                        data-testid={`watchlist-${item.symbol}`}
-                        onClick={() => navigate(`/stock/${item.symbol}`)}
-                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-surface-highlight transition-colors"
-                      >
-                        <span className="font-data text-text-primary">{item.symbol}</span>
-                        <ArrowRight className="w-4 h-4 text-text-secondary" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
 
           {/* Recent Analyses */}
           <Card className="card-surface" data-testid="recent-analyses-card">
@@ -667,7 +648,7 @@ export default function Dashboard() {
                     and get AI-powered trading recommendations.
                   </p>
                   <div className="mt-6 flex flex-wrap justify-center gap-2">
-                    {["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"].map((symbol) => (
+                    {(quickSelectStocks.length > 0 ? quickSelectStocks : ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]).map((symbol) => (
                       <Button
                         key={symbol}
                         variant="outline"

@@ -50,7 +50,7 @@ export default function PerformanceTracking() {
       ]);
       setAccuracy(accuracyRes.data);
       setPredictions(predictionsRes.data.predictions || predictionsRes.data || []);
-      setLeaderboard(leaderboardRes.data.strategies || leaderboardRes.data || []);
+      setLeaderboard(leaderboardRes.data.top_performers || leaderboardRes.data.strategies || []);
     } catch (error) {
       console.error("Error fetching tracking data:", error);
     } finally {

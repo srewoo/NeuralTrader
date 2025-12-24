@@ -668,6 +668,89 @@ You provide institutional-grade analysis with precise entry/exit levels, proper 
 
         return synthesis
 
+    async def get_ai_response(self, prompt: str, model: str = None, system_message: str = None) -> str:
+        """
+        Get AI response for a custom prompt using available LLM models
+
+        Args:
+            prompt: Custom prompt to send to the model
+            model: Optional model name (defaults to first available)
+            system_message: Optional system message for the model
+
+        Returns:
+            str: Model response text
+        """
+        if system_message is None:
+            system_message = "You are a helpful AI assistant specialized in financial analysis."
+
+        # Get available models
+        available_models = self.get_available_models()
+        if not available_models:
+            raise ValueError("No LLM models configured. Please provide API keys.")
+
+        # Use specified model or first available
+        if model:
+            model_info = next((m for m in available_models if m[0] == model), None)
+            if not model_info:
+                raise ValueError(f"Model {model} not available")
+        else:
+            model_info = available_models[0]
+
+        model_name, provider = model_info
+
+        # Call the appropriate model
+        try:
+            if provider == "openai":
+                return await self._call_openai(model_name, prompt, system_message)
+            elif provider == "gemini":
+                return await self._call_gemini(model_name, prompt, system_message)
+            elif provider == "anthropic":
+                return await self._call_anthropic(model_name, prompt, system_message)
+            else:
+                raise ValueError(f"Unsupported provider: {provider}")
+        except Exception as e:
+            logger.error(f"Failed to get AI response from {model_name}: {e}")
+            raise
+
+    async def get_market_overview(self) -> Dict[str, Any]:
+        """
+        Get AI-powered market overview analysis
+
+        Returns:
+            Dict with market analysis
+        """
+        prompt = """Analyze the current state of the Indian stock market (NSE/BSE).
+
+Provide a comprehensive market overview including:
+1. Current market trend (Bullish/Bearish/Sideways)
+2. Key support and resistance levels for major indices (NIFTY, SENSEX)
+3. Sectoral performance and leaders
+4. Key market drivers and risks
+5. Short-term outlook (1-2 weeks)
+6. Investment recommendations (sectors to watch)
+
+Format your response as a structured JSON with the following keys:
+{
+  "market_trend": "Bullish/Bearish/Sideways",
+  "nifty_analysis": "...",
+  "sensex_analysis": "...",
+  "top_sectors": ["sector1", "sector2", "sector3"],
+  "bottom_sectors": ["sector1", "sector2"],
+  "key_drivers": ["driver1", "driver2"],
+  "key_risks": ["risk1", "risk2"],
+  "outlook": "...",
+  "recommendations": ["recommendation1", "recommendation2"]
+}"""
+
+        response = await self.get_ai_response(prompt)
+
+        try:
+            import json
+            return json.loads(response)
+        except json.JSONDecodeError:
+            # If response is not valid JSON, return as text
+            return {"analysis": response}
+
 
 # Factory function
 def get_ensemble_analyzer(

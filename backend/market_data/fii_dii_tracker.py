@@ -43,7 +43,14 @@ class FIIDIITracker:
     async def _get_session(self):
         """Get or create aiohttp session with NSE cookies"""
         if self.session is None:
-            self.session = aiohttp.ClientSession(headers=self.HEADERS)
+            # Create connector with SSL verification disabled for NSE India
+            import ssl
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            self.session = aiohttp.ClientSession(headers=self.HEADERS, connector=connector)
 
             # First visit NSE homepage to get cookies
             try:

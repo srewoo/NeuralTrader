@@ -89,6 +89,28 @@ class DataProviderFactory:
             except Exception as e:
                 logger.warning(f"Failed to initialize FMP: {e}")
 
+        # Initialize Angel One if keys available (for Indian markets)
+        if "angelone" in self.provider_keys and self.provider_keys["angelone"]:
+            try:
+                from .angelone_provider import get_angelone_provider
+
+                angelone_config = self.provider_keys["angelone"]
+                provider = get_angelone_provider()
+                # Reinitialize with config if provided
+                if angelone_config.get("api_key"):
+                    from .angelone_provider import AngelOneProvider
+                    self.providers["angelone"] = AngelOneProvider(
+                        api_key=angelone_config.get("api_key"),
+                        client_id=angelone_config.get("client_id"),
+                        password=angelone_config.get("password"),
+                        totp_secret=angelone_config.get("totp_secret")
+                    )
+                else:
+                    self.providers["angelone"] = provider
+                logger.info("Angel One provider initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Angel One: {e}")
+
         # Always fallback to yfinance (no key required)
         self.providers["yfinance"] = "yfinance"
         logger.info("yfinance provider available as fallback")
@@ -108,7 +130,16 @@ class DataProviderFactory:
         Returns:
             Quote data dict or None
         """
-        provider_order = ["alpaca", "iex", "yfinance"]
+        # For Indian stocks (.NS, .BO), try Angel One first
+        is_indian_stock = ".NS" in symbol or ".BO" in symbol or symbol.upper() in [
+            "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "WIPRO", "ITC",
+            "SBIN", "BHARTIARTL", "KOTAKBANK", "NIFTY", "BANKNIFTY"
+        ]
+
+        if is_indian_stock:
+            provider_order = ["angelone", "yfinance"]
+        else:
+            provider_order = ["alpaca", "iex", "yfinance"]
 
         for provider_name in provider_order:
             if provider_name not in self.providers:
@@ -117,7 +148,25 @@ class DataProviderFactory:
             try:
                 provider = self.providers[provider_name]
 
-                if provider_name == "alpaca":
+                if provider_name == "angelone":
+                    result = await provider.get_quote(symbol)
+                    if result:
+                        logger.info(f"Quote from Angel One: {symbol}")
+                        return {
+                            "symbol": result.symbol,
+                            "name": result.name,
+                            "current_price": result.current_price,
+                            "previous_close": result.previous_close,
+                            "change": result.change,
+                            "change_percent": result.change_percent,
+                            "volume": result.volume,
+                            "high": result.high,
+                            "low": result.low,
+                            "open": result.open_price,
+                            "source": "angelone"
+                        }
+
+                elif provider_name == "alpaca":
                     result = await provider.get_latest_quote(symbol)
                     if result:
                         logger.info(f"Quote from Alpaca: {symbol}")

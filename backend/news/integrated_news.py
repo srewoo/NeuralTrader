@@ -81,17 +81,22 @@ class NewsAPISource:
         try:
             from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    "q": query,
-                    "from": from_date,
-                    "language": language,
-                    "sortBy": sort_by,
-                    "pageSize": page_size,
-                    "apiKey": self.api_key
-                }
+            # Prepare headers with X-Api-Key authentication (preferred method)
+            headers = {
+                "X-Api-Key": self.api_key
+            }
 
-                async with session.get(f"{self.BASE_URL}/everything", params=params) as response:
+            # Prepare query parameters (without apiKey - using header instead)
+            params = {
+                "q": query,
+                "from": from_date,
+                "language": language,
+                "sortBy": sort_by,
+                "pageSize": page_size
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.BASE_URL}/everything", params=params, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
 
@@ -131,15 +136,19 @@ class NewsAPISource:
             return []
 
         try:
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    "category": category,
-                    "country": country,
-                    "pageSize": page_size,
-                    "apiKey": self.api_key
-                }
+            # Use X-Api-Key header for authentication
+            headers = {
+                "X-Api-Key": self.api_key
+            }
 
-                async with session.get(f"{self.BASE_URL}/top-headlines", params=params) as response:
+            params = {
+                "category": category,
+                "country": country,
+                "pageSize": page_size
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.BASE_URL}/top-headlines", params=params, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
                         return [
@@ -487,13 +496,24 @@ class IntegratedNewsService:
         seen_titles = set()
         unique_articles = []
         for article in all_articles:
-            title = article.get("title", "").lower().strip()
+            title_raw = article.get("title", "")
+            # Handle case where title might be a list
+            if isinstance(title_raw, list):
+                title = " ".join(str(t) for t in title_raw).lower().strip()
+            else:
+                title = str(title_raw).lower().strip()
             if title and title not in seen_titles:
                 seen_titles.add(title)
                 unique_articles.append(article)
 
-        # Sort by date
-        unique_articles.sort(key=lambda x: x.get("published_at", ""), reverse=True)
+        # Sort by date - handle non-string published_at values
+        def get_sort_key(article):
+            pub_date = article.get('published_at', '')
+            if isinstance(pub_date, list):
+                return str(pub_date[0]) if pub_date else ''
+            return str(pub_date) if pub_date else ''
+
+        unique_articles.sort(key=get_sort_key, reverse=True)
 
         # Analyze sentiment
         sentiment_result = None
@@ -532,31 +552,74 @@ class IntegratedNewsService:
         include_sentiment: bool = True
     ) -> Dict[str, Any]:
         """Get general market news"""
-        tasks = [
-            self.rss_aggregator.fetch_latest_news(limit=limit),
-            self.advanced_aggregator.get_all_news(days=3),
-        ]
+        try:
+            # fetch_latest_news is synchronous, call it directly
+            rss_articles = self.rss_aggregator.fetch_latest_news(limit=limit)
 
-        if self.newsapi.enabled:
-            tasks.append(self.newsapi.get_top_headlines(category, page_size=limit))
+            # Build async tasks
+            tasks = [
+                self.advanced_aggregator.get_all_news(days=3),
+            ]
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+            if self.newsapi.enabled:
+                tasks.append(self.newsapi.get_top_headlines(category, page_size=limit))
 
-        all_articles = []
-        for result in results:
-            if isinstance(result, list):
-                all_articles.extend(result)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Deduplicate and sort
-        seen_titles = set()
-        unique_articles = []
-        for article in all_articles:
-            title = article.get("title", "").lower().strip()
-            if title and title not in seen_titles:
-                seen_titles.add(title)
-                unique_articles.append(article)
+            # Collect all articles
+            all_articles = []
+            if isinstance(rss_articles, list):
+                all_articles.extend(rss_articles)
 
-        unique_articles.sort(key=lambda x: x.get("published_at", ""), reverse=True)
+            for i, result in enumerate(results):
+                try:
+                    if isinstance(result, Exception):
+                        logger.warning(f"Task {i} failed: {result}")
+                        continue
+                    if isinstance(result, list):
+                        all_articles.extend(result)
+                except Exception as e:
+                    logger.error(f"Error processing result {i}: {e}")
+                    continue
+
+            logger.info(f"Collected {len(all_articles)} articles before deduplication")
+
+            # Deduplicate and sort
+            seen_titles = set()
+            unique_articles = []
+            for idx, article in enumerate(all_articles):
+                try:
+                    if not isinstance(article, dict):
+                        logger.warning(f"Article {idx} is not a dict: {type(article)}")
+                        continue
+
+                    # Handle cases where title might be a list or other non-string type
+                    title_raw = article.get("title", "")
+                    if isinstance(title_raw, list):
+                        title = " ".join(str(t) for t in title_raw).lower().strip()
+                    else:
+                        title = str(title_raw).lower().strip()
+
+                    if title and title not in seen_titles:
+                        seen_titles.add(title)
+                        unique_articles.append(article)
+                except Exception as e:
+                    logger.error(f"Error processing article {idx}: {e}, article={article}")
+                    continue
+
+            # Sort by date - handle non-string published_at values
+            def get_sort_key(article):
+                pub_date = article.get('published_at', '')
+                if isinstance(pub_date, list):
+                    return str(pub_date[0]) if pub_date else ''
+                return str(pub_date) if pub_date else ''
+
+            unique_articles.sort(key=get_sort_key, reverse=True)
+        except Exception as e:
+            logger.error(f"Fatal error in get_market_news: {type(e).__name__}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
 
         # Analyze sentiment
         sentiment_result = None

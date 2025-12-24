@@ -30,6 +30,7 @@ from backtesting.price_cache import get_price_cache
 # Import news system
 from news.sources import get_news_aggregator
 from news.sentiment import get_sentiment_analyzer
+from news.rate_limiter import get_rate_limiter
 
 # Import pattern detection
 from patterns.candlestick import get_pattern_detector
@@ -2659,11 +2660,35 @@ async def search_news(q: str, days_back: int = 7, limit: int = 20):
 
 @api_router.get("/news/trending")
 async def get_trending_topics(limit: int = 10):
-    """Get trending topics from recent news"""
+    """
+    Get trending topics from recent news
+    ✅ Optimized with caching and rate limiting
+    """
     try:
+        rate_limiter = get_rate_limiter()
+
+        # Try cache first (10 minute TTL for trending)
+        cache_params = {"limit": limit}
+        cached = rate_limiter.get_cached("trending", cache_params)
+        if cached:
+            return cached
+
+        # Check rate limit
+        if not rate_limiter.check_rate_limit("rss", skip_market_hours=True):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
+
         news_aggregator = get_news_aggregator()
         trending = news_aggregator.get_trending_topics(limit=limit)
-        return {"trending": trending}
+
+        result = {"trending": trending}
+
+        # Cache result
+        if trending:
+            rate_limiter.set_cache("trending", cache_params, result)
+
+        return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to get trending topics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2744,8 +2769,23 @@ async def get_market_news(
 ):
     """
     Get general market news with sentiment analysis
+    ✅ Optimized with caching and rate limiting
     """
     try:
+        rate_limiter = get_rate_limiter()
+
+        # Try cache first (5 minute TTL)
+        cache_params = {"category": category, "limit": limit}
+        cached = rate_limiter.get_cached("market_news", cache_params)
+        if cached:
+            return cached
+
+        # Check rate limit (skip market hours check for news)
+        if not rate_limiter.check_rate_limit("newsapi", skip_market_hours=True):
+            # Return cached data even if slightly stale
+            logger.warning("Rate limited - returning stale cache or error")
+            raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again in 1 minute.")
+
         from news.integrated_news import get_integrated_news_service
 
         settings = await db.settings.find_one({}, {"_id": 0})
@@ -2762,8 +2802,14 @@ async def get_market_news(
             include_sentiment=include_sentiment
         )
 
+        # Cache result
+        if result and result.get("total_articles", 0) > 0:
+            rate_limiter.set_cache("market_news", cache_params, result)
+
         return result
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Market news failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -3237,12 +3283,35 @@ from market_data.fii_dii_tracker import get_fii_dii_tracker, get_bulk_block_trac
 
 @api_router.get("/market/fii-dii")
 async def get_fii_dii_data():
-    """Get today's FII/DII flow data"""
+    """
+    Get today's FII/DII flow data
+    ✅ Optimized with caching and rate limiting
+    """
     try:
+        rate_limiter = get_rate_limiter()
+
+        # Try cache first (30 minute TTL - FII/DII updates slowly)
+        cache_params = {"endpoint": "fii_dii"}
+        cached = rate_limiter.get_cached("fii_dii", cache_params)
+        if cached:
+            return cached
+
+        # Check rate limit and market hours
+        if not rate_limiter.check_rate_limit("fii_dii"):
+            # Outside market hours or rate limited - return cached data
+            raise HTTPException(status_code=429, detail="Rate limit exceeded or outside market hours (9 AM - 5 PM IST)")
+
         tracker = get_fii_dii_tracker()
         data = await tracker.fetch_daily_fii_dii()
+
+        # Cache result
+        if data and not data.get("error"):
+            rate_limiter.set_cache("fii_dii", cache_params, data)
+
         return data
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to fetch FII/DII data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -4281,14 +4350,56 @@ async def get_index_movers(index_name: str):
 
 @api_router.get("/market/overview")
 async def get_market_overview():
-    """Get complete market overview with all indices and top gainers/losers"""
+    """
+    Get complete market overview with all indices and top gainers/losers
+    ✅ Optimized with caching and rate limiting
+    """
+    try:
+        rate_limiter = get_rate_limiter()
+
+        # Try cache first (2 minute TTL for market overview - needs to be fresh)
+        cache_params = {"endpoint": "market_overview"}
+        cached = rate_limiter.get_cached("market_overview", cache_params)
+        if cached:
+            return cached
+
+        # Check rate limit and market hours
+        if not rate_limiter.check_rate_limit("yfinance"):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded or outside market hours (9 AM - 5 PM IST)")
+
+        indices_data = get_indian_indices_data()
+        overview = await indices_data.get_market_overview()
+
+        # Cache result
+        if overview:
+            rate_limiter.set_cache("market_overview", cache_params, overview)
+
+        return overview
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get market overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/market/top-movers")
+async def get_top_movers(limit: int = 10):
+    """Get top gainers and losers"""
     try:
         indices_data = get_indian_indices_data()
         overview = await indices_data.get_market_overview()
-        return overview
 
+        # Extract top movers from overview
+        gainers = overview.get("top_gainers", [])[:limit]
+        losers = overview.get("top_losers", [])[:limit]
+
+        return {
+            "gainers": gainers,
+            "losers": losers
+        }
     except Exception as e:
-        logger.error(f"Failed to get market overview: {e}")
+        logger.error(f"Failed to get top movers: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

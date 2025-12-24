@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import logging
 import sys
 import os
+import ssl
 
 # Add RAG import
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -20,6 +21,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Configure SSL context globally for feedparser (which uses urllib internally)
+# This fixes SSL certificate verification issues with some RSS feeds
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 class NewsAggregator:
     """
@@ -27,11 +32,22 @@ class NewsAggregator:
     """
     
     # RSS feeds for Indian financial news (FREE, no API key required)
+    # Updated with more reliable and current feeds
     RSS_FEEDS = {
-        "moneycontrol": "https://www.moneycontrol.com/rss/latestnews.xml",
-        "economic_times": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+        # Economic Times - Markets section (most reliable)
+        "economic_times_markets": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+        "economic_times_stocks": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",
+        "economic_times_news": "https://economictimes.indiatimes.com/news/rssfeeds/1715249553.cms",
+        # Business Standard
         "business_standard": "https://www.business-standard.com/rss/markets-106.rss",
-        "livemint": "https://www.livemint.com/rss/markets",
+        # NDTV Profit
+        "ndtv_profit": "https://feeds.feedburner.com/ndtvprofit-latest",
+        # Yahoo Finance India
+        "yahoo_finance": "https://finance.yahoo.com/news/rssindex",
+        # Reuters Business
+        "reuters_business": "https://feeds.reuters.com/reuters/businessNews",
+        # Google News - India Business
+        "google_news_india": "https://news.google.com/rss/search?q=indian+stock+market&hl=en-IN&gl=IN&ceid=IN:en",
     }
     
     def __init__(self):
@@ -106,8 +122,8 @@ class NewsAggregator:
                     else:
                         published_date = datetime.now()
                     
-                    # Skip old articles (older than 7 days)
-                    if datetime.now() - published_date > timedelta(days=7):
+                    # Skip old articles (older than 30 days - increased from 7)
+                    if datetime.now() - published_date > timedelta(days=30):
                         continue
                     
                     article = {
@@ -183,6 +199,70 @@ class NewsAggregator:
         
         return matching[:limit]
     
+    def fetch_stock_news(self, symbol: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Fetch news specifically for a stock using Google News RSS
+
+        Args:
+            symbol: Stock symbol
+            limit: Maximum articles
+
+        Returns:
+            List of articles for the stock
+        """
+        symbol_clean = symbol.replace('.NS', '').replace('.BO', '').upper()
+
+        # Map common symbols to company names for better search
+        symbol_to_name = {
+            'RELIANCE': 'Reliance Industries',
+            'TCS': 'Tata Consultancy Services TCS',
+            'INFY': 'Infosys',
+            'HDFCBANK': 'HDFC Bank',
+            'ICICIBANK': 'ICICI Bank',
+            'WIPRO': 'Wipro',
+            'BHARTIARTL': 'Bharti Airtel',
+            'ITC': 'ITC Limited',
+            'SBIN': 'State Bank of India SBI',
+            'LT': 'Larsen Toubro',
+            'KOTAKBANK': 'Kotak Mahindra Bank',
+            'HINDUNILVR': 'Hindustan Unilever HUL',
+            'ASIANPAINT': 'Asian Paints',
+            'MARUTI': 'Maruti Suzuki',
+            'BAJFINANCE': 'Bajaj Finance',
+            'AXISBANK': 'Axis Bank',
+            'SUNPHARMA': 'Sun Pharma',
+            'TITAN': 'Titan Company',
+            'ULTRACEMCO': 'UltraTech Cement',
+            'ONGC': 'ONGC Oil Natural Gas',
+            'NTPC': 'NTPC Power',
+            'POWERGRID': 'Power Grid Corporation',
+            'TATAMOTORS': 'Tata Motors',
+            'TATASTEEL': 'Tata Steel',
+            'ADANIENT': 'Adani Enterprises',
+            'ADANIPORTS': 'Adani Ports',
+            'COALINDIA': 'Coal India',
+            'HCLTECH': 'HCL Technologies',
+            'TECHM': 'Tech Mahindra',
+        }
+
+        search_term = symbol_to_name.get(symbol_clean, symbol_clean)
+
+        # Google News RSS for specific stock
+        google_news_url = f"https://news.google.com/rss/search?q={search_term}+stock+NSE&hl=en-IN&gl=IN&ceid=IN:en"
+
+        try:
+            articles = self._fetch_from_rss(google_news_url, "google_news")
+
+            # If no results, try broader search
+            if not articles:
+                google_news_url = f"https://news.google.com/rss/search?q={symbol_clean}&hl=en-IN&gl=IN&ceid=IN:en"
+                articles = self._fetch_from_rss(google_news_url, "google_news")
+
+            return articles[:limit]
+        except Exception as e:
+            logger.error(f"Failed to fetch stock news for {symbol}: {e}")
+            return []
+
     def get_trending_topics(self, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get trending topics from recent news

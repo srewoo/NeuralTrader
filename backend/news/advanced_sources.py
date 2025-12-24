@@ -9,8 +9,13 @@ import feedparser
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import asyncio
+import ssl
 
 logger = logging.getLogger(__name__)
+
+# Configure SSL context globally for feedparser (which uses urllib internally)
+# This fixes SSL certificate verification issues with some RSS feeds
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class ReutersNewsSource:
@@ -242,8 +247,15 @@ class AdvancedNewsAggregator:
             elif isinstance(result, Exception):
                 logger.error(f"News source error: {result}")
 
-        # Sort by date (newest first)
-        all_articles.sort(key=lambda x: x.get('published_at', ''), reverse=True)
+        # Sort by date (newest first) - handle non-string published_at values
+        def get_sort_key(article):
+            pub_date = article.get('published_at', '')
+            # Handle case where published_at might be a list or other non-string type
+            if isinstance(pub_date, list):
+                return str(pub_date[0]) if pub_date else ''
+            return str(pub_date) if pub_date else ''
+
+        all_articles.sort(key=get_sort_key, reverse=True)
 
         logger.info(f"Aggregated {len(all_articles)} total articles")
         return all_articles

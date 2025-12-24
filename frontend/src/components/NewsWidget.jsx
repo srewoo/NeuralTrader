@@ -49,9 +49,10 @@ export default function NewsWidget({ symbol = null }) {
   const fetchTrending = async () => {
     try {
       const response = await axios.get(`${API_URL}/news/trending`);
-      setTrending(response.data.topics || response.data || []);
+      setTrending(response.data.trending || response.data.topics || []);
     } catch (error) {
       console.error("Error fetching trending:", error);
+      setTrending([]);
     }
   };
 

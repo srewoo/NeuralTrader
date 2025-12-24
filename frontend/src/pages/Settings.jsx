@@ -20,7 +20,8 @@ import {
   Bell,
   Mail,
   Webhook,
-  MessageSquare
+  MessageSquare,
+  TrendingUp
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,13 @@ export default function Settings() {
     twilio_auth_token: "",
     twilio_whatsapp_number: "",
     user_whatsapp_number: "",
+    // Indian Broker API Keys
+    angelone_api_key: "",
+    angelone_client_id: "",
+    angelone_password: "",
+    angelone_totp_secret: "",
+    zerodha_api_key: "",
+    zerodha_api_secret: "",
     use_tvscreener: true,
     selected_model: "gpt-4.1",
     selected_provider: "openai",
@@ -108,6 +116,13 @@ export default function Settings() {
     twilio_auth_token: data?.twilio_auth_token || "",
     twilio_whatsapp_number: data?.twilio_whatsapp_number || "",
     user_whatsapp_number: data?.user_whatsapp_number || "",
+    // Indian Broker API Keys
+    angelone_api_key: data?.angelone_api_key || "",
+    angelone_client_id: data?.angelone_client_id || "",
+    angelone_password: data?.angelone_password || "",
+    angelone_totp_secret: data?.angelone_totp_secret || "",
+    zerodha_api_key: data?.zerodha_api_key || "",
+    zerodha_api_secret: data?.zerodha_api_secret || "",
     use_tvscreener: data?.use_tvscreener !== undefined ? data.use_tvscreener : true,
     selected_model: data?.selected_model || "gpt-4.1",
     selected_provider: data?.selected_provider || "openai",
@@ -127,6 +142,11 @@ export default function Settings() {
   const [showTelegramToken, setShowTelegramToken] = useState(false);
   const [showSMTPPassword, setShowSMTPPassword] = useState(false);
   const [showTwilioAuthToken, setShowTwilioAuthToken] = useState(false);
+  const [showAngelOneKey, setShowAngelOneKey] = useState(false);
+  const [showAngelOnePassword, setShowAngelOnePassword] = useState(false);
+  const [showAngelOneTotp, setShowAngelOneTotp] = useState(false);
+  const [showZerodhaKey, setShowZerodhaKey] = useState(false);
+  const [showZerodhaSecret, setShowZerodhaSecret] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -658,6 +678,195 @@ export default function Settings() {
                   alphavantage.co
                 </a>
                 {" "}• News sentiment + technical indicators
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Indian Broker API Keys Section */}
+        <Card className="card-surface">
+          <CardHeader>
+            <CardTitle className="text-lg font-heading flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-orange-500" />
+              Indian Broker API Keys
+            </CardTitle>
+            <CardDescription>
+              Connect to Indian brokers for real-time NSE/BSE market data and trading
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Angel One / Angel Broking */}
+            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-orange-500/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-orange-500">A1</span>
+                </div>
+                <Label className="text-text-primary">
+                  Angel One (Smart API)
+                </Label>
+                <span className="text-xs text-success font-normal">(Free for data)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="angelone-api-key" className="text-sm text-text-secondary">API Key</Label>
+                  <div className="relative">
+                    <Input
+                      id="angelone-api-key"
+                      type={showAngelOneKey ? "text" : "password"}
+                      value={settings.angelone_api_key}
+                      onChange={(e) => handleChange("angelone_api_key", e.target.value)}
+                      placeholder="Your Angel One API Key"
+                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAngelOneKey(!showAngelOneKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    >
+                      {showAngelOneKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="angelone-client-id" className="text-sm text-text-secondary">Client ID</Label>
+                  <Input
+                    id="angelone-client-id"
+                    type="text"
+                    value={settings.angelone_client_id}
+                    onChange={(e) => handleChange("angelone_client_id", e.target.value)}
+                    placeholder="Your Client ID (e.g., S12345678)"
+                    className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="angelone-password" className="text-sm text-text-secondary">Password/PIN</Label>
+                  <div className="relative">
+                    <Input
+                      id="angelone-password"
+                      type={showAngelOnePassword ? "text" : "password"}
+                      value={settings.angelone_password}
+                      onChange={(e) => handleChange("angelone_password", e.target.value)}
+                      placeholder="Your trading password/PIN"
+                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAngelOnePassword(!showAngelOnePassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    >
+                      {showAngelOnePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="angelone-totp" className="text-sm text-text-secondary">TOTP Secret</Label>
+                  <div className="relative">
+                    <Input
+                      id="angelone-totp"
+                      type={showAngelOneTotp ? "text" : "password"}
+                      value={settings.angelone_totp_secret}
+                      onChange={(e) => handleChange("angelone_totp_secret", e.target.value)}
+                      placeholder="Base32 TOTP secret from authenticator"
+                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAngelOneTotp(!showAngelOneTotp)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    >
+                      {showAngelOneTotp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-secondary">
+                Get API credentials from{" "}
+                <a
+                  href="https://smartapi.angelbroking.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  smartapi.angelbroking.com
+                </a>
+                {" "}• Provides real-time NSE/BSE data, historical prices, and order placement
+              </p>
+            </div>
+
+            {/* Zerodha Kite */}
+            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-red-500/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-500">Z</span>
+                </div>
+                <Label className="text-text-primary">
+                  Zerodha Kite Connect
+                </Label>
+                <span className="text-xs text-warning font-normal">(₹2000/month)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="zerodha-api-key" className="text-sm text-text-secondary">API Key</Label>
+                  <div className="relative">
+                    <Input
+                      id="zerodha-api-key"
+                      type={showZerodhaKey ? "text" : "password"}
+                      value={settings.zerodha_api_key}
+                      onChange={(e) => handleChange("zerodha_api_key", e.target.value)}
+                      placeholder="Your Zerodha API Key"
+                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowZerodhaKey(!showZerodhaKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    >
+                      {showZerodhaKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="zerodha-api-secret" className="text-sm text-text-secondary">API Secret</Label>
+                  <div className="relative">
+                    <Input
+                      id="zerodha-api-secret"
+                      type={showZerodhaSecret ? "text" : "password"}
+                      value={settings.zerodha_api_secret}
+                      onChange={(e) => handleChange("zerodha_api_secret", e.target.value)}
+                      placeholder="Your Zerodha API Secret"
+                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowZerodhaSecret(!showZerodhaSecret)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    >
+                      {showZerodhaSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-secondary">
+                Get API credentials from{" "}
+                <a
+                  href="https://kite.trade/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  kite.trade
+                </a>
+                {" "}• Premium API with WebSocket streaming and order execution
               </p>
             </div>
           </CardContent>
