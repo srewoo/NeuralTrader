@@ -3381,10 +3381,9 @@ async def get_fii_dii_data():
         if cached:
             return cached
 
-        # Check rate limit and market hours
-        if not rate_limiter.check_rate_limit("fii_dii"):
-            # Outside market hours or rate limited - return cached data
-            raise HTTPException(status_code=429, detail="Rate limit exceeded or outside market hours (9 AM - 5 PM IST)")
+        # Check rate limit (skip market hours check - FII/DII data available after hours)
+        if not rate_limiter.check_rate_limit("fii_dii", skip_market_hours=True):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
         tracker = get_fii_dii_tracker()
         data = await tracker.fetch_daily_fii_dii()

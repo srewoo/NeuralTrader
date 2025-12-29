@@ -15,16 +15,17 @@ echo -e "  NeuralTrader - Integration Tests"
 echo -e "========================================${NC}"
 echo ""
 
-# Get script directory
+# Get script directory and change to backend
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+BACKEND_DIR="$SCRIPT_DIR/backend"
+cd "$BACKEND_DIR"
 
 # Create reports directory
 mkdir -p reports
 
 # Set environment variables
 export DISABLE_CHROMADB=true
-export PYTHONPATH="$SCRIPT_DIR"
+export PYTHONPATH="$BACKEND_DIR"
 
 # Timestamp for report files
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
@@ -59,9 +60,9 @@ fi
 
 echo ""
 echo -e "${YELLOW}Reports generated:${NC}"
-echo -e "  - HTML Report: reports/integration_report_${TIMESTAMP}.html"
-echo -e "  - Coverage: reports/integration_coverage_${TIMESTAMP}/index.html"
-echo -e "  - Log: reports/integration_output_${TIMESTAMP}.log"
+echo -e "  - HTML Report: backend/reports/integration_report_${TIMESTAMP}.html"
+echo -e "  - Coverage: backend/reports/integration_coverage_${TIMESTAMP}/index.html"
+echo -e "  - Log: backend/reports/integration_output_${TIMESTAMP}.log"
 echo ""
 
 # Create symlink to latest report
@@ -69,8 +70,8 @@ ln -sf "integration_report_${TIMESTAMP}.html" reports/integration_report_latest.
 ln -sf "integration_coverage_${TIMESTAMP}" reports/integration_coverage_latest
 
 echo -e "${GREEN}Latest report symlinks created:${NC}"
-echo -e "  - reports/integration_report_latest.html"
-echo -e "  - reports/integration_coverage_latest/"
+echo -e "  - backend/reports/integration_report_latest.html"
+echo -e "  - backend/reports/integration_coverage_latest/"
 echo ""
 
 exit $EXIT_CODE

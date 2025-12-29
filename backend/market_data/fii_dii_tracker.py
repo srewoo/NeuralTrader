@@ -83,6 +83,8 @@ class FIIDIITracker:
 
         except Exception as e:
             logger.error(f"Failed to fetch FII/DII data: {e}")
+            # Reset session on error to avoid stale connections
+            await self.close()
             return await self._get_fallback_data()
 
     def _parse_fii_dii_data(self, raw_data: Any) -> Dict[str, Any]:

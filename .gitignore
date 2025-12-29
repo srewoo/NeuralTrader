@@ -117,3 +117,6 @@ android-sdk/
 logs/
 logs
 *.md
+# Reports
+backend/reports/
+backend/.coverage
