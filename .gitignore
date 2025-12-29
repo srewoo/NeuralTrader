@@ -82,16 +82,9 @@ backend/price_cache.db
 *.pickle
 backend/*.bin
 backend/*.pickle
-backend/logs/backend.log
-backend/logs/backend.log.*
-backend/logs/backend.log.*.*
-backend/logs/backend.log.*.*.*
-backend/logs/backend.log.*.*.*.*
-backend/logs/backend.log.*.*.*.*.*
-backend/logs/backend.log.*.*.*.*.*.*
-backend/logs/backend.log.*.*.*.*.*.*.*
-backend/logs/backend.log.*.*.*.*.*.*.*.*
-logs/backend.pid
+
+# Logs folder - ignore entire directory
+backend/logs/
 *.pid
 
 
