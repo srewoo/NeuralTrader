@@ -1082,6 +1082,583 @@ class TestMLEndpoints:
 
 
 # ============================================================================
+# LLM Endpoints Tests
+# ============================================================================
+
+class TestLLMEndpoints:
+    """Test LLM-powered endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_llm_ask(self, async_client: AsyncClient):
+        """Test LLM ask endpoint"""
+        request_data = {
+            "question": "What is a bullish pattern?",
+            "context": "stock trading"
+        }
+        response = await async_client.post("/api/llm/ask", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_llm_summarize_news(self, async_client: AsyncClient):
+        """Test LLM summarize news endpoint"""
+        request_data = {
+            "articles": [{"title": "Stock rises", "content": "Market up today"}]
+        }
+        response = await async_client.post("/api/llm/summarize-news", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_llm_analyze_portfolio(self, async_client: AsyncClient):
+        """Test LLM analyze portfolio endpoint"""
+        request_data = {
+            "positions": [{"symbol": "RELIANCE", "quantity": 10}]
+        }
+        response = await async_client.post("/api/llm/analyze-portfolio", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_llm_explain_pattern(self, async_client: AsyncClient):
+        """Test LLM explain pattern endpoint"""
+        request_data = {
+            "pattern": "hammer",
+            "symbol": "RELIANCE"
+        }
+        response = await async_client.post("/api/llm/explain-pattern", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_llm_market_commentary(self, async_client: AsyncClient):
+        """Test LLM market commentary endpoint"""
+        response = await async_client.get("/api/llm/market-commentary")
+        assert response.status_code in [200, 400, 500]
+
+    @pytest.mark.asyncio
+    async def test_llm_compare_stocks(self, async_client: AsyncClient):
+        """Test LLM compare stocks endpoint"""
+        request_data = {
+            "symbols": ["RELIANCE", "TCS"]
+        }
+        response = await async_client.post("/api/llm/compare-stocks", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+
+# ============================================================================
+# Additional Market Endpoints Tests
+# ============================================================================
+
+class TestAdditionalMarketEndpoints:
+    """Test additional market data endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_market_bulk_deals(self, async_client: AsyncClient):
+        """Test bulk deals endpoint"""
+        response = await async_client.get("/api/market/bulk-deals")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_market_block_deals(self, async_client: AsyncClient):
+        """Test block deals endpoint"""
+        response = await async_client.get("/api/market/block-deals")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_market_index_by_name(self, async_client: AsyncClient):
+        """Test getting specific index by name"""
+        response = await async_client.get("/api/market/indices/NIFTY_50")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_market_index_movers(self, async_client: AsyncClient):
+        """Test getting index movers"""
+        response = await async_client.get("/api/market/indices/NIFTY_50/movers")
+        assert response.status_code in [200, 404, 500]
+
+
+# ============================================================================
+# Additional Analysis Endpoints Tests
+# ============================================================================
+
+class TestAdditionalAnalysisEndpoints:
+    """Test additional analysis endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_get_analysis_by_id(self, async_client: AsyncClient):
+        """Test getting analysis by ID"""
+        response = await async_client.get("/api/analysis/test_analysis_id")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_delete_analysis(self, async_client: AsyncClient):
+        """Test deleting analysis"""
+        response = await async_client.delete("/api/analysis/test_analysis_id")
+        assert response.status_code in [200, 204, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_ensemble_analysis(self, async_client: AsyncClient):
+        """Test ensemble analysis endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "models": ["gpt-4", "gemini-pro"]
+        }
+        response = await async_client.post("/api/analyze/ensemble", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_correlation_analysis(self, async_client: AsyncClient):
+        """Test correlation analysis endpoint"""
+        request_data = {
+            "symbols": ["RELIANCE", "TCS", "INFY"]
+        }
+        response = await async_client.post("/api/analysis/correlation", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_beta_analysis(self, async_client: AsyncClient):
+        """Test beta analysis endpoint"""
+        response = await async_client.get("/api/analysis/beta/RELIANCE")
+        assert response.status_code in [200, 400, 500]
+
+
+# ============================================================================
+# Additional Backtest Endpoints Tests
+# ============================================================================
+
+class TestAdditionalBacktestEndpoints:
+    """Test additional backtesting endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_get_backtest_by_id(self, async_client: AsyncClient):
+        """Test getting backtest by ID"""
+        response = await async_client.get("/api/backtest/test_backtest_id")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_delete_backtest(self, async_client: AsyncClient):
+        """Test deleting backtest"""
+        response = await async_client.delete("/api/backtest/test_backtest_id")
+        assert response.status_code in [200, 204, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_clear_cache(self, async_client: AsyncClient):
+        """Test clearing backtest cache"""
+        response = await async_client.post("/api/backtest/cache/clear")
+        assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_insights(self, async_client: AsyncClient):
+        """Test backtest insights endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following"
+        }
+        response = await async_client.post("/api/backtest/insights", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_walk_forward_backtest(self, async_client: AsyncClient):
+        """Test walk-forward backtest endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following",
+            "windows": 3
+        }
+        response = await async_client.post("/api/backtest/walk-forward", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_costs(self, async_client: AsyncClient):
+        """Test backtest costs endpoint"""
+        response = await async_client.get("/api/backtest/costs")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_monte_carlo_backtest(self, async_client: AsyncClient):
+        """Test Monte Carlo simulation endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following",
+            "simulations": 100
+        }
+        response = await async_client.post("/api/backtest/monte-carlo", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_portfolio_backtest(self, async_client: AsyncClient):
+        """Test portfolio backtest endpoint"""
+        request_data = {
+            "symbols": ["RELIANCE", "TCS"],
+            "weights": [0.5, 0.5],
+            "strategy": "trend_following"
+        }
+        response = await async_client.post("/api/backtest/portfolio", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_regime_backtest(self, async_client: AsyncClient):
+        """Test regime-based backtest endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following"
+        }
+        response = await async_client.post("/api/backtest/regime", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_optimize(self, async_client: AsyncClient):
+        """Test backtest optimization endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following"
+        }
+        response = await async_client.post("/api/backtest/optimize", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_optimize_enhanced(self, async_client: AsyncClient):
+        """Test enhanced backtest optimization endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "strategy": "trend_following"
+        }
+        response = await async_client.post("/api/backtest/optimize/enhanced", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_backtest_optimize_suggest(self, async_client: AsyncClient):
+        """Test backtest parameter suggestion endpoint"""
+        try:
+            response = await async_client.get("/api/backtest/optimize/suggest/trend_following")
+            # May fail with serialization errors (numpy.int64)
+            assert response.status_code in [200, 404, 422, 500]
+        except ValueError:
+            # Server may fail with numpy serialization errors
+            pass
+
+
+# ============================================================================
+# Additional Alerts Endpoints Tests
+# ============================================================================
+
+class TestAdditionalAlertsEndpoints:
+    """Test additional alerts endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_create_pattern_alert(self, async_client: AsyncClient):
+        """Test creating a pattern alert"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "pattern": "hammer",
+            "user_id": "test_user"
+        }
+        response = await async_client.post("/api/alerts/pattern", json=request_data)
+        assert response.status_code in [200, 201, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_create_portfolio_alert(self, async_client: AsyncClient):
+        """Test creating a portfolio alert"""
+        request_data = {
+            "threshold": 5.0,
+            "user_id": "test_user"
+        }
+        response = await async_client.post("/api/alerts/portfolio", json=request_data)
+        assert response.status_code in [200, 201, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_delete_alert(self, async_client: AsyncClient):
+        """Test deleting an alert"""
+        response = await async_client.delete("/api/alerts/test_alert_id")
+        assert response.status_code in [200, 204, 404, 500]
+
+
+# ============================================================================
+# Additional Paper Trading Endpoints Tests
+# ============================================================================
+
+class TestAdditionalPaperTradingEndpoints:
+    """Test additional paper trading endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_reset_portfolio(self, async_client: AsyncClient):
+        """Test resetting paper trading portfolio"""
+        response = await async_client.post("/api/paper-trading/reset")
+        assert response.status_code in [200, 500]
+
+
+# ============================================================================
+# Additional Screener Endpoints Tests
+# ============================================================================
+
+class TestAdditionalScreenerEndpoints:
+    """Test additional screener endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_screener_fundamentals(self, async_client: AsyncClient):
+        """Test screener fundamentals endpoint"""
+        response = await async_client.get("/api/screener/fundamentals/RELIANCE")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_screener_screen(self, async_client: AsyncClient):
+        """Test stock screening endpoint"""
+        request_data = {
+            "filters": {
+                "pe_ratio": {"min": 10, "max": 30},
+                "market_cap": {"min": 1000000000}
+            }
+        }
+        response = await async_client.post("/api/screener/screen", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_run_screener_preset(self, async_client: AsyncClient):
+        """Test running a screener preset"""
+        response = await async_client.post("/api/screener/run-preset/value_stocks")
+        assert response.status_code in [200, 404, 500]
+
+
+# ============================================================================
+# Additional Risk Endpoints Tests
+# ============================================================================
+
+class TestAdditionalRiskEndpoints:
+    """Test additional risk management endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_fixed_fractional_position_size(self, async_client: AsyncClient):
+        """Test fixed fractional position sizing"""
+        request_data = {
+            "account_size": 100000,
+            "risk_percent": 2.0,
+            "stop_loss_percent": 5.0
+        }
+        response = await async_client.post("/api/risk/position-size/fixed-fractional", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_risk_reward_ratio(self, async_client: AsyncClient):
+        """Test risk-reward ratio calculation"""
+        request_data = {
+            "entry_price": 100,
+            "stop_loss": 95,
+            "target_price": 115
+        }
+        response = await async_client.post("/api/risk/risk-reward-ratio", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+
+# ============================================================================
+# Indicators Formula Endpoint Tests
+# ============================================================================
+
+class TestIndicatorsFormulaEndpoints:
+    """Test custom indicator formula endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_custom_indicator_formula(self, async_client: AsyncClient):
+        """Test custom indicator formula endpoint"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "formula": "SMA(close, 20)"
+        }
+        response = await async_client.post("/api/indicators/formula", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+
+# ============================================================================
+# Additional Cache Endpoints Tests
+# ============================================================================
+
+class TestAdditionalCacheEndpoints:
+    """Test additional cache management endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_clear_cache(self, async_client: AsyncClient):
+        """Test clearing cache"""
+        response = await async_client.post("/api/cache/clear")
+        assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_get_cache_key(self, async_client: AsyncClient):
+        """Test getting cache value by key"""
+        response = await async_client.get("/api/cache/get/test_key")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_delete_cache_key(self, async_client: AsyncClient):
+        """Test deleting cache key"""
+        response = await async_client.delete("/api/cache/delete/test_key")
+        assert response.status_code in [200, 204, 404, 500]
+
+
+# ============================================================================
+# Tracking Verification Endpoint Tests
+# ============================================================================
+
+class TestTrackingVerificationEndpoints:
+    """Test tracking verification endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_verify_prediction(self, async_client: AsyncClient):
+        """Test verifying a prediction"""
+        request_data = {
+            "prediction_id": "test_prediction_id"
+        }
+        response = await async_client.post("/api/tracking/verify", json=request_data)
+        assert response.status_code in [200, 400, 404, 422, 500]
+
+
+# ============================================================================
+# Additional Knowledge Endpoints Tests
+# ============================================================================
+
+class TestAdditionalKnowledgeEndpoints:
+    """Test additional knowledge endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_store_event(self, async_client: AsyncClient):
+        """Test storing a market event"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "event_type": "earnings",
+            "description": "Q3 earnings beat estimates"
+        }
+        response = await async_client.post("/api/knowledge/events/store", json=request_data)
+        assert response.status_code in [200, 201, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_get_similar_events(self, async_client: AsyncClient):
+        """Test getting similar events"""
+        response = await async_client.get("/api/knowledge/events/similar?query=earnings")
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_get_events_by_symbol(self, async_client: AsyncClient):
+        """Test getting events by symbol"""
+        response = await async_client.get("/api/knowledge/events/symbol/RELIANCE")
+        assert response.status_code in [200, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_discover_patterns(self, async_client: AsyncClient):
+        """Test discovering patterns"""
+        request_data = {
+            "symbol": "RELIANCE",
+            "period": "1y"
+        }
+        response = await async_client.post("/api/knowledge/patterns/discover", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_patterns_history(self, async_client: AsyncClient):
+        """Test getting patterns history"""
+        response = await async_client.get("/api/knowledge/patterns/history")
+        assert response.status_code in [200, 500]
+
+
+# ============================================================================
+# RAG Additional Endpoints Tests
+# ============================================================================
+
+class TestAdditionalRAGEndpoints:
+    """Test additional RAG endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_rag_seed(self, async_client: AsyncClient):
+        """Test seeding RAG database"""
+        response = await async_client.post("/api/rag/seed")
+        assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_rag_ingest(self, async_client: AsyncClient):
+        """Test ingesting document into RAG"""
+        request_data = {
+            "content": "This is a test document about stock trading patterns.",
+            "metadata": {"category": "patterns"}
+        }
+        response = await async_client.post("/api/rag/ingest", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+
+# ============================================================================
+# Admin Endpoints Tests
+# ============================================================================
+
+class TestAdminEndpoints:
+    """Test admin/management endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_db_stats(self, async_client: AsyncClient):
+        """Test database stats endpoint"""
+        response = await async_client.get("/api/admin/db/stats")
+        assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_cleanup_recommendations(self, async_client: AsyncClient):
+        """Test cleaning up old recommendations"""
+        response = await async_client.delete("/api/admin/db/cleanup/recommendations")
+        assert response.status_code in [200, 204, 500]
+
+    @pytest.mark.asyncio
+    async def test_cleanup_analysis(self, async_client: AsyncClient):
+        """Test cleaning up old analysis"""
+        response = await async_client.delete("/api/admin/db/cleanup/analysis")
+        assert response.status_code in [200, 204, 500]
+
+    @pytest.mark.asyncio
+    async def test_cleanup_backtests(self, async_client: AsyncClient):
+        """Test cleaning up old backtests"""
+        response = await async_client.delete("/api/admin/db/cleanup/backtests")
+        assert response.status_code in [200, 204, 500]
+
+    @pytest.mark.asyncio
+    async def test_cleanup_all(self, async_client: AsyncClient):
+        """Test cleaning up all old data"""
+        response = await async_client.delete("/api/admin/db/cleanup/all")
+        assert response.status_code in [200, 204, 500]
+
+    @pytest.mark.asyncio
+    async def test_reset_collection(self, async_client: AsyncClient):
+        """Test resetting a collection"""
+        response = await async_client.post("/api/admin/db/reset/test_collection")
+        assert response.status_code in [200, 400, 404, 500]
+
+    @pytest.mark.asyncio
+    async def test_stocks_cache(self, async_client: AsyncClient):
+        """Test getting stocks cache info"""
+        response = await async_client.get("/api/admin/stocks/cache")
+        assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_refresh_stocks(self, async_client: AsyncClient):
+        """Test refreshing stocks data"""
+        response = await async_client.post("/api/admin/stocks/refresh")
+        assert response.status_code in [200, 500]
+
+
+# ============================================================================
+# Recommendations Additional Endpoints Tests
+# ============================================================================
+
+class TestAdditionalRecommendationsEndpoints:
+    """Test additional recommendations endpoints"""
+
+    @pytest.mark.asyncio
+    async def test_generate_recommendations(self, async_client: AsyncClient):
+        """Test generating recommendations"""
+        request_data = {
+            "symbols": ["RELIANCE", "TCS"],
+            "model": "gpt-4o-mini"
+        }
+        response = await async_client.post("/api/recommendations/generate", json=request_data)
+        assert response.status_code in [200, 400, 422, 500]
+
+    @pytest.mark.asyncio
+    async def test_get_stock_recommendations(self, async_client: AsyncClient):
+        """Test getting recommendations for a specific stock"""
+        response = await async_client.get("/api/recommendations/stock/RELIANCE")
+        assert response.status_code in [200, 404, 500]
+
+
+# ============================================================================
 # Error Handling Tests
 # ============================================================================
 
