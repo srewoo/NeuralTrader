@@ -5,21 +5,34 @@ SQLite persistence layer for alerts
 import sqlite3
 import json
 import logging
+import threading
+import os
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Database file path
-DB_PATH = Path(__file__).parent.parent / "alerts.db"
+# Database file path (configurable via environment variable)
+DB_PATH = Path(os.environ.get('ALERTS_DB_PATH', Path(__file__).parent.parent / "alerts.db"))
+
+# Thread-local storage for connections
+_local = threading.local()
 
 
 def get_connection() -> sqlite3.Connection:
-    """Get database connection"""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Get thread-local database connection for thread safety"""
+    if not hasattr(_local, 'connection') or _local.connection is None:
+        _local.connection = sqlite3.connect(str(DB_PATH))
+        _local.connection.row_factory = sqlite3.Row
+    return _local.connection
+
+
+def close_connection():
+    """Close thread-local connection"""
+    if hasattr(_local, 'connection') and _local.connection is not None:
+        _local.connection.close()
+        _local.connection = None
 
 
 def init_db():
@@ -56,6 +69,7 @@ def init_db():
 
 def save_alert(alert_data: Dict[str, Any]) -> bool:
     """Save alert to database"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -81,33 +95,39 @@ def save_alert(alert_data: Dict[str, Any]) -> bool:
         ))
 
         conn.commit()
-        conn.close()
         logger.debug(f"Alert saved to database: {alert_data['alert_id']}")
         return True
     except Exception as e:
         logger.error(f"Failed to save alert to database: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 def delete_alert(alert_id: str) -> bool:
     """Delete alert from database"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM alerts WHERE alert_id = ?", (alert_id,))
         conn.commit()
         deleted = cursor.rowcount > 0
-        conn.close()
         if deleted:
             logger.debug(f"Alert deleted from database: {alert_id}")
         return deleted
     except Exception as e:
         logger.error(f"Failed to delete alert from database: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 def update_alert_status(alert_id: str, status: str, triggered_at: Optional[str] = None) -> bool:
     """Update alert status in database"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -124,21 +144,23 @@ def update_alert_status(alert_id: str, status: str, triggered_at: Optional[str] 
             )
 
         conn.commit()
-        conn.close()
         return True
     except Exception as e:
         logger.error(f"Failed to update alert status: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 def load_all_alerts() -> List[Dict[str, Any]]:
     """Load all alerts from database"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM alerts")
         rows = cursor.fetchall()
-        conn.close()
 
         alerts = []
         for row in rows:
@@ -163,10 +185,14 @@ def load_all_alerts() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Failed to load alerts from database: {e}")
         return []
+    finally:
+        if conn:
+            conn.close()
 
 
 def load_user_alerts(user_id: str, status: Optional[str] = None) -> List[Dict[str, Any]]:
     """Load alerts for a specific user"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -183,7 +209,6 @@ def load_user_alerts(user_id: str, status: Optional[str] = None) -> List[Dict[st
             )
 
         rows = cursor.fetchall()
-        conn.close()
 
         alerts = []
         for row in rows:
@@ -207,16 +232,19 @@ def load_user_alerts(user_id: str, status: Optional[str] = None) -> List[Dict[st
     except Exception as e:
         logger.error(f"Failed to load user alerts: {e}")
         return []
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_max_alert_counter() -> int:
     """Get the maximum alert counter from existing alerts"""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT alert_id FROM alerts ORDER BY alert_id DESC LIMIT 1")
         row = cursor.fetchone()
-        conn.close()
 
         if row and row['alert_id']:
             # Extract counter from alert_id like "ALERT_00000001"
@@ -229,6 +257,9 @@ def get_max_alert_counter() -> int:
     except Exception as e:
         logger.error(f"Failed to get max alert counter: {e}")
         return 0
+    finally:
+        if conn:
+            conn.close()
 
 
 # Initialize database on module load

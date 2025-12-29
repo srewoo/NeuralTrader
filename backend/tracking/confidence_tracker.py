@@ -89,6 +89,54 @@ class ConfidenceTracker:
 
         return str(result.inserted_id)
 
+    async def track_prediction(
+        self,
+        symbol: str,
+        recommendation: str,
+        entry_price: float,
+        target_price: Optional[float] = None,
+        confidence: float = 0,
+        analysis_data: Optional[Dict] = None,
+        strategy: str = "UNKNOWN"
+    ) -> str:
+        """
+        Alias for record_prediction with flexible parameter names.
+        This method provides compatibility with different calling conventions.
+
+        Args:
+            symbol: Stock symbol
+            recommendation: BUY/SELL/HOLD
+            entry_price: Price at time of recommendation
+            target_price: Target price (if applicable)
+            confidence: Confidence score (0-100)
+            analysis_data: Full analysis data
+            strategy: Strategy name
+
+        Returns:
+            Prediction ID
+        """
+        # Extract additional fields from analysis_data if available
+        stop_loss = None
+        reasoning = ""
+        model_used = strategy
+
+        if analysis_data:
+            stop_loss = analysis_data.get('stop_loss')
+            reasoning = analysis_data.get('reasoning', '')
+            model_used = analysis_data.get('model_used', strategy)
+
+        return await self.record_prediction(
+            symbol=symbol,
+            recommendation=recommendation,
+            confidence=confidence,
+            entry_price=entry_price,
+            target_price=target_price,
+            stop_loss=stop_loss,
+            reasoning=reasoning,
+            model_used=model_used,
+            additional_data=analysis_data
+        )
+
     async def verify_predictions(self) -> Dict[str, Any]:
         """
         Verify pending predictions by checking current prices.

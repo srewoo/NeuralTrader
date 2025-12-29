@@ -7,6 +7,7 @@ import json
 import logging
 import pickle
 import hashlib
+from collections import OrderedDict
 from typing import Any, Optional, Union, Callable
 from datetime import datetime, timedelta
 from functools import wraps
@@ -36,12 +37,16 @@ class RedisCache:
     - Fallback to in-memory cache if Redis is unavailable
     """
 
+    # Maximum entries for in-memory fallback cache (LRU eviction)
+    MAX_MEMORY_ENTRIES = 1000
+
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
         default_ttl: int = 300,  # 5 minutes default
         namespace: str = "neuraltrader",
-        use_fallback: bool = True
+        use_fallback: bool = True,
+        max_memory_entries: int = None
     ):
         """
         Initialize Redis cache
@@ -51,18 +56,20 @@ class RedisCache:
             default_ttl: Default time-to-live in seconds
             namespace: Prefix for all keys
             use_fallback: Use in-memory fallback if Redis unavailable
+            max_memory_entries: Max entries for in-memory cache (LRU eviction)
         """
         self.redis_url = redis_url
         self.default_ttl = default_ttl
         self.namespace = namespace
         self.use_fallback = use_fallback
+        self.max_memory_entries = max_memory_entries or self.MAX_MEMORY_ENTRIES
 
         self._redis: Optional[Any] = None
         self._sync_redis: Optional[Any] = None
         self._connected = False
 
-        # In-memory fallback cache
-        self._memory_cache: dict = {}
+        # In-memory fallback cache with LRU eviction (OrderedDict maintains insertion order)
+        self._memory_cache: OrderedDict = OrderedDict()
         self._memory_ttls: dict = {}
 
     async def connect(self) -> bool:
@@ -118,6 +125,16 @@ class RedisCache:
         """Create namespaced key"""
         return f"{self.namespace}:{key}"
 
+    def _evict_lru_if_needed(self):
+        """Evict least recently used entries if memory cache exceeds limit"""
+        while len(self._memory_cache) >= self.max_memory_entries:
+            # Remove oldest entry (first item in OrderedDict)
+            oldest_key = next(iter(self._memory_cache))
+            del self._memory_cache[oldest_key]
+            if oldest_key in self._memory_ttls:
+                del self._memory_ttls[oldest_key]
+            logger.debug(f"LRU evicted: {oldest_key}")
+
     def _serialize(self, value: Any) -> bytes:
         """Serialize value for storage"""
         try:
@@ -163,6 +180,8 @@ class RedisCache:
                 del self._memory_cache[full_key]
                 del self._memory_ttls[full_key]
                 return None
+            # Move to end (most recently used) for LRU
+            self._memory_cache.move_to_end(full_key)
             return self._memory_cache.get(full_key)
 
         return None
@@ -197,6 +216,8 @@ class RedisCache:
 
         # Fallback to memory cache
         if self.use_fallback:
+            # Evict LRU entries if cache is full
+            self._evict_lru_if_needed()
             self._memory_cache[full_key] = value
             self._memory_ttls[full_key] = datetime.now() + timedelta(seconds=ttl)
             return True

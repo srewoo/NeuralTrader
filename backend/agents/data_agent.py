@@ -7,11 +7,8 @@ from typing import Dict, Any, Optional, Tuple
 import yfinance as yf
 from .base import BaseAgent
 import logging
-import sys
-import os
 
-# Add parent directory to path to import data_providers
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Use absolute import - server.py runs from backend directory
 from data_providers.provider_manager import get_provider_manager
 
 logger = logging.getLogger(__name__)

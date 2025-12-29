@@ -187,13 +187,15 @@ class DataProviderManager:
         self.__init__(api_keys)
 
 
-# Global instance (will be initialized by server with user's API keys)
+# Global instance with thread lock (will be initialized by server with user's API keys)
+import threading
 _manager_instance: Optional[DataProviderManager] = None
+_manager_lock = threading.Lock()
 
 
 def get_provider_manager(api_keys: Optional[Dict[str, Any]] = None) -> DataProviderManager:
     """
-    Get or create global provider manager instance
+    Get or create global provider manager instance with thread safety
 
     Args:
         api_keys: Optional API keys to initialize/update manager
@@ -203,7 +205,10 @@ def get_provider_manager(api_keys: Optional[Dict[str, Any]] = None) -> DataProvi
     """
     global _manager_instance
 
-    if _manager_instance is None or api_keys is not None:
-        _manager_instance = DataProviderManager(api_keys)
+    # Thread-safe initialization
+    with _manager_lock:
+        # Only reinitialize if keys are provided or instance doesn't exist
+        if _manager_instance is None or api_keys is not None:
+            _manager_instance = DataProviderManager(api_keys)
 
     return _manager_instance

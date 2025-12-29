@@ -13,6 +13,105 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+
+# ============================================================================
+# FAISS/Vector Store Mocks (applied at session level for testing)
+# ============================================================================
+
+class MockVectorStore:
+    """Mock VectorStore that doesn't use FAISS for testing"""
+    def __init__(self, persist_directory=None):
+        self.persist_directory = persist_directory
+        self.index = MagicMock()
+        self._documents = {}
+        self.dimension = 384
+
+    def add_documents(self, documents, metadatas, ids, embeddings=None):
+        for i, doc_id in enumerate(ids):
+            self._documents[doc_id] = {
+                "document": documents[i],
+                "metadata": metadatas[i] if metadatas else {}
+            }
+        return True
+
+    def query(self, query_texts, n_results=5, where=None, where_document=None):
+        return {
+            "ids": [[]],
+            "documents": [[]],
+            "metadatas": [[]],
+            "distances": [[]]
+        }
+
+    def get_by_ids(self, ids):
+        return {"ids": [], "documents": [], "metadatas": []}
+
+    def delete_by_ids(self, ids):
+        return True
+
+    def count(self):
+        return len(self._documents)
+
+    def reset(self):
+        self._documents = {}
+        return True
+
+    def get_collection_info(self):
+        return {"name": "test_collection", "count": 0, "metadata": {"backend": "mock"}}
+
+
+class MockKnowledgeRetriever:
+    """Mock KnowledgeRetriever that doesn't use vector store"""
+    def __init__(self):
+        self.vector_store = MockVectorStore()
+        self.embedding_generator = MagicMock()
+
+    def retrieve(self, query, n_results=5, filters=None, min_similarity=0.5):
+        return []
+
+    def retrieve_by_category(self, query, category, n_results=3):
+        return []
+
+    def retrieve_for_stock(self, query, symbol, n_results=5):
+        return []
+
+    def build_context(self, query, n_results=5, max_tokens=2000):
+        return "No relevant historical knowledge found."
+
+    def get_similar_patterns(self, technical_indicators, n_results=3):
+        return []
+
+    def get_strategy_recommendations(self, market_condition, n_results=3):
+        return []
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_vector_store_globally():
+    """
+    Session-level fixture that mocks the FAISS vector store during tests.
+    This runs automatically for all tests.
+    """
+    mock_store = MockVectorStore()
+    mock_retriever = MockKnowledgeRetriever()
+
+    with patch('rag.vector_store.get_vector_store', return_value=mock_store):
+        with patch('rag.vector_store.VectorStore', MockVectorStore):
+            with patch('rag.retrieval.get_retriever', return_value=mock_retriever):
+                with patch('rag.retrieval.KnowledgeRetriever', MockKnowledgeRetriever):
+                    yield
+
+
+@pytest.fixture
+def mock_vector_store():
+    """Fixture providing a mock vector store"""
+    return MockVectorStore()
+
+
+@pytest.fixture
+def mock_retriever():
+    """Fixture providing a mock knowledge retriever"""
+    return MockKnowledgeRetriever()
+
+
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an event loop for the test session"""
@@ -187,7 +286,7 @@ def sample_analysis_result():
 @pytest.fixture
 async def async_client():
     """Create async HTTP client for API testing"""
-    from httpx import AsyncClient
+    from httpx import AsyncClient, ASGITransport
 
     # Import app with mock dependencies
     with patch.dict(os.environ, {
@@ -197,7 +296,8 @@ async def async_client():
     }):
         from server import app
 
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             yield client
 
 

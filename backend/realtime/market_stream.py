@@ -22,19 +22,31 @@ class MarketStream:
         self.active = False
         self.manager = get_connection_manager()
         self.analyzer = None  # Lazy load to avoid circular import issues at startup
-        self.watched_symbols = {
-            "RELIANCE": {"price": 2500.0, "volatility": 0.002},
-            "TCS": {"price": 3500.0, "volatility": 0.0015},
-            "INFY": {"price": 1500.0, "volatility": 0.0025},
-            "HDFCBANK": {"price": 1600.0, "volatility": 0.0018},
-            "ICICIBANK": {"price": 950.0, "volatility": 0.002},
-            "NTPC": {"price": 322.55, "volatility": 0.0020},
-            "POWERGRID": {"price": 268.05, "volatility": 0.0018},
-            "SBIN": {"price": 780.0, "volatility": 0.0022},
-            "TATAMOTORS": {"price": 750.0, "volatility": 0.0025},
-            "WIPRO": {"price": 450.0, "volatility": 0.0019}
-        }
+        self.alert_manager = None  # Lazy load alert manager
+        self.watched_symbols = {}  # Dynamic - populated from user subscriptions or watchlist
+        self.default_volatility = 0.002  # Default volatility for new symbols
+        self._background_tasks = set()  # Track background tasks to prevent garbage collection
         
+    async def add_symbol(self, symbol: str, initial_price: float = None):
+        """Add a symbol to watch dynamically"""
+        if symbol not in self.watched_symbols:
+            if initial_price is None:
+                # Fetch real price from data provider
+                try:
+                    from data_providers.factory import get_data_provider_factory
+                    factory = get_data_provider_factory()
+                    quote = await factory.get_quote(symbol)
+                    initial_price = quote.get('price', 100.0)
+                except Exception:
+                    initial_price = 100.0  # Fallback
+            
+            self.watched_symbols[symbol] = {
+                "price": initial_price,
+                "volatility": self.default_volatility,
+                "prev_price": initial_price
+            }
+            logger.info(f"Added {symbol} to market stream")
+    
     async def start_stream(self):
         """Start the simulation loop"""
         if self.active:
@@ -43,53 +55,72 @@ class MarketStream:
         self.active = True
         logger.info("Market Stream Started")
         
-        # Initialize analyzer
-        if not self.analyzer:
-             self.analyzer = get_enhanced_analyzer()
-        
-        while self.active:
-            try:
-                for symbol, data in self.watched_symbols.items():
-                    # Generate next price tick
-                    # Geometric Brownian Motion step: P_t = P_{t-1} * e^((mu - 0.5*sigma^2)*dt + sigma*dW)
-                    # Simplified: P_new = P_old * (1 + random_shock)
+        try:
+            # Initialize analyzer
+            if not self.analyzer:
+                self.analyzer = get_enhanced_analyzer()
+            
+            while self.active:
+                try:
+                    # Skip if no symbols to watch
+                    if not self.watched_symbols:
+                        await asyncio.sleep(5)
+                        continue
                     
-                    volatility = data["volatility"]
-                    shock = random.gauss(0, volatility)
-                    new_price = data["price"] * (1 + shock)
-                    
-                    # Update state
-                    self.watched_symbols[symbol]["price"] = new_price
-                    
-                    # Create tick payload
-                    tick = {
-                        "symbol": symbol,
-                        "price": round(new_price, 2),
-                        "change_pct": round(shock * 100, 3),
-                        "volume": random.randint(100, 5000),
-                        "timestamp": datetime.now().isoformat()
-                    }
-
-                    # Broadcast
-                    await self.manager.broadcast_ticker(symbol, tick)
-                    
-                    # Smart Trigger: Run analysis if price moves > 0.5% in one tick (Flash Move)
-                    # OR randomly for demo purposes (1% chance per tick)
-                    is_flash_move = abs(shock) > 0.005
-                    is_random_check = random.random() < 0.01
-                    
-                    if is_flash_move or is_random_check:
-                        logger.info(f"⚡ Triggering Live Analysis for {symbol} (Shock: {shock:.4f})")
+                    for symbol, data in self.watched_symbols.items():
+                        # Generate next price tick
+                        volatility = data["volatility"]
+                        shock = random.gauss(0, volatility)
+                        new_price = data["price"] * (1 + shock)
                         
-                        # Run analysis in background (don't block stream)
-                        asyncio.create_task(self._run_live_analysis(symbol, new_price, shock))
-                
-                # Sleep to mimic tick frequency (e.g., 1 second updates)
-                await asyncio.sleep(1)
-                
-            except Exception as e:
-                logger.error(f"Stream Error: {e}")
-                await asyncio.sleep(5) # Retry delay
+                        # Get previous price for alert checking
+                        prev_price = data.get("prev_price", new_price)
+
+                        # Update state
+                        self.watched_symbols[symbol]["price"] = new_price
+                        self.watched_symbols[symbol]["prev_price"] = new_price
+
+                        # Create tick payload
+                        tick = {
+                            "symbol": symbol,
+                            "price": round(new_price, 2),
+                            "change_pct": round(shock * 100, 3),
+                            "volume": random.randint(100, 5000),
+                            "timestamp": datetime.now().isoformat()
+                        }
+
+                        # Broadcast
+                        await self.manager.broadcast_ticker(symbol, tick)
+
+                        # Check price alerts (with error handling to prevent stream crash)
+                        try:
+                            await self._check_price_alerts(symbol, new_price, prev_price)
+                        except Exception as alert_err:
+                            logger.warning(f"Alert check failed for {symbol}: {alert_err}")
+                        
+                        # Smart Trigger: Run analysis if price moves > 0.5% in one tick (Flash Move)
+                        # OR randomly for demo purposes (1% chance per tick)
+                        is_flash_move = abs(shock) > 0.005
+                        is_random_check = random.random() < 0.01
+                        
+                        if is_flash_move or is_random_check:
+                            logger.info(f"⚡ Triggering Live Analysis for {symbol} (Shock: {shock:.4f})")
+
+                            # Run analysis in background (don't block stream)
+                            task = asyncio.create_task(self._run_live_analysis(symbol, new_price, shock))
+                            self._background_tasks.add(task)
+                            task.add_done_callback(self._background_tasks.discard)
+                    
+                    # Sleep to mimic tick frequency (e.g., 1 second updates)
+                    await asyncio.sleep(1)
+                    
+                except Exception as e:
+                    logger.error(f"Stream tick error: {e}", exc_info=True)
+                    await asyncio.sleep(5) # Retry delay
+                    
+        except Exception as e:
+            logger.error(f"Fatal stream error: {e}", exc_info=True)
+            self.active = False
 
     async def _run_live_analysis(self, symbol: str, price: float, shock: float):
         """Run quick analysis and broadcast if interesting"""
@@ -124,6 +155,36 @@ class MarketStream:
         except Exception as e:
             logger.error(f"Live analysis failed for {symbol}: {e}")
 
+    async def _check_price_alerts(self, symbol: str, current_price: float, previous_price: float):
+        """Check if any price alerts should trigger for this symbol"""
+        try:
+            # Lazy load alert manager to avoid circular imports
+            if self.alert_manager is None:
+                from alerts.alert_manager import get_alert_manager
+                self.alert_manager = get_alert_manager()
+
+            # Get all active price alerts for this symbol
+            from alerts.alert_manager import AlertStatus, AlertType
+            active_alerts = [
+                alert for alert in self.alert_manager.alerts.values()
+                if alert.symbol == symbol
+                and alert.status == AlertStatus.ACTIVE
+                and alert.alert_type == AlertType.PRICE
+            ]
+
+            # Check each alert
+            for alert in active_alerts:
+                should_trigger = self.alert_manager.check_price_alert(
+                    alert, current_price, previous_price
+                )
+
+                if should_trigger:
+                    logger.info(f"🔔 Alert triggered: {alert.alert_id} for {symbol} at ₹{current_price:.2f}")
+                    await self.alert_manager.trigger_alert(alert)
+
+        except Exception as e:
+            logger.error(f"Error checking price alerts for {symbol}: {e}")
+
     async def stop_stream(self):
         """Stop the simulation symbol"""
         self.active = False
@@ -134,3 +195,4 @@ stream = MarketStream()
 
 def get_market_stream() -> MarketStream:
     return stream
+

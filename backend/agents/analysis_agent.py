@@ -8,11 +8,8 @@ import pandas as pd
 import ta
 from .base import BaseAgent
 from .percentile_scorer import PercentileScorer
-import sys
-import os
 
-# Add parent directory to path to import data_providers
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Use absolute import - server.py runs from backend directory
 from data_providers.provider_manager import get_provider_manager
 
 

@@ -53,7 +53,7 @@ class KnowledgeRetriever:
             
             if results["ids"] and len(results["ids"][0]) > 0:
                 for i in range(len(results["ids"][0])):
-                    # ChromaDB returns distances (lower is better)
+                    # FAISS returns distances (lower is better)
                     # Convert to similarity score (higher is better)
                     distance = results["distances"][0][i]
                     similarity = 1 / (1 + distance)  # Convert distance to similarity

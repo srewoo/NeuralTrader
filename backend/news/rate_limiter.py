@@ -189,7 +189,8 @@ class NewsRateLimiter:
             return None
 
         try:
-            key = self._get_cache_key(cache_type, cache_type, params)
+            # Use cache_type as both provider and endpoint identifier
+            key = self._get_cache_key("cache", cache_type, params)
             cached = self.redis.get(key)
 
             if cached:
@@ -220,7 +221,7 @@ class NewsRateLimiter:
             return False
 
         try:
-            key = self._get_cache_key(cache_type, cache_type, params)
+            key = self._get_cache_key("cache", cache_type, params)
             ttl = self.CACHE_TTL.get(cache_type, 300)
 
             # Add cache metadata
@@ -323,7 +324,11 @@ def get_rate_limiter() -> NewsRateLimiter:
     """Get or create global rate limiter instance"""
     global _rate_limiter
     if _rate_limiter is None:
-        _rate_limiter = NewsRateLimiter()
+        # Disable market hours enforcement by default for development
+        # Set ENFORCE_MARKET_HOURS=true in production if needed
+        import os
+        enforce_hours = os.getenv("ENFORCE_MARKET_HOURS", "false").lower() == "true"
+        _rate_limiter = NewsRateLimiter(enforce_market_hours=enforce_hours)
     return _rate_limiter
 
 

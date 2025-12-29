@@ -17,7 +17,7 @@ cachetools==6.2.3
 certifi==2025.11.12
 cffi==2.0.0
 charset-normalizer==3.4.4
-chromadb==1.3.7
+faiss-cpu>=1.7.0
 click>=8.0.0
 coloredlogs==15.0.1
 cryptography==46.0.3
@@ -70,7 +70,7 @@ kubernetes==34.1.0
 librt==0.7.3
 langgraph==0.2.45
 langchain==0.3.15
-langchain-core>=1.0.0
+langchain-core<0.4.0,>=0.3.15
 langchain-openai==0.2.14
 langchain-google-genai==2.0.8
 litellm==1.80.0
@@ -86,7 +86,7 @@ multitasking==0.0.12
 mypy==1.19.0
 mypy_extensions==1.1.0
 networkx==3.4.2
-numpy==2.3.5
+numpy<2.0.0,>=1.24.0
 oauthlib==3.3.1
 onnxruntime==1.23.2
 openai==1.99.9
@@ -120,7 +120,6 @@ pyproject_hooks==1.2.0
 pytest>=8.2,<9
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
-httpx==0.28.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-jose==3.5.0
@@ -164,7 +163,7 @@ tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.3.0
 uvicorn==0.25.0
-uvloop==0.22.1
+# uvloop==0.22.1  # Disabled for macOS ARM compatibility - use --loop asyncio instead
 watchfiles==1.1.1
 websocket-client==1.9.0
 websockets==15.0.1

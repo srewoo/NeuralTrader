@@ -47,7 +47,7 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=appuser:appuser . .
 
 # Create necessary directories
-RUN mkdir -p /app/chroma_db /app/logs && \
+RUN mkdir -p /app/faiss_db /app/logs && \
     chown -R appuser:appuser /app
 
 # Set environment variables

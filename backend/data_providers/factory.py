@@ -68,7 +68,7 @@ class DataProviderFactory:
         # Initialize Finnhub if key available
         if "finnhub" in self.provider_keys and self.provider_keys["finnhub"]:
             try:
-                from .finnhub import FinnhubProvider
+                from .finnhub_provider import FinnhubProvider
 
                 self.providers["finnhub"] = FinnhubProvider(
                     api_key=self.provider_keys["finnhub"]
@@ -80,7 +80,7 @@ class DataProviderFactory:
         # Initialize FMP if key available
         if "fmp" in self.provider_keys and self.provider_keys["fmp"]:
             try:
-                from .fmp import FMPProvider
+                from .fmp_provider import FMPProvider
 
                 self.providers["fmp"] = FMPProvider(
                     api_key=self.provider_keys["fmp"]
@@ -384,15 +384,29 @@ class DataProviderFactory:
         return None
 
 
-# Singleton instance
+# Singleton instance with thread lock
+import threading
 _factory_instance: Optional[DataProviderFactory] = None
+_factory_lock = threading.Lock()
 
 
 def get_data_provider_factory(provider_keys: Dict[str, Any] = None) -> DataProviderFactory:
-    """Get or create data provider factory instance"""
+    """Get or create data provider factory instance with thread safety"""
     global _factory_instance
 
-    if _factory_instance is None or provider_keys:
-        _factory_instance = DataProviderFactory(provider_keys)
+    # Only reinitialize if keys are provided AND different from current
+    if provider_keys and _factory_instance is not None:
+        # Check if keys have actually changed
+        current_keys = set(_factory_instance.provider_keys.keys()) if hasattr(_factory_instance, 'provider_keys') else set()
+        new_keys = set(provider_keys.keys())
+        if current_keys == new_keys:
+            # Keys haven't changed, return existing instance
+            return _factory_instance
+
+    # Thread-safe initialization
+    with _factory_lock:
+        # Double-check pattern to avoid race condition
+        if _factory_instance is None or provider_keys:
+            _factory_instance = DataProviderFactory(provider_keys)
 
     return _factory_instance

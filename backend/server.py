@@ -72,10 +72,10 @@ from portfolio.risk_manager import get_risk_manager
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+# MongoDB connection (with defaults for development)
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'neuraltrader')]
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -85,7 +85,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3005').split(','),
+    allow_origins=[origin.strip() for origin in os.environ.get('CORS_ORIGINS', 'http://localhost:3005').split(',')],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -170,6 +170,13 @@ class SettingsCreate(BaseModel):
     twilio_auth_token: Optional[str] = None
     twilio_whatsapp_number: Optional[str] = None
     user_whatsapp_number: Optional[str] = None
+    # Indian Broker API Keys
+    angelone_api_key: Optional[str] = None
+    angelone_client_id: Optional[str] = None
+    angelone_password: Optional[str] = None
+    angelone_totp_secret: Optional[str] = None
+    zerodha_api_key: Optional[str] = None
+    zerodha_api_secret: Optional[str] = None
     use_tvscreener: bool = True
     selected_model: str = "gpt-4.1"
     selected_provider: str = "openai"
@@ -333,7 +340,8 @@ async def fetch_stock_data(symbol: str) -> Dict[str, Any]:
             else:
                 hist = ticker.history(period="5d")
                 is_intraday = False
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to get intraday data: {e}")
             hist = ticker.history(period="5d")
             is_intraday = False
 
@@ -350,7 +358,8 @@ async def fetch_stock_data(symbol: str) -> Dict[str, Any]:
                 else:
                     hist = ticker.history(period="5d")
                     is_intraday = False
-            except:
+            except Exception as e:
+                logger.warning(f"Failed to get BSE intraday data: {e}")
                 hist = ticker.history(period="5d")
                 is_intraday = False
 
@@ -373,6 +382,11 @@ async def fetch_stock_data(symbol: str) -> Dict[str, Any]:
             from pytz import timezone as tz
             ist = tz('Asia/Kolkata')
             last_update = ist.localize(last_update)
+        else:
+            # Convert to IST if already timezone-aware
+            from pytz import timezone as tz
+            ist = tz('Asia/Kolkata')
+            last_update = last_update.astimezone(ist)
 
         current_time = datetime.now(timezone.utc)
         data_age_minutes = int((current_time - last_update).total_seconds() / 60)
@@ -661,6 +675,10 @@ Be specific with price levels and provide actionable insights. Consider both bul
         
         # Parse the response
         try:
+            # Check if response is None or empty
+            if not response:
+                raise ValueError("Empty response from LLM")
+            
             # Try to extract JSON from response
             response_text = response.strip()
             if response_text.startswith('```json'):
@@ -734,6 +752,13 @@ Be specific with price levels and provide actionable insights. Consider both bul
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     manager = get_connection_manager()
     await manager.connect(websocket, client_id)
+    
+    # TODO: Market stream disabled - causes Python crash on macOS
+    # stream = get_market_stream()
+    # if not stream.active:
+    #     asyncio.create_task(stream.start_stream())
+    #     logger.info("Market stream started on WebSocket connection")
+    
     try:
         while True:
             # Wait for messages from client (e.g. subscribe)
@@ -757,6 +782,8 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 
     except Exception as e:
         logger.warning(f"WebSocket error for {client_id}: {e}")
+    finally:
+        # Ensure cleanup happens even if exception occurs
         manager.disconnect(client_id)
 
 @app.on_event("startup")
@@ -820,19 +847,25 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Redis cache initialization failed (using memory fallback): {e}")
 
-    # Start Market Stream
-    stream = get_market_stream()
-    asyncio.create_task(stream.start_stream())
+    # Startup complete - market stream will be started when first WebSocket connects
+    logger.info("Application startup complete")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    stream = get_market_stream()
-    await stream.stop_stream()
+    # Stop market stream if it's running
+    try:
+        stream = get_market_stream()
+        if stream.active:
+            await stream.stop_stream()
+            logger.info("Market stream stopped")
+    except Exception as e:
+        logger.warning(f"Market stream shutdown error: {e}")
 
     # Shutdown Redis cache
     try:
         from utils.redis_cache import shutdown_cache
         await shutdown_cache()
+        logger.info("Redis cache shutdown complete")
     except Exception as e:
         logger.warning(f"Redis cache shutdown error: {e}")
 
@@ -872,6 +905,13 @@ async def get_settings():
         "twilio_auth_token": "",
         "twilio_whatsapp_number": "",
         "user_whatsapp_number": "",
+        # Indian Broker API Keys
+        "angelone_api_key": "",
+        "angelone_client_id": "",
+        "angelone_password": "",
+        "angelone_totp_secret": "",
+        "zerodha_api_key": "",
+        "zerodha_api_secret": "",
         "use_tvscreener": True,
         "selected_model": "gpt-4.1",
         "selected_provider": "openai"
@@ -919,6 +959,17 @@ async def get_settings():
         merged_settings['smtp_password'] = mask_key(merged_settings['smtp_password'])
     if merged_settings.get('twilio_auth_token'):
         merged_settings['twilio_auth_token'] = mask_key(merged_settings['twilio_auth_token'])
+    # Mask Indian Broker API Keys
+    if merged_settings.get('angelone_api_key'):
+        merged_settings['angelone_api_key'] = mask_key(merged_settings['angelone_api_key'])
+    if merged_settings.get('angelone_password'):
+        merged_settings['angelone_password'] = mask_key(merged_settings['angelone_password'])
+    if merged_settings.get('angelone_totp_secret'):
+        merged_settings['angelone_totp_secret'] = mask_key(merged_settings['angelone_totp_secret'])
+    if merged_settings.get('zerodha_api_key'):
+        merged_settings['zerodha_api_key'] = mask_key(merged_settings['zerodha_api_key'])
+    if merged_settings.get('zerodha_api_secret'):
+        merged_settings['zerodha_api_secret'] = mask_key(merged_settings['zerodha_api_secret'])
 
     return merged_settings
 
@@ -1006,6 +1057,22 @@ async def save_settings(settings: SettingsCreate):
         update_data["twilio_whatsapp_number"] = settings.twilio_whatsapp_number
     if settings.user_whatsapp_number:
         update_data["user_whatsapp_number"] = settings.user_whatsapp_number
+
+    # Indian Broker API Keys - Angel One
+    if settings.angelone_api_key and not is_masked(settings.angelone_api_key):
+        update_data["angelone_api_key"] = settings.angelone_api_key
+    if settings.angelone_client_id:
+        update_data["angelone_client_id"] = settings.angelone_client_id
+    if settings.angelone_password and not is_masked(settings.angelone_password):
+        update_data["angelone_password"] = settings.angelone_password
+    if settings.angelone_totp_secret and not is_masked(settings.angelone_totp_secret):
+        update_data["angelone_totp_secret"] = settings.angelone_totp_secret
+
+    # Indian Broker API Keys - Zerodha
+    if settings.zerodha_api_key and not is_masked(settings.zerodha_api_key):
+        update_data["zerodha_api_key"] = settings.zerodha_api_key
+    if settings.zerodha_api_secret and not is_masked(settings.zerodha_api_secret):
+        update_data["zerodha_api_secret"] = settings.zerodha_api_secret
 
     # TVScreener setting
     update_data["use_tvscreener"] = settings.use_tvscreener
@@ -1499,6 +1566,24 @@ async def get_enhanced_analysis(symbol: str):
 
         if result.get('error'):
             raise HTTPException(status_code=500, detail=result.get('error'))
+
+        # Track prediction for performance monitoring
+        if result.get('recommendation') and result['recommendation'] != 'HOLD':
+            try:
+                tracker = get_confidence_tracker(db)
+                await tracker.track_prediction(
+                    symbol=symbol,
+                    recommendation=result['recommendation'],
+                    entry_price=result.get('current_price'),
+                    target_price=result.get('target_price'),
+                    confidence=result.get('confidence', 0),
+                    analysis_data=result,
+                    strategy="ENHANCED_ANALYSIS"
+                )
+                logger.info(f"📊 Tracked prediction: {symbol} {result['recommendation']} (confidence: {result.get('confidence', 0)}%)")
+            except Exception as e:
+                logger.error(f"Failed to track prediction for {symbol}: {e}")
+                # Don't fail the whole request if tracking fails
 
         return result
 
