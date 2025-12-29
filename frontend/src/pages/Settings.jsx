@@ -154,14 +154,19 @@ export default function Settings() {
     fetchSettings();
   }, []);
 
-  const fetchSettings = async () => {
+  const fetchSettings = async (skipLocalStorageSave = false) => {
     try {
       // Try to fetch from backend first
       const response = await axios.get(`${API_URL}/settings`);
       const backendSettings = normalizeSettings(mergeWithDefaults(response.data));
       setSettings(backendSettings);
-      // Also save to localStorage as backup
-      saveStoredSettings(backendSettings);
+      // Only save to localStorage on initial load (masked keys are fine for display)
+      // Skip saving when refreshing after a save to preserve unmasked keys
+      if (!skipLocalStorageSave) {
+        // Note: localStorage will have masked keys, which is expected for security
+        // The real keys are stored in MongoDB backend
+        saveStoredSettings(backendSettings);
+      }
     } catch (error) {
       console.error("Error fetching settings:", error);
       // Fallback to localStorage if backend is unavailable
@@ -194,19 +199,19 @@ export default function Settings() {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      // Save to backend
+      // Save to backend - this is the source of truth
       await axios.post(`${API_URL}/settings`, settings);
-      // Also save to localStorage for persistence
-      saveStoredSettings(settings);
       toast.success("Settings saved successfully!");
       setHasChanges(false);
-      fetchSettings(); // Refresh to get masked keys
+      // Refresh UI with masked keys, but skip saving to localStorage
+      // This preserves the fact that backend is the source of truth
+      // and localStorage is only used for display fallback (with masked keys)
+      fetchSettings(true);
     } catch (error) {
-      // Even if backend fails, save to localStorage
-      saveStoredSettings(settings);
-      toast.error("Failed to save to backend, but cached locally");
+      // Don't save to localStorage on backend failure - prevents data inconsistency
+      toast.error("Failed to save settings. Please try again.");
       console.error(error);
-      setHasChanges(false);
+      // Keep hasChanges true so user knows settings weren't saved
     } finally {
       setIsSaving(false);
     }

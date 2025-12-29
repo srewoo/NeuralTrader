@@ -310,22 +310,22 @@ def mock_openai():
 
 @pytest.fixture
 def mock_chromadb():
-    """Mock ChromaDB collection"""
-    with patch('chromadb.PersistentClient') as mock:
-        client = MagicMock()
-        collection = MagicMock()
+    """Mock FAISS vector store (legacy name kept for test compatibility)"""
+    mock_store = MagicMock()
 
-        # Mock query results
-        collection.query.return_value = {
-            'ids': [['doc1', 'doc2', 'doc3']],
-            'documents': [['Document 1 content', 'Document 2 content', 'Document 3 content']],
-            'metadatas': [[{'category': 'patterns'}, {'category': 'strategies'}, {'category': 'patterns'}]],
-            'distances': [[0.1, 0.2, 0.3]]
-        }
+    # Mock query results
+    mock_store.query.return_value = {
+        'ids': [['doc1', 'doc2', 'doc3']],
+        'documents': [['Document 1 content', 'Document 2 content', 'Document 3 content']],
+        'metadatas': [[{'category': 'patterns'}, {'category': 'strategies'}, {'category': 'patterns'}]],
+        'distances': [[0.1, 0.2, 0.3]]
+    }
+    mock_store.count.return_value = 3
+    mock_store.get_collection_info.return_value = {'name': 'test', 'count': 3, 'metadata': {'backend': 'FAISS'}}
 
-        client.get_or_create_collection.return_value = collection
-        mock.return_value = client
-        yield mock
+    with patch('rag.vector_store.get_vector_store', return_value=mock_store):
+        with patch('rag.vector_store.VectorStore', return_value=mock_store):
+            yield mock_store
 
 
 # ============================================================================

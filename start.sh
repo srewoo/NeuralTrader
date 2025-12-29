@@ -5,6 +5,9 @@
 
 set -e
 
+# Get the directory where this script is located (works on any machine)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # Color codes for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -41,7 +44,7 @@ check_redis
 
 # Start Redis Server
 echo -e "${GREEN}🔴 Starting Redis Server...${NC}"
-if pgrep -x "redis-server" > /dev/null; then
+if redis-cli ping > /dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  Redis is already running!${NC}"
 else
     nohup redis-server > logs/redis.log 2>&1 &
@@ -54,7 +57,7 @@ fi
 echo ""
 
 # Check if backend servers are already running
-if pgrep -f "uvicorn.*backend.server:app" > /dev/null; then
+if pgrep -f "uvicorn server:app" > /dev/null; then
     echo -e "${YELLOW}⚠️  Backend server is already running!${NC}"
     echo -e "${YELLOW}   Run ./stop.sh first to stop existing servers${NC}"
     echo ""
@@ -74,8 +77,8 @@ else
         source venv/bin/activate
     fi
     
-    # Start backend in background
-    nohup uvicorn server:app --reload --host 0.0.0.0 --port 8005 > ../logs/backend.log 2>&1 &
+    # Start backend in background (using asyncio loop instead of uvloop to prevent macOS crash)
+    nohup uvicorn server:app --host 0.0.0.0 --port 8005 --loop asyncio > ../logs/backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > ../logs/backend.pid
     echo -e "${GREEN}✅ Backend FastAPI started on http://localhost:8005 (PID: $BACKEND_PID)${NC}"
@@ -88,7 +91,7 @@ else
         echo -e "${YELLOW}⚠️  Celery worker is already running!${NC}"
     else
         # Set PYTHONPATH to include backend directory for imports
-        PYTHONPATH=/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend:$PYTHONPATH \
+        PYTHONPATH="$SCRIPT_DIR/backend:$PYTHONPATH" \
         nohup celery -A celery_app worker --loglevel=info --pool=solo > ../logs/celery_worker.log 2>&1 &
         CELERY_WORKER_PID=$!
         echo $CELERY_WORKER_PID > ../logs/celery_worker.pid
@@ -103,7 +106,7 @@ else
         echo -e "${YELLOW}⚠️  Celery beat is already running!${NC}"
     else
         # Set PYTHONPATH to include backend directory
-        PYTHONPATH=/Users/sharajrewoo/DemoReposQA/NeuralTrader/backend:$PYTHONPATH \
+        PYTHONPATH="$SCRIPT_DIR/backend:$PYTHONPATH" \
         nohup celery -A celery_app beat --loglevel=info > ../logs/celery_beat.log 2>&1 &
         CELERY_BEAT_PID=$!
         echo $CELERY_BEAT_PID > ../logs/celery_beat.pid
@@ -151,15 +154,15 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Service Status${NC}"
 echo -e "${BLUE}========================================${NC}"
 
-# Check Redis
-if pgrep -x "redis-server" > /dev/null; then
+# Check Redis (use redis-cli ping for accurate detection)
+if redis-cli ping > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Redis: Running${NC}"
 else
     echo -e "${RED}❌ Redis: Not running${NC}"
 fi
 
 # Check Backend
-if pgrep -f "uvicorn.*backend.server:app" > /dev/null; then
+if pgrep -f "uvicorn server:app" > /dev/null; then
     echo -e "${GREEN}✅ Backend API: Running on http://localhost:8005${NC}"
     echo -e "${GREEN}   API Docs: http://localhost:8005/docs${NC}"
 else

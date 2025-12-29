@@ -83,10 +83,26 @@ export default function Dashboard() {
         if (watchlistRes.data?.length > 0) {
           setQuickSelectStocks(watchlistRes.data.slice(0, 5).map(s => s.symbol));
         } else {
-          setQuickSelectStocks(["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]);
+          // Fetch from popular stocks API (real data)
+          try {
+            const popularRes = await axios.get(`${API_URL}/stocks/popular?limit=5`);
+            if (popularRes.data?.length > 0) {
+              setQuickSelectStocks(popularRes.data.map(s => s.symbol));
+            }
+          } catch {
+            setQuickSelectStocks([]);
+          }
         }
       } catch {
-        setQuickSelectStocks(["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]);
+        // Fetch from popular stocks API (real data)
+        try {
+          const popularRes = await axios.get(`${API_URL}/stocks/popular?limit=5`);
+          if (popularRes.data?.length > 0) {
+            setQuickSelectStocks(popularRes.data.map(s => s.symbol));
+          }
+        } catch {
+          setQuickSelectStocks([]);
+        }
       }
     }
   };
@@ -648,7 +664,7 @@ export default function Dashboard() {
                     and get AI-powered trading recommendations.
                   </p>
                   <div className="mt-6 flex flex-wrap justify-center gap-2">
-                    {(quickSelectStocks.length > 0 ? quickSelectStocks : ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"]).map((symbol) => (
+                    {quickSelectStocks.map((symbol) => (
                       <Button
                         key={symbol}
                         variant="outline"

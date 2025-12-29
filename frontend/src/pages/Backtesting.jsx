@@ -47,7 +47,7 @@ import { API_URL } from "@/config/api";
 export default function Backtesting() {
   const [strategies, setStrategies] = useState([]);
   const [selectedStrategy, setSelectedStrategy] = useState("");
-  const [symbol, setSymbol] = useState("RELIANCE.NS");
+  const [symbol, setSymbol] = useState(""); // No default - user must select
   const [startDate, setStartDate] = useState("2023-01-01");
   const [endDate, setEndDate] = useState("2024-12-31");
   const [initialCapital, setInitialCapital] = useState(100000);

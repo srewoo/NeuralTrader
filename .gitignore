@@ -73,8 +73,8 @@ agenthub/agents/youtube/db
 backend/celerybeat-schedule
 backend/celerybeat-schedule-*
 
-# Vector store / ChromaDB (large binary data, regeneratable)
-backend/chroma_db/
+# Vector store / FAISS (large binary data, regeneratable)
+backend/faiss_db/
 backend/price_cache.db
 
 # Binary and pickle files (model artifacts, embeddings)
@@ -91,6 +91,9 @@ backend/logs/backend.log.*.*.*.*.*
 backend/logs/backend.log.*.*.*.*.*.*
 backend/logs/backend.log.*.*.*.*.*.*.*
 backend/logs/backend.log.*.*.*.*.*.*.*.*
+logs/backend.pid
+*.pid
+
 
 # Environment files (CRITICAL: contains secrets!)
 .env
