@@ -318,7 +318,7 @@ def generate_stock_recommendations(self, limit: int = 100):
         import yfinance as yf
         from datetime import timezone
         from data_providers.tvscreener_provider import get_all_indian_stocks_async
-        from agents.enhanced_analyzer import get_enhanced_analyzer
+        from agents.ensemble_analyzer import get_ensemble_analyzer
         from database.mongo_client import get_mongo_client
 
         logger.info(f"🚀 Starting background stock recommendations generation for {limit} stocks...")
@@ -345,8 +345,8 @@ def generate_stock_recommendations(self, limit: int = 100):
 
         logger.info(f"📊 Analyzing {len(stocks_to_analyze)} stocks...")
 
-        # Use enhanced analyzer
-        analyzer = get_enhanced_analyzer()
+        # Use ensemble analyzer
+        analyzer = get_ensemble_analyzer()
 
         buy_recs = []
         sell_recs = []
@@ -355,23 +355,56 @@ def generate_stock_recommendations(self, limit: int = 100):
         # Process stocks (sequential to avoid overwhelming APIs)
         for symbol in stocks_to_analyze:
             try:
-                # Get stock info (add .NS suffix for NSE stocks)
-                ticker = f"{symbol}.NS"
-                info = yf.Ticker(ticker).info
+                # Try both NSE (.NS) and BSE (.BO) exchanges
+                ticker = None
+                exchange = None
+                info = {}
+
+                # Try NSE first (more liquid, primary exchange)
+                try:
+                    nse_ticker = f"{symbol}.NS"
+                    nse_data = yf.Ticker(nse_ticker)
+                    nse_info = nse_data.info
+
+                    # Check if valid data exists
+                    if nse_info and nse_info.get('regularMarketPrice'):
+                        ticker = nse_ticker
+                        exchange = "NSE"
+                        info = nse_info
+                except Exception:
+                    pass
+
+                # If NSE fails, try BSE
+                if not ticker:
+                    try:
+                        bse_ticker = f"{symbol}.BO"
+                        bse_data = yf.Ticker(bse_ticker)
+                        bse_info = bse_data.info
+
+                        if bse_info and bse_info.get('regularMarketPrice'):
+                            ticker = bse_ticker
+                            exchange = "BSE"
+                            info = bse_info
+                    except Exception:
+                        pass
+
+                # Skip if no valid data from either exchange
+                if not ticker or not info:
+                    logger.debug(f"No valid data for {symbol} on NSE or BSE")
+                    continue
+
                 stock_info = {
                     "symbol": symbol,
+                    "exchange": exchange,
                     "name": info.get('longName', symbol),
                     "sector": info.get('sector', 'N/A')
                 }
 
+                logger.debug(f"Analyzing {symbol} on {exchange}")
+
                 # Analyze stock
                 async def analyze():
-                    return await analyzer.analyze_stock(
-                        symbol,
-                        include_patterns=True,
-                        include_sentiment=True,
-                        include_backtest_validation=False  # Skip backtest for speed
-                    )
+                    return await analyzer.analyze_stock(symbol, include_news=True)
 
                 result = run_async(analyze())
 
@@ -399,6 +432,7 @@ def generate_stock_recommendations(self, limit: int = 100):
 
                 rec_obj = {
                     "symbol": symbol,
+                    "exchange": exchange,  # NSE or BSE
                     "name": stock_info.get("name", symbol),
                     "sector": stock_info.get("sector", "N/A"),
                     "recommendation": recommendation,
@@ -434,6 +468,11 @@ def generate_stock_recommendations(self, limit: int = 100):
         buy_recs.sort(key=lambda x: x['confidence'], reverse=True)
         sell_recs.sort(key=lambda x: x['confidence'], reverse=True)
 
+        # Count stocks by exchange
+        all_recs = buy_recs + sell_recs
+        nse_count = sum(1 for r in all_recs if r.get('exchange') == 'NSE')
+        bse_count = sum(1 for r in all_recs if r.get('exchange') == 'BSE')
+
         # Calculate market sentiment
         market_sentiment = "Neutral"
         if len(buy_recs) > len(sell_recs) * 1.5:
@@ -459,6 +498,8 @@ def generate_stock_recommendations(self, limit: int = 100):
                 "market_sentiment": market_sentiment,
                 "avg_buy_confidence": round(avg_buy_conf, 1),
                 "avg_sell_confidence": round(avg_sell_conf, 1),
+                "nse_stocks": nse_count,
+                "bse_stocks": bse_count,
             },
             "buy_recommendations": buy_recs[:20],  # Top 20
             "sell_recommendations": sell_recs[:15],  # Top 15
@@ -483,7 +524,7 @@ def generate_stock_recommendations(self, limit: int = 100):
             db.recommendations.insert_one(recommendations_data.copy())
             logger.info("✅ Inserted new recommendation")
 
-        logger.info(f"🎉 Background analysis complete! {len(buy_recs)} BUY ({avg_buy_conf:.1f}% avg), {len(sell_recs)} SELL ({avg_sell_conf:.1f}% avg)")
+        logger.info(f"🎉 Background analysis complete! {len(buy_recs)} BUY ({avg_buy_conf:.1f}% avg), {len(sell_recs)} SELL ({avg_sell_conf:.1f}% avg) | NSE: {nse_count}, BSE: {bse_count}")
 
         return {
             "status": "success",
