@@ -69,6 +69,9 @@ from data_providers.tvscreener_provider import (
 )
 from portfolio.risk_manager import get_risk_manager
 
+# Import Options module
+from options.router import router as options_router
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -5450,6 +5453,9 @@ async def get_all_stocks(
         logger.error(f"Failed to get all stocks: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# Include the options router in api_router
+api_router.include_router(options_router)
 
 # Include the router in the main app (must be after all endpoint definitions)
 app.include_router(api_router)

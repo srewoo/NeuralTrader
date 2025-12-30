@@ -11,6 +11,7 @@ import logging
 from .strategies import Strategy, SignalType
 from .metrics import PerformanceMetrics
 from .price_cache import get_price_cache
+from .spread_model import SpreadModel, OrderSide, get_spread_model_for_stock
 
 logger = logging.getLogger(__name__)
 
@@ -24,19 +25,25 @@ class BacktestEngine:
         self,
         initial_capital: float = 100000,
         commission: float = 0.001,  # 0.1%
-        slippage: float = 0.0005     # 0.05%
+        slippage: float = 0.0005,    # 0.05%
+        spread_model: Optional[SpreadModel] = None,
+        use_spread_model: bool = False
     ):
         """
         Initialize backtest engine
-        
+
         Args:
             initial_capital: Starting capital
             commission: Commission rate (as decimal)
             slippage: Slippage rate (as decimal)
+            spread_model: Optional SpreadModel for realistic bid-ask spread modeling
+            use_spread_model: If True, uses spread model instead of simple slippage
         """
         self.initial_capital = initial_capital
         self.commission = commission
         self.slippage = slippage
+        self.spread_model = spread_model
+        self.use_spread_model = use_spread_model
         self.price_cache = get_price_cache()
     
     def run_backtest(
@@ -135,12 +142,12 @@ class BacktestEngine:
     ) -> tuple:
         """
         Simulate trades based on signals
-        
+
         Args:
             data: Price data
             signals: Trading signals
             position_size: Position size fraction
-            
+
         Returns:
             Tuple of (trades DataFrame, equity curve, position history)
         """
@@ -149,21 +156,54 @@ class BacktestEngine:
         trades = []
         equity_curve = []
         position_history = []
-        
+        spread_costs = []  # Track spread costs
+
         entry_price = None
         entry_date = None
-        
+
+        # Pre-calculate average volume for spread model
+        avg_volume = data['Volume'].mean() if 'Volume' in data.columns else None
+
+        # Calculate rolling volatility for spread model
+        if self.use_spread_model and self.spread_model:
+            returns = data['Close'].pct_change()
+            volatility_series = returns.rolling(20).std() * np.sqrt(252)
+        else:
+            volatility_series = None
+
         for date, row in data.iterrows():
             signal = signals.loc[date]
             price = row['Close']
-            
-            # Apply slippage
-            if signal == SignalType.BUY.value:
-                execution_price = price * (1 + self.slippage)
-            elif signal == SignalType.SELL.value:
-                execution_price = price * (1 - self.slippage)
+            volume = row.get('Volume', None)
+
+            # Calculate execution price based on spread model or simple slippage
+            if self.use_spread_model and self.spread_model:
+                # Get volatility for this date
+                volatility = volatility_series.loc[date] if volatility_series is not None else None
+                if pd.isna(volatility):
+                    volatility = 0.20  # Default 20% volatility
+
+                if signal == SignalType.BUY.value:
+                    execution_price = self.spread_model.get_execution_price(
+                        price, OrderSide.BUY, volume, avg_volume, volatility
+                    )
+                    spread_cost = execution_price - price
+                elif signal == SignalType.SELL.value:
+                    execution_price = self.spread_model.get_execution_price(
+                        price, OrderSide.SELL, volume, avg_volume, volatility
+                    )
+                    spread_cost = price - execution_price
+                else:
+                    execution_price = price
+                    spread_cost = 0
             else:
-                execution_price = price
+                # Simple slippage model (original behavior)
+                if signal == SignalType.BUY.value:
+                    execution_price = price * (1 + self.slippage)
+                elif signal == SignalType.SELL.value:
+                    execution_price = price * (1 - self.slippage)
+                else:
+                    execution_price = price
             
             # Execute trades
             if signal == SignalType.BUY.value and position == 0:

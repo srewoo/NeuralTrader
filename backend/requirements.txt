@@ -178,3 +178,5 @@ pyotp==2.9.0
 celery==5.4.0
 flower==2.0.1
 Brotli>=1.0.0
+# XGBoost for ML ensemble predictions
+xgboost>=2.0.0
