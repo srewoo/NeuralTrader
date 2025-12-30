@@ -180,3 +180,5 @@ flower==2.0.1
 Brotli>=1.0.0
 # XGBoost for ML ensemble predictions
 xgboost>=2.0.0
+# DuckDuckGo search for real-time web news
+duckduckgo-search>=6.0.0

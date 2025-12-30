@@ -2903,6 +2903,150 @@ async def get_market_news(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ WEB SEARCH ENDPOINTS (Real-Time News) ============
+
+@api_router.get("/news/web-search/stock/{symbol}")
+async def web_search_stock_news(
+    symbol: str,
+    company_name: Optional[str] = None,
+    max_results: int = 10,
+    days_back: int = 7
+):
+    """
+    Search for real-time news about a stock using web search.
+
+    Uses DuckDuckGo (free) or SerpAPI for current news articles.
+    More current than NewsAPI for breaking news.
+
+    Parameters:
+    - symbol: Stock symbol
+    - company_name: Optional company name for better results
+    - max_results: Maximum number of articles (default 10)
+    - days_back: Days to look back (default 7)
+    """
+    try:
+        from news.web_search import search_stock_news
+
+        results = await search_stock_news(
+            symbol=symbol,
+            company_name=company_name,
+            max_results=max_results,
+            days_back=days_back
+        )
+
+        return {
+            "symbol": symbol,
+            "total_results": len(results),
+            "days_back": days_back,
+            "articles": results,
+            "source": "web_search"
+        }
+
+    except Exception as e:
+        logger.error(f"Web search for {symbol} failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/news/web-search/market")
+async def web_search_market_news(
+    topic: str = "Indian stock market",
+    max_results: int = 10,
+    days_back: int = 3
+):
+    """
+    Search for general market news using web search.
+
+    Great for getting current market sentiment and breaking news.
+
+    Parameters:
+    - topic: Market topic (default "Indian stock market")
+    - max_results: Maximum articles (default 10)
+    - days_back: Days to look back (default 3)
+    """
+    try:
+        from news.web_search import get_web_search_service
+
+        service = get_web_search_service()
+        results = await service.search_market_news(
+            topic=topic,
+            max_results=max_results,
+            days_back=days_back
+        )
+
+        # Deduplicate
+        results = service.deduplicate_results(results)
+
+        return {
+            "topic": topic,
+            "total_results": len(results),
+            "days_back": days_back,
+            "articles": [
+                {
+                    "title": r.title,
+                    "url": r.url,
+                    "snippet": r.snippet,
+                    "source": r.source,
+                    "published_date": r.published_date.isoformat() if r.published_date else None
+                }
+                for r in results
+            ],
+            "source": "web_search"
+        }
+
+    except Exception as e:
+        logger.error(f"Market web search failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/news/web-search/sector/{sector}")
+async def web_search_sector_news(
+    sector: str,
+    max_results: int = 10,
+    days_back: int = 7
+):
+    """
+    Search for sector-specific news using web search.
+
+    Parameters:
+    - sector: Sector name (e.g., "banking", "IT", "pharma")
+    - max_results: Maximum articles (default 10)
+    - days_back: Days to look back (default 7)
+    """
+    try:
+        from news.web_search import get_web_search_service
+
+        service = get_web_search_service()
+        results = await service.search_sector_news(
+            sector=sector,
+            max_results=max_results,
+            days_back=days_back
+        )
+
+        # Deduplicate
+        results = service.deduplicate_results(results)
+
+        return {
+            "sector": sector,
+            "total_results": len(results),
+            "days_back": days_back,
+            "articles": [
+                {
+                    "title": r.title,
+                    "url": r.url,
+                    "snippet": r.snippet,
+                    "source": r.source,
+                    "published_date": r.published_date.isoformat() if r.published_date else None
+                }
+                for r in results
+            ],
+            "source": "web_search"
+        }
+
+    except Exception as e:
+        logger.error(f"Sector web search failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============ CANDLESTICK PATTERN ENDPOINTS ============
 
 @api_router.get("/patterns/{symbol}")
