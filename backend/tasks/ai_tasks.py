@@ -302,3 +302,197 @@ def analyze_stock_async(self, symbol: str, user_id: str = "default"):
     except Exception as e:
         logger.error(f"Async analysis failed for {symbol}: {e}")
         return {"status": "error", "message": str(e)}
+
+
+@celery_app.task(bind=True, max_retries=1)
+def generate_stock_recommendations(self, limit: int = 100):
+    """
+    Generate comprehensive stock recommendations for Nifty 100 + BSE stocks.
+    Runs every 4 hours to keep data fresh.
+    Users always see cached results instantly.
+
+    Args:
+        limit: Number of stocks to analyze (default: 100 for Nifty 100)
+    """
+    try:
+        import yfinance as yf
+        from datetime import timezone
+        from data_providers.tvscreener_provider import get_all_indian_stocks_async
+        from agents.enhanced_analyzer import get_enhanced_analyzer
+        from database.mongo_client import get_mongo_client
+
+        logger.info(f"🚀 Starting background stock recommendations generation for {limit} stocks...")
+
+        # Get MongoDB connection
+        mongo = get_mongo_client()
+        db = mongo.get_database()
+
+        # Fetch stocks dynamically
+        async def fetch_stocks():
+            return await get_all_indian_stocks_async(
+                min_market_cap=100,  # 100 Cr minimum
+                max_stocks=limit * 2  # Fetch more for filtering
+            )
+
+        dynamic_stocks = run_async(fetch_stocks())
+
+        if not dynamic_stocks:
+            logger.warning("No stocks fetched from TradingView, using fallback")
+            from data_providers.indian_stocks import NIFTY_100_STOCKS
+            stocks_to_analyze = [s['symbol'] for s in NIFTY_100_STOCKS[:limit]]
+        else:
+            stocks_to_analyze = [s['symbol'] for s in dynamic_stocks[:limit]]
+
+        logger.info(f"📊 Analyzing {len(stocks_to_analyze)} stocks...")
+
+        # Use enhanced analyzer
+        analyzer = get_enhanced_analyzer()
+
+        buy_recs = []
+        sell_recs = []
+        processed = 0
+
+        # Process stocks (sequential to avoid overwhelming APIs)
+        for symbol in stocks_to_analyze:
+            try:
+                # Get stock info (add .NS suffix for NSE stocks)
+                ticker = f"{symbol}.NS"
+                info = yf.Ticker(ticker).info
+                stock_info = {
+                    "symbol": symbol,
+                    "name": info.get('longName', symbol),
+                    "sector": info.get('sector', 'N/A')
+                }
+
+                # Analyze stock
+                async def analyze():
+                    return await analyzer.analyze_stock(
+                        symbol,
+                        include_patterns=True,
+                        include_sentiment=True,
+                        include_backtest_validation=False  # Skip backtest for speed
+                    )
+
+                result = run_async(analyze())
+
+                if result.get('error'):
+                    continue
+
+                recommendation = result.get('recommendation', 'HOLD')
+                confidence = result.get('confidence', 0)
+
+                # Only include strong signals (60%+ confidence)
+                if recommendation == 'HOLD' or confidence < 60.0:
+                    continue
+
+                # Build recommendation object
+                signals = []
+                for signal in result.get('signals', []):
+                    signals.append(signal.get('description', signal.get('indicator', '')))
+
+                regime = result.get('market_regime', {})
+                if regime.get('primary_regime'):
+                    signals.insert(0, f"Regime: {regime.get('primary_regime').replace('_', ' ').title()}")
+
+                price_targets = result.get('price_targets', {})
+                indicators = result.get('indicators', {})
+
+                rec_obj = {
+                    "symbol": symbol,
+                    "name": stock_info.get("name", symbol),
+                    "sector": stock_info.get("sector", "N/A"),
+                    "recommendation": recommendation,
+                    "confidence": round(confidence, 1),
+                    "current_price": result.get('current_price', 0),
+                    "target_price": price_targets.get('target'),
+                    "stop_loss": price_targets.get('stop_loss'),
+                    "signals": signals[:10],
+                    "indicators": {
+                        "rsi": indicators.get('rsi'),
+                        "macd": indicators.get('macd'),
+                        "adx": indicators.get('adx'),
+                    },
+                    "market_regime": regime.get('primary_regime', 'unknown'),
+                    "sentiment_score": result.get('sentiment', {}).get('score', 0),
+                }
+
+                if recommendation == 'BUY':
+                    buy_recs.append(rec_obj)
+                elif recommendation == 'SELL':
+                    sell_recs.append(rec_obj)
+
+                processed += 1
+
+                if processed % 10 == 0:
+                    logger.info(f"✅ Processed {processed}/{len(stocks_to_analyze)} stocks")
+
+            except Exception as e:
+                logger.warning(f"Failed to analyze {symbol}: {e}")
+                continue
+
+        # Sort by confidence
+        buy_recs.sort(key=lambda x: x['confidence'], reverse=True)
+        sell_recs.sort(key=lambda x: x['confidence'], reverse=True)
+
+        # Calculate market sentiment
+        market_sentiment = "Neutral"
+        if len(buy_recs) > len(sell_recs) * 1.5:
+            market_sentiment = "Bullish"
+        elif len(sell_recs) > len(buy_recs) * 1.5:
+            market_sentiment = "Bearish"
+
+        # Calculate averages
+        avg_buy_conf = sum(r['confidence'] for r in buy_recs) / len(buy_recs) if buy_recs else 0
+        avg_sell_conf = sum(r['confidence'] for r in sell_recs) / len(sell_recs) if sell_recs else 0
+
+        # Build recommendations document
+        recommendations_data = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "analysis_type": "enhanced_background",
+            "total_stocks_analyzed": len(stocks_to_analyze),
+            "min_confidence_threshold": 60.0,
+            "sentiment_enabled": True,
+            "backtest_enabled": False,
+            "summary": {
+                "total_buy_signals": len(buy_recs),
+                "total_sell_signals": len(sell_recs),
+                "market_sentiment": market_sentiment,
+                "avg_buy_confidence": round(avg_buy_conf, 1),
+                "avg_sell_confidence": round(avg_sell_conf, 1),
+            },
+            "buy_recommendations": buy_recs[:20],  # Top 20
+            "sell_recommendations": sell_recs[:15],  # Top 15
+        }
+
+        # Save to MongoDB (upsert to replace old data)
+        from datetime import timedelta
+        one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+
+        existing = db.recommendations.find_one(
+            {"generated_at": {"$gte": one_hour_ago}},
+            sort=[("generated_at", -1)]
+        )
+
+        if existing:
+            db.recommendations.update_one(
+                {"_id": existing["_id"]},
+                {"$set": recommendations_data}
+            )
+            logger.info("✅ Updated existing recommendation")
+        else:
+            db.recommendations.insert_one(recommendations_data.copy())
+            logger.info("✅ Inserted new recommendation")
+
+        logger.info(f"🎉 Background analysis complete! {len(buy_recs)} BUY ({avg_buy_conf:.1f}% avg), {len(sell_recs)} SELL ({avg_sell_conf:.1f}% avg)")
+
+        return {
+            "status": "success",
+            "stocks_analyzed": len(stocks_to_analyze),
+            "buy_signals": len(buy_recs),
+            "sell_signals": len(sell_recs),
+            "market_sentiment": market_sentiment
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Background recommendations generation failed: {e}")
+        raise self.retry(exc=e, countdown=600)  # Retry after 10 minutes

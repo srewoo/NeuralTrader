@@ -48,9 +48,21 @@ export default function AIRecommends() {
     loadCachedRecommendations();
   }, []);
 
+  // Auto-refresh cached data every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Silently refresh cached data in background (don't show loading state)
+      loadCachedRecommendations(false);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Load cached recommendations from database
-  const loadCachedRecommendations = async () => {
-    setLoading(true);
+  const loadCachedRecommendations = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -58,9 +70,13 @@ export default function AIRecommends() {
       setRecommendations(response.data);
     } catch (err) {
       console.error("Error loading recommendations:", err);
-      setError(err.response?.data?.detail || "Failed to load recommendations");
+      if (showLoading) {
+        setError(err.response?.data?.detail || "Failed to load recommendations");
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -70,16 +86,17 @@ export default function AIRecommends() {
     setError(null);
 
     try {
-      toast.info("🔍 Analyzing 200+ NSE stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 2-5 minutes...");
+      toast.info("🔍 Analyzing top 50 NSE stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 30-90 seconds...");
 
       const response = await axios.post(`${API_URL}/recommendations/generate`, null, {
         params: {
-          limit: 200,
+          limit: 50,  // Reduced from 200 to 50 for faster analysis
           enhanced: true,
           min_confidence: 65.0,
           enable_sentiment: true,
           enable_backtest: true
-        }
+        },
+        timeout: 180000  // 3 minute timeout instead of default 30 seconds
       });
 
       setRecommendations(response.data);
@@ -224,14 +241,14 @@ export default function AIRecommends() {
               </div>
               <div className="text-center">
                 <p className="text-lg font-medium text-text-primary mb-2">
-                  AI is analyzing 100 stocks...
+                  AI is analyzing top 50 stocks...
                 </p>
                 <p className="text-sm text-text-secondary">
                   Scanning RSI, MACD, Moving Averages, Bollinger Bands & more
                 </p>
               </div>
               <Loader2 className="w-8 h-8 animate-spin text-ai-accent mt-4" />
-              <p className="text-xs text-text-secondary mt-2">This may take 30-60 seconds</p>
+              <p className="text-xs text-text-secondary mt-2">This may take 30-90 seconds</p>
             </div>
           </CardContent>
         </Card>
@@ -276,7 +293,7 @@ export default function AIRecommends() {
                 AI Recommendations
               </h1>
               <p className="text-text-secondary">
-                Technical analysis of top 100 NSE/BSE stocks
+                Technical analysis of top NSE/BSE stocks
               </p>
             </div>
           </div>
@@ -334,7 +351,7 @@ export default function AIRecommends() {
                 No Recommendations Yet
               </h3>
               <p className="text-text-secondary mb-6 max-w-md mx-auto">
-                Click the "Generate New" button to analyze 100 top NSE/BSE stocks
+                Click the "Generate New" button to analyze top NSE/BSE stocks
                 and get AI-powered buy/sell recommendations based on technical indicators.
               </p>
               <Button

@@ -4,9 +4,16 @@ Background job processing for NeuralTrader
 """
 
 import os
+import sys
+from pathlib import Path
 from celery import Celery
 from celery.schedules import crontab
 from dotenv import load_dotenv
+
+# Add backend directory to Python path for Celery workers
+backend_dir = Path(__file__).parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
 load_dotenv()
 
@@ -86,6 +93,18 @@ celery_app.conf.update(
         "track-prediction-accuracy": {
             "task": "tasks.ai_tasks.track_prediction_accuracy",
             "schedule": crontab(hour=16, minute=30, day_of_week="1-5"),
+        },
+        # Generate comprehensive stock recommendations every 4 hours
+        "generate-stock-recommendations": {
+            "task": "tasks.ai_tasks.generate_stock_recommendations",
+            "schedule": crontab(minute=0, hour="*/4"),
+            "args": (100,),  # Analyze top 100 stocks
+        },
+        # Quick recommendations refresh during market hours
+        "quick-recommendations-market-hours": {
+            "task": "tasks.ai_tasks.generate_stock_recommendations",
+            "schedule": crontab(minute="0,30", hour="9-15", day_of_week="1-5"),
+            "args": (50,),  # Quick analysis of top 50 stocks during market hours
         },
     },
 )

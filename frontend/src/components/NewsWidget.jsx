@@ -273,22 +273,30 @@ export default function NewsWidget({ symbol = null }) {
               {trending.length === 0 ? (
                 <p className="text-text-secondary text-sm text-center py-8">No trending topics</p>
               ) : (
-                trending.map((topic, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg bg-surface-highlight flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">#{idx + 1}</span>
-                      <span className="text-sm text-text-primary">{topic.keyword || topic}</span>
+                trending.map((topic, idx) => {
+                  // Handle different response formats: string, {keyword, count}, or {topic, count}
+                  const topicText = typeof topic === 'string'
+                    ? topic
+                    : topic.keyword || topic.topic || JSON.stringify(topic);
+                  const topicCount = typeof topic === 'object' ? topic.count : null;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-lg bg-surface-highlight flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">#{idx + 1}</span>
+                        <span className="text-sm text-text-primary">{topicText}</span>
+                      </div>
+                      {topicCount && (
+                        <Badge variant="outline" className="text-xs">
+                          {topicCount} mentions
+                        </Badge>
+                      )}
                     </div>
-                    {topic.count && (
-                      <Badge variant="outline" className="text-xs">
-                        {topic.count} mentions
-                      </Badge>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

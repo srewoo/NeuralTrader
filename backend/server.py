@@ -850,6 +850,15 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Redis cache initialization failed (using memory fallback): {e}")
 
+    # Trigger initial stock recommendations generation
+    try:
+        from tasks.ai_tasks import generate_stock_recommendations
+        # Run in background - don't wait for completion
+        generate_stock_recommendations.delay(50)  # Quick initial analysis of top 50 stocks
+        logger.info("Triggered initial stock recommendations generation")
+    except Exception as e:
+        logger.warning(f"Failed to trigger initial recommendations: {e}")
+
     # Startup complete - market stream will be started when first WebSocket connects
     logger.info("Application startup complete")
 
