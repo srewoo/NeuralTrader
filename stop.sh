@@ -16,6 +16,34 @@ echo -e "${RED}  FORCE STOPPING All Services...${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+# Function to check if a PID is valid and running
+is_pid_valid() {
+    local pid="$1"
+    if [ -z "$pid" ] || ! [[ "$pid" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+    if kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+# Function to kill process from PID file with stale PID handling
+kill_from_pidfile() {
+    local pidfile="$1"
+    local name="$2"
+
+    if [ -f "$pidfile" ]; then
+        local pid=$(cat "$pidfile" 2>/dev/null)
+        if is_pid_valid "$pid"; then
+            kill -9 "$pid" 2>/dev/null && echo -e "${GREEN}✅ Killed $name (PID: $pid)${NC}"
+        else
+            echo -e "${YELLOW}ℹ️  $name PID file exists but process not running (stale PID: $pid)${NC}"
+        fi
+        rm -f "$pidfile"
+    fi
+}
+
 # Function to force kill processes
 force_kill() {
     local pattern="$1"
@@ -103,11 +131,28 @@ fi
 echo ""
 
 # ============================================
-# CLEANUP PID FILES
+# CLEANUP PID FILES (with stale PID detection)
 # ============================================
 echo -e "${YELLOW}🧹 Cleaning up PID files...${NC}"
-rm -f logs/backend.pid logs/frontend.pid logs/celery_worker.pid logs/celery_beat.pid logs/redis.pid 2>/dev/null
-echo -e "${GREEN}✅ PID files cleaned${NC}"
+
+# Try to kill from PID files first (handles stale PIDs gracefully)
+kill_from_pidfile "logs/backend.pid" "Backend API"
+kill_from_pidfile "logs/frontend.pid" "Frontend"
+kill_from_pidfile "logs/celery_worker.pid" "Celery Worker"
+kill_from_pidfile "logs/celery_beat.pid" "Celery Beat"
+
+# Clean up any remaining stale PID files
+for pidfile in logs/*.pid; do
+    if [ -f "$pidfile" ]; then
+        pid=$(cat "$pidfile" 2>/dev/null)
+        if ! is_pid_valid "$pid"; then
+            rm -f "$pidfile"
+            echo -e "${YELLOW}ℹ️  Removed stale PID file: $pidfile${NC}"
+        fi
+    fi
+done
+
+echo -e "${GREEN}✅ PID cleanup complete${NC}"
 
 echo ""
 

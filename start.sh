@@ -39,8 +39,42 @@ check_redis() {
     fi
 }
 
+# Function to check if MongoDB is running
+check_mongodb() {
+    # Check if mongod is running by attempting to connect
+    if command -v mongosh &> /dev/null; then
+        if mongosh --quiet --eval "db.runCommand({ping:1})" > /dev/null 2>&1; then
+            return 0
+        fi
+    elif command -v mongo &> /dev/null; then
+        if mongo --quiet --eval "db.runCommand({ping:1})" > /dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    # Fallback: check if mongod process is running
+    if pgrep -x mongod > /dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
 # Check Redis installation
 check_redis
+
+# Check MongoDB availability
+echo -e "${GREEN}🍃 Checking MongoDB...${NC}"
+if check_mongodb; then
+    echo -e "${GREEN}✅ MongoDB is running${NC}"
+else
+    echo -e "${RED}❌ MongoDB is not running!${NC}"
+    echo -e "${YELLOW}   NeuralTrader requires MongoDB for settings and history.${NC}"
+    echo -e "${YELLOW}   Please start MongoDB before running NeuralTrader:${NC}"
+    echo -e "${YELLOW}   - macOS (Homebrew): brew services start mongodb-community${NC}"
+    echo -e "${YELLOW}   - Linux: sudo systemctl start mongod${NC}"
+    echo -e "${YELLOW}   - Docker: docker run -d -p 27017:27017 mongo${NC}"
+    exit 1
+fi
+echo ""
 
 # Start Redis Server
 echo -e "${GREEN}🔴 Starting Redis Server...${NC}"
