@@ -305,14 +305,14 @@ def analyze_stock_async(self, symbol: str, user_id: str = "default"):
 
 
 @celery_app.task(bind=True, max_retries=1)
-def generate_stock_recommendations(self, limit: int = 100):
+def generate_stock_recommendations(self, limit: int = 200):
     """
-    Generate comprehensive stock recommendations for Nifty 100 + BSE stocks.
+    Generate comprehensive stock recommendations for top NSE/BSE stocks.
     Runs every 4 hours to keep data fresh.
     Users always see cached results instantly.
 
     Args:
-        limit: Number of stocks to analyze (default: 100 for Nifty 100)
+        limit: Number of stocks to analyze (default: 200 for top NSE/BSE stocks)
     """
     try:
         import yfinance as yf
@@ -429,6 +429,21 @@ def generate_stock_recommendations(self, limit: int = 100):
 
                 price_targets = result.get('price_targets', {})
                 indicators = result.get('indicators', {})
+                fundamentals = result.get('fundamentals', {})
+
+                # Extract key fundamental metrics
+                fundamental_metrics = None
+                if fundamentals:
+                    fundamental_metrics = {
+                        "pe_ratio": fundamentals.get('pe_ratio'),
+                        "pb_ratio": fundamentals.get('pb_ratio'),
+                        "debt_to_equity": fundamentals.get('debt_to_equity'),
+                        "roe": fundamentals.get('roe'),
+                        "profit_margin": fundamentals.get('profit_margin'),
+                        "dividend_yield": fundamentals.get('dividend_yield'),
+                        "market_cap": fundamentals.get('market_cap'),
+                        "fundamental_score": result.get('fundamental_score')
+                    }
 
                 rec_obj = {
                     "symbol": symbol,
@@ -446,6 +461,7 @@ def generate_stock_recommendations(self, limit: int = 100):
                         "macd": indicators.get('macd'),
                         "adx": indicators.get('adx'),
                     },
+                    "fundamentals": fundamental_metrics,
                     "market_regime": regime.get('primary_regime', 'unknown'),
                     "sentiment_score": result.get('sentiment', {}).get('score', 0),
                 }
@@ -484,6 +500,70 @@ def generate_stock_recommendations(self, limit: int = 100):
         avg_buy_conf = sum(r['confidence'] for r in buy_recs) / len(buy_recs) if buy_recs else 0
         avg_sell_conf = sum(r['confidence'] for r in sell_recs) / len(sell_recs) if sell_recs else 0
 
+        # Analyze sector diversification
+        def analyze_sector_diversification(recommendations):
+            sector_counts = {}
+            for rec in recommendations:
+                sector = rec.get('sector', 'Unknown')
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+
+            total = len(recommendations)
+            warnings = []
+
+            for sector, count in sector_counts.items():
+                percentage = (count / total) * 100 if total > 0 else 0
+                if percentage > 40:  # More than 40% in one sector
+                    warnings.append({
+                        "sector": sector,
+                        "count": count,
+                        "percentage": round(percentage, 1),
+                        "severity": "high",
+                        "message": f"{count} stocks ({percentage:.1f}%) from {sector} sector - High concentration risk"
+                    })
+                elif percentage > 25:  # More than 25% in one sector
+                    warnings.append({
+                        "sector": sector,
+                        "count": count,
+                        "percentage": round(percentage, 1),
+                        "severity": "medium",
+                        "message": f"{count} stocks ({percentage:.1f}%) from {sector} sector - Consider diversification"
+                    })
+
+            return {
+                "warnings": warnings,
+                "sector_breakdown": [{
+                    "sector": sector,
+                    "count": count,
+                    "percentage": round((count / total) * 100, 1) if total > 0 else 0
+                } for sector, count in sorted(sector_counts.items(), key=lambda x: x[1], reverse=True)]
+            }
+
+        buy_diversification = analyze_sector_diversification(buy_recs)
+        sell_diversification = analyze_sector_diversification(sell_recs)
+
+        # Get historical accuracy stats
+        historical_accuracy = None
+        try:
+            from tracking.confidence_tracker import ConfidenceTracker
+            tracker = ConfidenceTracker(db)
+
+            # Use sync version for Celery task
+            async def get_stats():
+                return await tracker.get_accuracy_stats(days_back=30)
+
+            import asyncio
+            accuracy_stats = asyncio.run(get_stats()) if asyncio.get_event_loop().is_running() else run_async(get_stats())
+
+            if accuracy_stats and accuracy_stats.get('total_predictions', 0) > 0:
+                historical_accuracy = {
+                    "total_predictions": accuracy_stats.get('total_predictions', 0),
+                    "period_days": accuracy_stats.get('period_days', 30),
+                    "by_recommendation": accuracy_stats.get('by_recommendation', {}),
+                    "by_confidence_band": accuracy_stats.get('by_confidence_band', {})
+                }
+        except Exception as e:
+            logger.warning(f"Failed to get historical accuracy: {e}")
+
         # Build recommendations document
         recommendations_data = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -500,9 +580,14 @@ def generate_stock_recommendations(self, limit: int = 100):
                 "avg_sell_confidence": round(avg_sell_conf, 1),
                 "nse_stocks": nse_count,
                 "bse_stocks": bse_count,
+                "historical_accuracy": historical_accuracy,
             },
-            "buy_recommendations": buy_recs[:20],  # Top 20
-            "sell_recommendations": sell_recs[:15],  # Top 15
+            "buy_recommendations": buy_recs[:50],  # Top 50 BUY signals
+            "sell_recommendations": sell_recs[:30],  # Top 30 SELL signals
+            "diversification_analysis": {
+                "buy": buy_diversification,
+                "sell": sell_diversification
+            }
         }
 
         # Save to MongoDB (upsert to replace old data)

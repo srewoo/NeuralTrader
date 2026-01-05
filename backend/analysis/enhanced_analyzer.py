@@ -217,15 +217,21 @@ class EnhancedAnalyzer:
 
                 pattern_signals = validated_patterns
 
-            # Calculate Bayesian confidence
+            # Detect contradictory signals
+            contradictions_analysis = self._detect_contradictory_signals(signals, scores, indicators)
+
+            # Calculate Bayesian confidence (will apply contradiction penalties)
             confidence, confidence_breakdown = self._calculate_bayesian_confidence(
-                signals, scores, confluence, regime_info, pattern_signals, sentiment_data, fundamental_score
+                signals, scores, confluence, regime_info, pattern_signals, sentiment_data, fundamental_score, indicators, contradictions_analysis
             )
 
             # Determine recommendation
             recommendation = self._determine_recommendation(
                 signals, scores, confidence, regime_info
             )
+
+            # Calculate entry timing suggestions
+            entry_timing = self._calculate_entry_timing(recommendation, indicators, df, regime_info)
 
             # Calculate price targets with confidence intervals
             price_targets = self._calculate_price_targets(
@@ -259,6 +265,8 @@ class EnhancedAnalyzer:
                 "final_recommendation": final_recommendation,
                 "confidence": confidence,
                 "confidence_breakdown": confidence_breakdown,
+                "contradictions": contradictions_analysis,
+                "entry_timing": entry_timing,
                 "analysis_summary": { # Backward compatibility
                     "recommendation": final_recommendation,
                     "confidence": confidence,
@@ -816,6 +824,192 @@ class EnhancedAnalyzer:
             logger.warning(f"Backtest validation failed: {e}")
             return None
 
+    def _calculate_entry_timing(
+        self,
+        recommendation: str,
+        indicators: Dict[str, Any],
+        df: pd.DataFrame,
+        regime_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Calculate optimal entry timing suggestions based on current technical position.
+
+        Returns timing suggestion: immediate, wait_for_pullback, wait_for_breakout, avoid
+        """
+        rsi = indicators.get('rsi')
+        adx = indicators.get('adx')
+        bb_position = indicators.get('bb_position')
+        macd_histogram = indicators.get('macd_histogram')
+        current_price = float(df['Close'].iloc[-1])
+        sma_20 = indicators.get('sma_20')
+        sma_50 = indicators.get('sma_50')
+
+        timing = {
+            "suggestion": "immediate",
+            "confidence": "medium",
+            "reasons": [],
+            "ideal_entry_price": None,
+            "wait_for_signals": []
+        }
+
+        if recommendation in ['BUY', 'STRONG_BUY']:
+            # Check if stock is overextended
+            if rsi and rsi > 70:
+                timing["suggestion"] = "wait_for_pullback"
+                timing["confidence"] = "high"
+                timing["reasons"].append("RSI overbought - wait for pullback to 60-65")
+                timing["wait_for_signals"].append("RSI drops below 65")
+                if sma_20:
+                    timing["ideal_entry_price"] = round(sma_20 * 0.98, 2)  # Near 20 SMA
+                    timing["reasons"].append(f"Consider entry near ₹{timing['ideal_entry_price']} (20 SMA)")
+
+            elif bb_position == 'above_upper':
+                timing["suggestion"] = "wait_for_pullback"
+                timing["confidence"] = "high"
+                timing["reasons"].append("Price above upper Bollinger Band - overextended")
+                timing["wait_for_signals"].append("Price pulls back to middle Bollinger Band")
+                bb_middle = indicators.get('bb_middle')
+                if bb_middle:
+                    timing["ideal_entry_price"] = round(bb_middle, 2)
+                    timing["reasons"].append(f"Target entry around ₹{timing['ideal_entry_price']} (BB middle)")
+
+            elif adx and adx < 20 and regime_info.get('primary_regime') == 'sideways':
+                timing["suggestion"] = "wait_for_breakout"
+                timing["confidence"] = "medium"
+                timing["reasons"].append("Weak trend (ADX < 20) - wait for momentum")
+                timing["wait_for_signals"].append("ADX crosses above 25")
+                timing["wait_for_signals"].append("Strong volume surge")
+
+            elif rsi and 45 <= rsi <= 60 and adx and adx > 25:
+                timing["suggestion"] = "immediate"
+                timing["confidence"] = "high"
+                timing["reasons"].append("Healthy RSI and strong trend (ADX > 25)")
+                if sma_50 and current_price > sma_50:
+                    timing["reasons"].append("Price above 50 SMA - uptrend intact")
+
+            else:
+                timing["suggestion"] = "immediate"
+                timing["confidence"] = "medium"
+                timing["reasons"].append("Technical indicators support entry")
+
+        elif recommendation in ['SELL', 'STRONG_SELL']:
+            # Similar logic for SELL signals
+            if rsi and rsi < 30:
+                timing["suggestion"] = "wait_for_pullback"
+                timing["confidence"] = "high"
+                timing["reasons"].append("RSI oversold - wait for bounce to 35-40")
+                timing["wait_for_signals"].append("RSI rises above 35")
+                if sma_20:
+                    timing["ideal_entry_price"] = round(sma_20 * 1.02, 2)  # Near 20 SMA
+                    timing["reasons"].append(f"Consider shorting near ₹{timing['ideal_entry_price']} (20 SMA)")
+
+            elif bb_position == 'below_lower':
+                timing["suggestion"] = "wait_for_pullback"
+                timing["confidence"] = "high"
+                timing["reasons"].append("Price below lower Bollinger Band - oversold")
+                timing["wait_for_signals"].append("Price bounces to middle Bollinger Band")
+
+            else:
+                timing["suggestion"] = "immediate"
+                timing["confidence"] = "medium"
+                timing["reasons"].append("Technical indicators support exit/short")
+
+        return timing
+
+    def _detect_contradictory_signals(
+        self,
+        signals: List[Dict],
+        scores: Dict[str, float],
+        indicators: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Detect contradictory signals that should reduce confidence.
+
+        Examples:
+        - ADX < 25 (weak trend) with strong directional recommendation
+        - RSI overbought (>70) with BUY signal
+        - Price above upper Bollinger Band with BUY signal
+        - Volume declining with breakout signals
+        """
+        contradictions = []
+        confidence_penalty = 0
+
+        rsi = indicators.get('rsi')
+        adx = indicators.get('adx')
+        bb_position = indicators.get('bb_position')
+        volume_trend = indicators.get('volume_trend')
+
+        signal_direction = 'buy' if scores['weighted_buy'] > scores['weighted_sell'] else 'sell'
+
+        # ADX contradiction: Strong recommendation with weak trend
+        if adx is not None and adx < 25:
+            if scores['weighted_buy'] > 10 or scores['weighted_sell'] > 10:
+                contradictions.append({
+                    'type': 'weak_trend',
+                    'severity': 'high',
+                    'message': f'ADX {adx:.1f} indicates no clear trend despite strong signals',
+                    'penalty': -15
+                })
+                confidence_penalty -= 15
+
+        # RSI contradiction: Overbought with BUY
+        if signal_direction == 'buy' and rsi is not None and rsi > 70:
+            contradictions.append({
+                'type': 'rsi_overbought',
+                'severity': 'medium',
+                'message': f'RSI {rsi:.1f} is overbought for a BUY signal',
+                'penalty': -10
+            })
+            confidence_penalty -= 10
+
+        # RSI contradiction: Oversold with SELL
+        if signal_direction == 'sell' and rsi is not None and rsi < 30:
+            contradictions.append({
+                'type': 'rsi_oversold',
+                'severity': 'medium',
+                'message': f'RSI {rsi:.1f} is oversold for a SELL signal',
+                'penalty': -10
+            })
+            confidence_penalty -= 10
+
+        # Bollinger Band contradiction: Above upper band with BUY
+        if signal_direction == 'buy' and bb_position == 'above_upper':
+            contradictions.append({
+                'type': 'bb_extended',
+                'severity': 'high',
+                'message': 'Price above upper Bollinger Band indicates overextension',
+                'penalty': -12
+            })
+            confidence_penalty -= 12
+
+        # Bollinger Band contradiction: Below lower band with SELL
+        if signal_direction == 'sell' and bb_position == 'below_lower':
+            contradictions.append({
+                'type': 'bb_extended',
+                'severity': 'high',
+                'message': 'Price below lower Bollinger Band indicates oversold',
+                'penalty': -12
+            })
+            confidence_penalty -= 12
+
+        # Volume contradiction: Declining volume with strong signals
+        if volume_trend == 'declining':
+            if scores['weighted_buy'] > 8 or scores['weighted_sell'] > 8:
+                contradictions.append({
+                    'type': 'weak_volume',
+                    'severity': 'medium',
+                    'message': 'Declining volume doesn\'t support strong directional move',
+                    'penalty': -8
+                })
+                confidence_penalty -= 8
+
+        return {
+            'has_contradictions': len(contradictions) > 0,
+            'contradictions': contradictions,
+            'total_penalty': confidence_penalty,
+            'severity': 'high' if confidence_penalty < -20 else 'medium' if confidence_penalty < -10 else 'low'
+        }
+
     def _calculate_bayesian_confidence(
         self,
         signals: List[Dict],
@@ -824,7 +1018,9 @@ class EnhancedAnalyzer:
         regime_info: Dict[str, Any],
         patterns: List[Dict],
         sentiment: Optional[Dict],
-        fundamental_score: float = 50
+        fundamental_score: float = 50,
+        indicators: Dict[str, Any] = None,
+        contradictions_analysis: Dict[str, Any] = None
     ) -> Tuple[float, Dict[str, Any]]:
         """Calculate Bayesian confidence score"""
 
@@ -921,6 +1117,11 @@ class EnhancedAnalyzer:
             elif fundamental_score > 70:
                 fundamental_bonus = -5  # Careful selling quality
 
+        # Apply contradiction penalty
+        contradiction_penalty = 0
+        if contradictions_analysis and contradictions_analysis.get('has_contradictions'):
+            contradiction_penalty = contradictions_analysis.get('total_penalty', 0)
+
         # Calculate final confidence
         # Start from base, add weighted signal strength
         signal_contribution = min(30, weighted_diff * 2)
@@ -932,6 +1133,7 @@ class EnhancedAnalyzer:
         confidence += pattern_bonus
         confidence += sentiment_bonus
         confidence += fundamental_bonus
+        confidence += contradiction_penalty  # Apply contradiction penalty
 
         # Clamp between 30 and 95
         confidence = max(30, min(95, confidence))
@@ -945,7 +1147,9 @@ class EnhancedAnalyzer:
             'pattern_bonus': pattern_bonus,
             'sentiment_bonus': sentiment_bonus,
             'fundamental_bonus': fundamental_bonus,
-            'formula': 'base + signals * prior * confluence * regime * 10 + patterns + sentiment + fundamentals'
+            'contradiction_penalty': contradiction_penalty,
+            'contradictions': contradictions_analysis.get('contradictions', []) if contradictions_analysis else [],
+            'formula': 'base + signals * prior * confluence * regime + patterns + sentiment + fundamentals + contradictions'
         }
 
         return round(confidence, 1), breakdown

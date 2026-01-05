@@ -1734,6 +1734,23 @@ async def generate_ai_recommendations(
 
                 price_targets = result.get('price_targets', {})
                 indicators = result.get('indicators', {})
+                fundamentals = result.get('fundamentals', {})
+
+                # Extract key fundamental metrics
+                fundamental_metrics = None
+                if fundamentals:
+                    fundamental_metrics = {
+                        "pe_ratio": fundamentals.get('pe_ratio'),
+                        "pb_ratio": fundamentals.get('pb_ratio'),
+                        "debt_to_equity": fundamentals.get('debt_to_equity'),
+                        "roe": fundamentals.get('roe'),
+                        "profit_margin": fundamentals.get('profit_margin'),
+                        "dividend_yield": fundamentals.get('dividend_yield'),
+                        "market_cap": fundamentals.get('market_cap'),
+                        "fundamental_score": result.get('fundamental_score')
+                    }
+
+                entry_timing = result.get('entry_timing', {})
 
                 return {
                     "symbol": symbol,
@@ -1753,6 +1770,8 @@ async def generate_ai_recommendations(
                         "sma_50": indicators.get('sma_50'),
                         "adx": indicators.get('adx'),
                     },
+                    "fundamentals": fundamental_metrics,
+                    "entry_timing": entry_timing,
                     "market_regime": regime.get('primary_regime', 'unknown'),
                     "confluence": confluence.get('agreement', 0),
                     "backtest_validated": bool(backtest),
@@ -1795,6 +1814,63 @@ async def generate_ai_recommendations(
         avg_buy_conf = sum(r['confidence'] for r in buy_recs) / len(buy_recs) if buy_recs else 0
         avg_sell_conf = sum(r['confidence'] for r in sell_recs) / len(sell_recs) if sell_recs else 0
 
+        # Analyze sector diversification
+        def analyze_sector_diversification(recommendations):
+            sector_counts = {}
+            for rec in recommendations:
+                sector = rec.get('sector', 'Unknown')
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+
+            total = len(recommendations)
+            warnings = []
+
+            for sector, count in sector_counts.items():
+                percentage = (count / total) * 100 if total > 0 else 0
+                if percentage > 40:  # More than 40% in one sector
+                    warnings.append({
+                        "sector": sector,
+                        "count": count,
+                        "percentage": round(percentage, 1),
+                        "severity": "high",
+                        "message": f"{count} stocks ({percentage:.1f}%) from {sector} sector - High concentration risk"
+                    })
+                elif percentage > 25:  # More than 25% in one sector
+                    warnings.append({
+                        "sector": sector,
+                        "count": count,
+                        "percentage": round(percentage, 1),
+                        "severity": "medium",
+                        "message": f"{count} stocks ({percentage:.1f}%) from {sector} sector - Consider diversification"
+                    })
+
+            return {
+                "warnings": warnings,
+                "sector_breakdown": [{
+                    "sector": sector,
+                    "count": count,
+                    "percentage": round((count / total) * 100, 1) if total > 0 else 0
+                } for sector, count in sorted(sector_counts.items(), key=lambda x: x[1], reverse=True)]
+            }
+
+        buy_diversification = analyze_sector_diversification(buy_recs)
+        sell_diversification = analyze_sector_diversification(sell_recs)
+
+        # Get historical accuracy stats
+        historical_accuracy = None
+        try:
+            from tracking.confidence_tracker import ConfidenceTracker
+            tracker = ConfidenceTracker(db)
+            accuracy_stats = await tracker.get_accuracy_stats(days_back=30)
+            if accuracy_stats and accuracy_stats.get('total_predictions', 0) > 0:
+                historical_accuracy = {
+                    "total_predictions": accuracy_stats.get('total_predictions', 0),
+                    "period_days": accuracy_stats.get('period_days', 30),
+                    "by_recommendation": accuracy_stats.get('by_recommendation', {}),
+                    "by_confidence_band": accuracy_stats.get('by_confidence_band', {})
+                }
+        except Exception as e:
+            logger.warning(f"Failed to get historical accuracy: {e}")
+
         recommendations_data = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "analysis_type": "enhanced" if enhanced else "basic",
@@ -1808,9 +1884,14 @@ async def generate_ai_recommendations(
                 "market_sentiment": market_sentiment,
                 "avg_buy_confidence": round(avg_buy_conf, 1),
                 "avg_sell_confidence": round(avg_sell_conf, 1),
+                "historical_accuracy": historical_accuracy,
             },
-            "buy_recommendations": buy_recs[:20],  # Top 20 buys
-            "sell_recommendations": sell_recs[:15],  # Top 15 sells
+            "buy_recommendations": buy_recs[:50],  # Top 50 BUY signals
+            "sell_recommendations": sell_recs[:30],  # Top 30 SELL signals
+            "diversification_analysis": {
+                "buy": buy_diversification,
+                "sell": sell_diversification
+            }
         }
 
         # Save to database with upsert logic
@@ -1867,6 +1948,21 @@ async def get_recommendations_history(limit: int = 10):
 
     except Exception as e:
         logger.error(f"Failed to get recommendations history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/recommendations/accuracy")
+async def get_recommendation_accuracy(days_back: int = 30):
+    """Get historical accuracy statistics for AI recommendations"""
+    try:
+        from tracking.confidence_tracker import ConfidenceTracker
+
+        tracker = ConfidenceTracker(db)
+        stats = await tracker.get_accuracy_stats(days_back=days_back)
+
+        return stats
+    except Exception as e:
+        logger.error(f"Failed to get accuracy stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

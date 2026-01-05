@@ -86,17 +86,17 @@ export default function AIRecommends() {
     setError(null);
 
     try {
-      toast.info("🔍 Analyzing top 50 NSE stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nTakes 30-90 seconds...");
+      toast.info("🔍 Analyzing top 200 NSE/BSE stocks with enhanced AI...\n✅ Sentiment enabled\n✅ Backtest enabled\n✅ 65%+ confidence\n\nMay take 2-3 minutes...");
 
       const response = await axios.post(`${API_URL}/recommendations/generate`, null, {
         params: {
-          limit: 50,  // Reduced from 200 to 50 for faster analysis
+          limit: 200,  // Analyze top 200 stocks from NSE and BSE
           enhanced: true,
           min_confidence: 65.0,
           enable_sentiment: true,
           enable_backtest: true
         },
-        timeout: 180000  // 3 minute timeout instead of default 30 seconds
+        timeout: 300000  // 5 minute timeout for larger analysis
       });
 
       setRecommendations(response.data);
@@ -241,14 +241,14 @@ export default function AIRecommends() {
               </div>
               <div className="text-center">
                 <p className="text-lg font-medium text-text-primary mb-2">
-                  AI is analyzing top 50 stocks...
+                  AI is analyzing top 200 NSE/BSE stocks...
                 </p>
                 <p className="text-sm text-text-secondary">
                   Scanning RSI, MACD, Moving Averages, Bollinger Bands & more
                 </p>
               </div>
               <Loader2 className="w-8 h-8 animate-spin text-ai-accent mt-4" />
-              <p className="text-xs text-text-secondary mt-2">This may take 30-90 seconds</p>
+              <p className="text-xs text-text-secondary mt-2">This may take 2-3 minutes</p>
             </div>
           </CardContent>
         </Card>
@@ -396,7 +396,7 @@ export default function AIRecommends() {
       {hasRecommendations && (
         <>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <Card className="card-surface">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
@@ -456,7 +456,64 @@ export default function AIRecommends() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="card-surface border-ai-accent/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-text-secondary mb-1">Historical Accuracy</p>
+                {recommendations?.summary?.historical_accuracy ? (
+                  <div>
+                    <p className="text-2xl font-data font-bold text-ai-accent">
+                      {recommendations.summary.historical_accuracy.by_recommendation?.BUY?.accuracy_pct ||
+                       recommendations.summary.historical_accuracy.by_recommendation?.overall?.accuracy_pct ||
+                       'N/A'}%
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {recommendations.summary.historical_accuracy.total_predictions} predictions
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-lg font-data text-text-secondary">Not available</p>
+                )}
+              </div>
+              <Target className="w-8 h-8 text-ai-accent" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Sector Diversification Warnings */}
+      {(recommendations?.diversification_analysis?.buy?.warnings?.length > 0 ||
+        recommendations?.diversification_analysis?.sell?.warnings?.length > 0) && (
+        <Card className="card-surface mb-6 border-yellow-500/30">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-text-primary mb-2">Sector Concentration Alerts</p>
+                {recommendations?.diversification_analysis?.buy?.warnings?.map((warning, idx) => (
+                  <div key={`buy-${idx}`} className={`text-sm mb-2 p-2 rounded ${
+                    warning.severity === 'high' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'
+                  }`}>
+                    <span className="font-medium">BUY: </span>{warning.message}
+                  </div>
+                ))}
+                {recommendations?.diversification_analysis?.sell?.warnings?.map((warning, idx) => (
+                  <div key={`sell-${idx}`} className={`text-sm mb-2 p-2 rounded ${
+                    warning.severity === 'high' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'
+                  }`}>
+                    <span className="font-medium">SELL: </span>{warning.message}
+                  </div>
+                ))}
+                <p className="text-xs text-text-secondary mt-2">
+                  Consider diversifying across different sectors to reduce concentration risk.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recommendations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -545,6 +602,50 @@ export default function AIRecommends() {
                             </Badge>
                           )}
                         </div>
+
+                        {rec.fundamentals && (
+                          <div className="mt-3 pt-3 border-t border-success/20">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              {rec.fundamentals.pe_ratio && (
+                                <div>
+                                  <span className="text-text-secondary">P/E: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.pe_ratio.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {rec.fundamentals.pb_ratio && (
+                                <div>
+                                  <span className="text-text-secondary">P/B: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.pb_ratio.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {rec.fundamentals.roe && (
+                                <div>
+                                  <span className="text-text-secondary">ROE: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.roe.toFixed(1)}%</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {rec.entry_timing && rec.entry_timing.suggestion !== 'immediate' && (
+                          <div className="mt-3 pt-3 border-t border-success/20">
+                            <div className={`text-xs p-2 rounded ${
+                              rec.entry_timing.suggestion === 'wait_for_pullback' ? 'bg-yellow-500/10 text-yellow-400' :
+                              rec.entry_timing.suggestion === 'wait_for_breakout' ? 'bg-blue-500/10 text-blue-400' :
+                              'bg-success/10 text-success'
+                            }`}>
+                              <div className="font-medium mb-1">
+                                ⏱️ {rec.entry_timing.suggestion === 'wait_for_pullback' ? 'Wait for Pullback' :
+                                    rec.entry_timing.suggestion === 'wait_for_breakout' ? 'Wait for Breakout' :
+                                    'Good Entry Point'}
+                              </div>
+                              {rec.entry_timing.reasons?.[0] && (
+                                <div className="text-xs opacity-90">{rec.entry_timing.reasons[0]}</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-success/20">
                           <div className="flex gap-3 text-xs text-text-secondary">
@@ -647,6 +748,31 @@ export default function AIRecommends() {
                             </Badge>
                           )}
                         </div>
+
+                        {rec.fundamentals && (
+                          <div className="mt-3 pt-3 border-t border-danger/20">
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              {rec.fundamentals.pe_ratio && (
+                                <div>
+                                  <span className="text-text-secondary">P/E: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.pe_ratio.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {rec.fundamentals.pb_ratio && (
+                                <div>
+                                  <span className="text-text-secondary">P/B: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.pb_ratio.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {rec.fundamentals.roe && (
+                                <div>
+                                  <span className="text-text-secondary">ROE: </span>
+                                  <span className="text-text-primary font-medium">{rec.fundamentals.roe.toFixed(1)}%</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-danger/20">
                           <div className="flex gap-3 text-xs text-text-secondary">
