@@ -141,7 +141,7 @@ class Settings(BaseModel):
     user_whatsapp_number: Optional[str] = None
     # TVScreener (FREE - no key needed!)
     use_tvscreener: bool = True
-    selected_model: str = "gpt-4.1"
+    selected_model: str = "gpt-4o-mini"
     selected_provider: str = "openai"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -181,7 +181,7 @@ class SettingsCreate(BaseModel):
     zerodha_api_key: Optional[str] = None
     zerodha_api_secret: Optional[str] = None
     use_tvscreener: bool = True
-    selected_model: str = "gpt-4.1"
+    selected_model: str = "gpt-4o-mini"
     selected_provider: str = "openai"
 
     # Validator to convert empty strings to None for smtp_port
@@ -264,7 +264,7 @@ class AnalysisResult(BaseModel):
 
 class AnalysisRequest(BaseModel):
     symbol: str
-    model: str = "gpt-4.1"
+    model: str = "gpt-4o-mini"
     provider: str = "openai"
 
     @validator('symbol')
@@ -925,7 +925,7 @@ async def get_settings():
         "zerodha_api_key": "",
         "zerodha_api_secret": "",
         "use_tvscreener": True,
-        "selected_model": "gpt-4.1",
+        "selected_model": "gpt-4o-mini",
         "selected_provider": "openai"
     }
 
@@ -3250,10 +3250,229 @@ class LLMCompareRequest(BaseModel):
     criteria: Optional[List[str]] = None  # ["value", "growth", "momentum", "risk"]
 
 
+@api_router.post("/llm/ask/stream")
+async def llm_ask_streaming(request: LLMQueryRequest):
+    """
+    Streaming natural language interface for stock queries with Server-Sent Events (SSE).
+    Provides real-time streaming responses with RAG-enhanced context and caching.
+    """
+    from fastapi.responses import StreamingResponse
+    import json
+    import hashlib
+    from datetime import datetime, timedelta, timezone
+
+    async def generate_stream():
+        try:
+            # Get Redis cache instance
+            from utils.redis_cache import get_cache
+            cache = get_cache()
+
+            # Check cache first for faster responses
+            cache_key = f"llm_stream:{hashlib.md5((request.question + str(request.symbol)).encode()).hexdigest()}"
+
+            # Try to get cached response (5 minute TTL for fast responses)
+            cached = await cache.get(cache_key)
+            if cached and not request.question.lower().startswith(("current", "latest", "today", "now")):
+                # Stream cached response for perceived speed
+                cached_data = json.loads(cached)
+                for char in cached_data.get("content", ""):
+                    yield f"data: {json.dumps({'content': char})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'cached': True, 'model': cached_data.get('model')})}\n\n"
+                return
+
+            # Get API key
+            settings = await db.settings.find_one({}, {"_id": 0})
+            if not settings:
+                yield f"data: {json.dumps({'error': 'Please configure API keys in Settings'})}\n\n"
+                return
+
+            # Debug logging - show ALL settings
+            logger.info(f"LLM Stream - Raw settings keys: {list(settings.keys())}")
+            logger.info(f"LLM Stream - selected_model in settings: {settings.get('selected_model')}")
+
+            provider = settings.get('selected_provider', 'openai')
+            api_key = settings.get(f'{provider}_api_key')
+            model = settings.get('selected_model', 'gpt-4o-mini')
+
+            # Debug logging
+            logger.info(f"LLM Stream - Provider: {provider}, Model: {model}")
+
+            if not api_key:
+                yield f"data: {json.dumps({'error': f'Please configure {provider} API key in Settings'})}\n\n"
+                return
+
+            # Build enhanced context with stock data
+            stock_context = ""
+            context_data = {}
+            rag_knowledge = ""
+
+            if request.symbol:
+                import yfinance as yf
+                try:
+                    ticker = yf.Ticker(f"{request.symbol}.NS")
+                    info = ticker.info
+                    hist = ticker.history(period="3mo")
+
+                    if not hist.empty:
+                        current_price = hist['Close'].iloc[-1]
+                        context_data = {
+                            "symbol": request.symbol,
+                            "current_price": round(current_price, 2),
+                            "change_pct": info.get('regularMarketChangePercent', 0)
+                        }
+
+                        stock_context = f"""Stock: {info.get('longName', request.symbol)} ({request.symbol})
+Current Price: ₹{current_price:.2f}
+Day Change: {info.get('regularMarketChangePercent', 0):.2f}%
+52W High: ₹{info.get('fiftyTwoWeekHigh', 'N/A')} | 52W Low: ₹{info.get('fiftyTwoWeekLow', 'N/A')}
+P/E: {info.get('trailingPE', 'N/A')} | Market Cap: ₹{info.get('marketCap', 0) / 10000000:.0f} Cr
+Sector: {info.get('sector', 'N/A')}"""
+                except:
+                    pass
+
+                # **NEW: Add RAG knowledge context for better insights**
+                try:
+                    from knowledge.rag_ingestion import get_rag_ingestion
+                    rag_ingestion = get_rag_ingestion(db)
+
+                    # Get discovered patterns
+                    patterns = await rag_ingestion.query_relevant_knowledge(
+                        symbol=request.symbol,
+                        query_type="pattern",
+                        limit=2
+                    )
+
+                    # Get historical events
+                    events = await rag_ingestion.query_relevant_knowledge(
+                        symbol=request.symbol,
+                        query_type="event",
+                        limit=2
+                    )
+
+                    # Format RAG knowledge
+                    if patterns:
+                        rag_knowledge += "\n\nHISTORICAL PATTERNS DISCOVERED:\n"
+                        for p in patterns:
+                            meta = p.get('metadata', {})
+                            rag_knowledge += f"- {p.get('pattern_type', 'Unknown').replace('_', ' ').title()}: "
+                            rag_knowledge += f"{meta.get('success_rate', 0):.0%} success rate, "
+                            rag_knowledge += f"{meta.get('average_return', 0):+.1f}% avg return\n"
+
+                    if events:
+                        rag_knowledge += "\nHISTORICAL EVENT IMPACTS:\n"
+                        for e in events:
+                            meta = e.get('metadata', {})
+                            rag_knowledge += f"- {e.get('event_type', 'Unknown').replace('_', ' ').title()}: "
+                            rag_knowledge += f"Recovery timeline: {meta.get('recovery_timeline', 'N/A')}\n"
+
+                except Exception as rag_error:
+                    logger.warning(f"RAG knowledge retrieval failed: {rag_error}")
+                    # Continue without RAG context
+            else:
+                # **NEW: Add general market knowledge for non-symbol queries**
+                try:
+                    # Get recent market overview from cache or DB
+                    market_cache = await cache.get("market:overview")
+                    if market_cache:
+                        market_data = json.loads(market_cache)
+                        rag_knowledge += f"\n\nCURRENT MARKET CONTEXT:\n"
+                        rag_knowledge += f"Nifty 50: {market_data.get('nifty_50', {}).get('current', 'N/A')}\n"
+                        rag_knowledge += f"Sensex: {market_data.get('sensex', {}).get('current', 'N/A')}\n"
+                        rag_knowledge += f"Market Sentiment: {market_data.get('sentiment', 'Neutral')}\n"
+                except Exception as market_error:
+                    logger.warning(f"Market context retrieval failed: {market_error}")
+
+            # Enhanced prompt with RAG knowledge
+            prompt = f"""You are an expert Indian stock market assistant with deep knowledge of NSE/BSE markets, technical analysis, and investment strategies.
+
+{stock_context if stock_context else "General market query - provide insights based on current Indian market trends."}
+{rag_knowledge}
+
+User Question: {request.question}
+
+Provide a clear, actionable answer:
+- Use ₹ for prices
+- Include specific numbers and data points
+- Reference historical patterns if relevant
+- Be concise yet comprehensive (2-5 sentences)
+- Add disclaimers for buy/sell opinions
+- Focus on Indian market context"""
+
+            # Stream based on provider and collect full response for caching
+            full_response = ""
+
+            if provider == 'openai':
+                import openai
+                client = openai.AsyncOpenAI(api_key=api_key)
+
+                stream = await client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    stream=True,
+                    temperature=0.7,
+                    max_tokens=500
+                )
+
+                async for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        full_response += content
+                        yield f"data: {json.dumps({'content': content, **context_data})}\n\n"
+
+            elif provider == 'gemini':
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                model_obj = genai.GenerativeModel(model)
+
+                response = model_obj.generate_content(prompt, stream=True)
+                for chunk in response:
+                    if chunk.text:
+                        full_response += chunk.text
+                        yield f"data: {json.dumps({'content': chunk.text, **context_data})}\n\n"
+
+            elif provider == 'anthropic':
+                import anthropic
+                client = anthropic.AsyncAnthropic(api_key=api_key)
+
+                async with client.messages.stream(
+                    model=model,
+                    max_tokens=500,
+                    messages=[{"role": "user", "content": prompt}]
+                ) as stream:
+                    async for text in stream.text_stream:
+                        full_response += text
+                        yield f"data: {json.dumps({'content': text, **context_data})}\n\n"
+
+            # Cache the full response for 5 minutes (300 seconds) for faster future responses
+            if full_response:
+                try:
+                    cache_data = {"content": full_response, "model": model, **context_data}
+                    await cache.set(cache_key, json.dumps(cache_data), ttl=300)
+                except Exception as cache_error:
+                    logger.warning(f"Failed to cache response: {cache_error}")
+
+            # Completion signal
+            yield f"data: {json.dumps({'done': True, 'model': model, **context_data})}\n\n"
+
+        except Exception as e:
+            logger.error(f"Streaming error: {e}")
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
+    )
+
+
 @api_router.post("/llm/ask")
 async def llm_ask_about_stock(request: LLMQueryRequest):
     """
-    Natural language interface for stock queries.
+    Natural language interface for stock queries (non-streaming).
     Ask questions like "Is RELIANCE a good buy?" or "What's the trend for TCS?"
     """
     try:

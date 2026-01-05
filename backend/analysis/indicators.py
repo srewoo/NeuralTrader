@@ -117,6 +117,52 @@ class AdvancedIndicators:
         except:
             result['mfi'] = None
 
+        # Triple Exponential Average (TRIX)
+        try:
+            trix = ta.trend.TRIXIndicator(close, window=15)
+            result['trix'] = self._safe_float(trix.trix().iloc[-1])
+        except:
+            result['trix'] = None
+
+        # Mass Index
+        try:
+            mi = ta.trend.MassIndex(high, low, window_fast=9, window_slow=25)
+            result['mass_index'] = self._safe_float(mi.mass_index().iloc[-1])
+        except:
+            result['mass_index'] = None
+
+        # True Strength Index (TSI)
+        try:
+            tsi = ta.momentum.TSIIndicator(close, window_slow=25, window_fast=13)
+            result['tsi'] = self._safe_float(tsi.tsi().iloc[-1])
+        except:
+            result['tsi'] = None
+
+        # Detrended Price Oscillator (DPO)
+        try:
+            dpo = ta.trend.DPOIndicator(close, window=20)
+            result['dpo'] = self._safe_float(dpo.dpo().iloc[-1])
+        except:
+            result['dpo'] = None
+
+        # Know Sure Thing (KST) Oscillator
+        try:
+            kst = ta.trend.KSTIndicator(close, roc1=10, roc2=15, roc3=20, roc4=30, window1=10, window2=10, window3=10, window4=15)
+            result['kst'] = self._safe_float(kst.kst().iloc[-1])
+            result['kst_signal'] = self._safe_float(kst.kst_sig().iloc[-1])
+            result['kst_diff'] = self._safe_float(kst.kst_diff().iloc[-1])
+        except:
+            result['kst'] = None
+            result['kst_signal'] = None
+            result['kst_diff'] = None
+
+        # Schaff Trend Cycle (STC)
+        try:
+            stc = ta.trend.STCIndicator(close, window_slow=50, window_fast=23, cycle=10, smooth1=3, smooth2=3)
+            result['stc'] = self._safe_float(stc.stc().iloc[-1])
+        except:
+            result['stc'] = None
+
         return result
 
     def _calculate_trend_indicators(self, close: pd.Series) -> Dict[str, Any]:
@@ -145,6 +191,39 @@ class AdvancedIndicators:
                 result[f'ema_{period}'] = self._safe_float(ema.iloc[-1])
             else:
                 result[f'ema_{period}'] = None
+
+        # WMA (Weighted Moving Average)
+        for period in [10, 20, 50]:
+            if len(close) >= period:
+                try:
+                    wma = ta.trend.WMAIndicator(close, window=period).wma()
+                    result[f'wma_{period}'] = self._safe_float(wma.iloc[-1])
+                except:
+                    result[f'wma_{period}'] = None
+            else:
+                result[f'wma_{period}'] = None
+
+        # Hull Moving Average (HMA)
+        try:
+            if len(close) >= 16:
+                wma_half = ta.trend.WMAIndicator(close, window=8).wma()
+                wma_full = ta.trend.WMAIndicator(close, window=16).wma()
+                raw_hma = 2 * wma_half - wma_full
+                hma = ta.trend.WMAIndicator(raw_hma.dropna(), window=4).wma()
+                result['hma'] = self._safe_float(hma.iloc[-1])
+        except:
+            result['hma'] = None
+
+        # Vortex Indicator
+        try:
+            vi = ta.trend.VortexIndicator(close.shift(-1).fillna(close), close.shift(1).fillna(close), close, window=14)
+            result['vi_pos'] = self._safe_float(vi.vortex_indicator_pos().iloc[-1])
+            result['vi_neg'] = self._safe_float(vi.vortex_indicator_neg().iloc[-1])
+            result['vi_diff'] = self._safe_float((vi.vortex_indicator_pos() - vi.vortex_indicator_neg()).iloc[-1])
+        except:
+            result['vi_pos'] = None
+            result['vi_neg'] = None
+            result['vi_diff'] = None
 
         return result
 
@@ -180,6 +259,21 @@ class AdvancedIndicators:
         donchian = ta.volatility.DonchianChannel(high, low, close, window=20)
         result['donchian_upper'] = self._safe_float(donchian.donchian_channel_hband().iloc[-1])
         result['donchian_lower'] = self._safe_float(donchian.donchian_channel_lband().iloc[-1])
+
+        # Ulcer Index
+        try:
+            ui = ta.volatility.UlcerIndex(close, window=14)
+            result['ulcer_index'] = self._safe_float(ui.ulcer_index().iloc[-1])
+        except:
+            result['ulcer_index'] = None
+
+        # Historical Volatility (Standard Deviation)
+        try:
+            result['hist_volatility_10'] = self._safe_float(close.pct_change().rolling(10).std().iloc[-1] * 100)
+            result['hist_volatility_30'] = self._safe_float(close.pct_change().rolling(30).std().iloc[-1] * 100)
+        except:
+            result['hist_volatility_10'] = None
+            result['hist_volatility_30'] = None
 
         return result
 
@@ -254,6 +348,61 @@ class AdvancedIndicators:
         # Ultimate Oscillator
         uo = ta.momentum.UltimateOscillator(high, low, close, window1=7, window2=14, window3=28)
         result['ultimate_oscillator'] = self._safe_float(uo.ultimate_oscillator().iloc[-1])
+
+        # Awesome Oscillator
+        try:
+            ao = ta.momentum.AwesomeOscillatorIndicator(high, low, window1=5, window2=34)
+            result['awesome_oscillator'] = self._safe_float(ao.awesome_oscillator().iloc[-1])
+        except:
+            result['awesome_oscillator'] = None
+
+        # Kaufman's Adaptive Moving Average (KAMA)
+        try:
+            kama = ta.momentum.KAMAIndicator(close, window=10, pow1=2, pow2=30)
+            result['kama'] = self._safe_float(kama.kama().iloc[-1])
+        except:
+            result['kama'] = None
+
+        # Percentage Price Oscillator (PPO)
+        try:
+            ppo = ta.momentum.PPOIndicator(close, window_slow=26, window_fast=12, window_sign=9)
+            result['ppo'] = self._safe_float(ppo.ppo().iloc[-1])
+            result['ppo_signal'] = self._safe_float(ppo.ppo_signal().iloc[-1])
+            result['ppo_hist'] = self._safe_float(ppo.ppo_hist().iloc[-1])
+        except:
+            result['ppo'] = None
+            result['ppo_signal'] = None
+            result['ppo_hist'] = None
+
+        # Percentage Volume Oscillator (PVO)
+        try:
+            pvo = ta.volume.VolumePriceTrendIndicator(close, volume)
+            result['vpt'] = self._safe_float(pvo.volume_price_trend().iloc[-1])
+        except:
+            result['vpt'] = None
+
+        # Force Index
+        try:
+            fi = ta.volume.ForceIndexIndicator(close, volume, window=13)
+            result['force_index'] = self._safe_float(fi.force_index().iloc[-1])
+        except:
+            result['force_index'] = None
+
+        # Ease of Movement (EoM)
+        try:
+            eom = ta.volume.EaseOfMovementIndicator(high, low, volume, window=14)
+            result['eom'] = self._safe_float(eom.ease_of_movement().iloc[-1])
+            result['eom_signal'] = self._safe_float(eom.sma_ease_of_movement().iloc[-1])
+        except:
+            result['eom'] = None
+            result['eom_signal'] = None
+
+        # Negative Volume Index (NVI)
+        try:
+            nvi = ta.volume.NegativeVolumeIndexIndicator(close, volume)
+            result['nvi'] = self._safe_float(nvi.negative_volume_index().iloc[-1])
+        except:
+            result['nvi'] = None
 
         return result
 

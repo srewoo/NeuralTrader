@@ -71,30 +71,92 @@ export default function AIAssistant() {
     setInput("");
     setIsLoading(true);
 
+    // Create placeholder for streaming response
+    const placeholderIndex = messages.length + 1;
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      isStreaming: true
+    }]);
+
     try {
-      const response = await axios.post(`${API_URL}/llm/ask`, {
-        question: prompt,
-        context: "Indian stock market trading, NSE, BSE"
+      let streamedContent = "";
+      let streamModel = "";
+
+      // Use fetch with ReadableStream for POST requests
+      const response = await fetch(`${API_URL}/llm/ask/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream"
+        },
+        body: JSON.stringify({
+          question: prompt,
+          symbol: null
+        })
       });
 
-      const assistantMessage = {
-        role: "assistant",
-        content: response.data.answer || response.data.response || "I couldn't generate a response. Please try again.",
-        timestamp: new Date(),
-        model: response.data.model
-      };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-      setMessages(prev => [...prev, assistantMessage]);
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              if (data.content) {
+                streamedContent += data.content;
+                streamModel = data.model || streamModel;
+
+                // Update the streaming message in real-time
+                setMessages(prev => prev.map((msg, idx) =>
+                  idx === placeholderIndex
+                    ? { ...msg, content: streamedContent, model: streamModel }
+                    : msg
+                ));
+              }
+
+              if (data.done) {
+                // Finalize the message
+                setMessages(prev => prev.map((msg, idx) =>
+                  idx === placeholderIndex
+                    ? { ...msg, isStreaming: false, model: streamModel }
+                    : msg
+                ));
+              }
+            } catch (parseError) {
+              console.warn("Failed to parse SSE data:", parseError);
+            }
+          }
+        }
+      }
+
+      setIsLoading(false);
+
     } catch (error) {
-      console.error("AI Assistant error:", error);
-      const errorMessage = {
+      console.error("AI Assistant streaming error:", error);
+
+      // Remove placeholder and add error message
+      setMessages(prev => prev.filter((_, idx) => idx !== placeholderIndex));
+      setMessages(prev => [...prev, {
         role: "assistant",
         content: "Sorry, I encountered an error. Please check your API keys in Settings and try again.",
         timestamp: new Date(),
         isError: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      }]);
+
       setIsLoading(false);
     }
   };
@@ -191,6 +253,9 @@ export default function AIAssistant() {
                         message.role === "user" ? "text-white" : "text-text-primary"
                       }`}>
                         {message.content}
+                        {message.isStreaming && (
+                          <span className="inline-block w-1.5 h-4 bg-ai-accent ml-1 animate-pulse" />
+                        )}
                       </p>
                       <div className={`flex items-center justify-between mt-2 ${
                         message.role === "user" ? "text-white/70" : "text-text-secondary"
