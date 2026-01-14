@@ -49,6 +49,7 @@ class EnsemblePredictor:
     Ensemble predictor combining LSTM, XGBoost, and Transformer models.
 
     Features:
+    - Pre-trained model loading at initialization
     - Parallel model predictions
     - Weighted averaging with configurable weights
     - Dynamic weight adjustment based on recent accuracy
@@ -60,10 +61,17 @@ class EnsemblePredictor:
         self.config = config or EnsembleConfig()
         self.weights = self.config.initial_weights.copy()
 
-        # Lazy-load models
+        # Model instances (loaded with pre-training support)
         self._lstm_model = None
         self._xgboost_model = None
         self._transformer_model = None
+
+        # Track which models have pre-trained weights
+        self._models_pretrained = {
+            "lstm": False,
+            "xgboost": False,
+            "transformer": False
+        }
 
         # Track prediction history for weight adjustment
         self.prediction_history: List[Dict[str, Any]] = []
@@ -71,36 +79,106 @@ class EnsemblePredictor:
         # Thread pool for parallel predictions
         self._executor = ThreadPoolExecutor(max_workers=3)
 
+        # Attempt to load pre-trained models at initialization
+        self._load_pretrained_models()
+
+    def _load_pretrained_models(self):
+        """Load all available pre-trained models."""
+        logger.info("Loading pre-trained ML models...")
+
+        # Load XGBoost (with pre-trained weights)
+        if self.config.use_xgboost:
+            try:
+                from .xgboost_model import XGBoostPredictor
+                xgb = XGBoostPredictor()
+                if xgb.load_pretrained("default"):
+                    self._xgboost_model = xgb
+                    self._models_pretrained["xgboost"] = True
+                    logger.info("XGBoost pre-trained model loaded")
+                else:
+                    self._xgboost_model = xgb  # Keep instance for on-the-fly training
+                    logger.info("XGBoost will train on-the-fly (no pre-trained weights)")
+            except Exception as e:
+                logger.warning(f"Failed to load XGBoost: {e}")
+
+        # Load Transformer (with pre-trained weights)
+        if self.config.use_transformer:
+            try:
+                from .transformer_model import TransformerPredictor
+                transformer = TransformerPredictor()
+                if transformer.load_pretrained("default"):
+                    self._transformer_model = transformer
+                    self._models_pretrained["transformer"] = True
+                    logger.info("Transformer pre-trained model loaded")
+                else:
+                    self._transformer_model = transformer  # Keep instance for on-the-fly training
+                    logger.info("Transformer will train on-the-fly (no pre-trained weights)")
+            except Exception as e:
+                logger.warning(f"Failed to load Transformer: {e}")
+
+        # LSTM is loaded via MLService (it handles pre-training internally)
+        if self.config.use_lstm:
+            try:
+                from .inference import get_ml_service
+                ml_service = get_ml_service()
+                self._lstm_model = ml_service
+                self._models_pretrained["lstm"] = ml_service.is_pretrained
+                if ml_service.is_pretrained:
+                    logger.info("LSTM pre-trained model loaded")
+                else:
+                    logger.info("LSTM will train on-the-fly (no pre-trained weights)")
+            except Exception as e:
+                logger.warning(f"Failed to load LSTM: {e}")
+
+        pretrained_count = sum(self._models_pretrained.values())
+        logger.info(f"Loaded {pretrained_count}/3 pre-trained models")
+
+    def get_pretrained_status(self) -> Dict[str, bool]:
+        """
+        Return which models have pre-trained weights loaded.
+
+        Returns:
+            Dict mapping model name to whether it's pre-trained
+        """
+        return self._models_pretrained.copy()
+
     @property
     def lstm_model(self):
-        """Lazy-load LSTM model"""
+        """Get LSTM model (pre-trained or lazy-loaded)"""
         if self._lstm_model is None and self.config.use_lstm:
             try:
-                from .inference import MLService
-                self._lstm_model = MLService()
-            except ImportError as e:
+                from .inference import get_ml_service
+                self._lstm_model = get_ml_service()
+                self._models_pretrained["lstm"] = self._lstm_model.is_pretrained
+            except Exception as e:
                 logger.warning(f"LSTM model not available: {e}")
         return self._lstm_model
 
     @property
     def xgboost_model(self):
-        """Lazy-load XGBoost model"""
+        """Get XGBoost model (pre-trained or lazy-loaded)"""
         if self._xgboost_model is None and self.config.use_xgboost:
             try:
                 from .xgboost_model import XGBoostPredictor
                 self._xgboost_model = XGBoostPredictor()
-            except ImportError as e:
+                # Try to load pre-trained
+                if self._xgboost_model.load_pretrained("default"):
+                    self._models_pretrained["xgboost"] = True
+            except Exception as e:
                 logger.warning(f"XGBoost model not available: {e}")
         return self._xgboost_model
 
     @property
     def transformer_model(self):
-        """Lazy-load Transformer model"""
+        """Get Transformer model (pre-trained or lazy-loaded)"""
         if self._transformer_model is None and self.config.use_transformer:
             try:
                 from .transformer_model import TransformerPredictor
                 self._transformer_model = TransformerPredictor()
-            except ImportError as e:
+                # Try to load pre-trained
+                if self._transformer_model.load_pretrained("default"):
+                    self._models_pretrained["transformer"] = True
+            except Exception as e:
                 logger.warning(f"Transformer model not available: {e}")
         return self._transformer_model
 

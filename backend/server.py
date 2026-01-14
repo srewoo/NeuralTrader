@@ -755,13 +755,16 @@ Be specific with price levels and provide actionable insights. Consider both bul
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     manager = get_connection_manager()
     await manager.connect(websocket, client_id)
-    
-    # TODO: Market stream disabled - causes Python crash on macOS
-    # stream = get_market_stream()
-    # if not stream.active:
-    #     asyncio.create_task(stream.start_stream())
-    #     logger.info("Market stream started on WebSocket connection")
-    
+
+    # Start market stream if not already running (live data with simulation fallback)
+    try:
+        stream = get_market_stream()
+        if not stream.active:
+            asyncio.create_task(stream.start_stream())
+            logger.info("Market stream started on WebSocket connection (live data mode)")
+    except Exception as e:
+        logger.warning(f"Failed to start market stream: {e}")
+
     try:
         while True:
             # Wait for messages from client (e.g. subscribe)
@@ -769,20 +772,38 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             try:
                 message = json.loads(data)
                 action = message.get("action")
-                
+
                 if action == "subscribe":
                     symbols = message.get("symbols", [])
                     await manager.subscribe(client_id, symbols)
+
+                    # Add symbols to market stream for live data
+                    try:
+                        stream = get_market_stream()
+                        for symbol in symbols:
+                            await stream.add_symbol(symbol)
+                    except Exception as e:
+                        logger.warning(f"Failed to add symbols to stream: {e}")
+
                     # Send confirmation
                     await manager.send_personal_message({"type": "subscribed", "symbols": symbols}, client_id)
-                    
+
                 elif action == "unsubscribe":
                     symbols = message.get("symbols", [])
                     await manager.unsubscribe(client_id, symbols)
-                    
+
+                elif action == "stream_status":
+                    # Allow clients to check stream status
+                    try:
+                        stream = get_market_stream()
+                        status = stream.get_stream_status()
+                        await manager.send_personal_message({"type": "stream_status", **status}, client_id)
+                    except Exception:
+                        pass
+
             except json.JSONDecodeError:
                 pass
-                
+
     except Exception as e:
         logger.warning(f"WebSocket error for {client_id}: {e}")
     finally:
@@ -850,14 +871,9 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Redis cache initialization failed (using memory fallback): {e}")
 
-    # Trigger initial stock recommendations generation
-    try:
-        from tasks.ai_tasks import generate_stock_recommendations
-        # Run in background - don't wait for completion
-        generate_stock_recommendations.delay(50)  # Quick initial analysis of top 50 stocks
-        logger.info("Triggered initial stock recommendations generation")
-    except Exception as e:
-        logger.warning(f"Failed to trigger initial recommendations: {e}")
+    # ML models are lazy-loaded on first prediction request to avoid startup crashes
+    # Pre-trained models will be loaded by the ensemble predictor when needed
+    logger.info("ML models configured for lazy loading (will load on first prediction)")
 
     # Startup complete - market stream will be started when first WebSocket connects
     logger.info("Application startup complete")

@@ -29,7 +29,8 @@ celery_app = Celery(
         "tasks.market_tasks",
         "tasks.ai_tasks",
         "tasks.alert_tasks",
-        "tasks.news_tasks"
+        "tasks.news_tasks",
+        "tasks.ml_tasks"
     ]
 )
 
@@ -105,6 +106,17 @@ celery_app.conf.update(
             "task": "tasks.ai_tasks.generate_stock_recommendations",
             "schedule": crontab(minute="0,30", hour="9-15", day_of_week="1-5"),
             "args": (50,),  # Quick analysis of top 50 stocks during market hours
+        },
+        # Weekly ML model retraining (Sunday 2 AM IST)
+        "weekly-model-retraining": {
+            "task": "tasks.ml_tasks.retrain_all_models",
+            "schedule": crontab(hour=2, minute=0, day_of_week=0),
+            "args": (30,),  # Train on 30 NIFTY symbols
+        },
+        # Daily model freshness check (6 AM IST)
+        "daily-model-freshness-check": {
+            "task": "tasks.ml_tasks.check_model_freshness",
+            "schedule": crontab(hour=6, minute=0),
         },
     },
 )

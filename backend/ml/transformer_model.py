@@ -430,3 +430,80 @@ class TransformerPredictor:
         # This would require modifying StockTransformer to return attention weights
         logger.warning("Attention weight extraction not yet implemented")
         return None
+
+    def load_pretrained(self, symbol: str = "default") -> bool:
+        """
+        Load pre-trained model weights.
+
+        Args:
+            symbol: Symbol to load (falls back to 'default')
+
+        Returns:
+            True if loaded successfully, False otherwise
+        """
+        try:
+            from .persistence import get_model_persistence
+
+            persistence = get_model_persistence()
+            data = persistence.load_transformer(symbol, str(self.device))
+
+            if data is None:
+                return False
+
+            # Reconstruct config from saved data
+            config_dict = data["config"]
+            self.config = TransformerConfig(
+                input_dim=config_dict["input_dim"],
+                hidden_dim=config_dict["hidden_dim"],
+                num_heads=config_dict["num_heads"],
+                num_layers=config_dict["num_layers"],
+                dropout=config_dict["dropout"],
+                sequence_length=config_dict["sequence_length"]
+            )
+
+            # Create model and load state
+            self.model = StockTransformer(self.config).to(self.device)
+            self.model.load_state_dict(data["state_dict"])
+            self.model.eval()
+
+            self.scaler = data["scaler"]
+            self.is_fitted = True
+
+            logger.info(f"Transformer loaded pre-trained weights for '{symbol}'")
+            return True
+
+        except Exception as e:
+            logger.warning(f"Failed to load Transformer pre-trained model: {e}")
+            return False
+
+    def save_trained(self, symbol: str = "default", metadata: Optional[Dict] = None) -> bool:
+        """
+        Save current trained model.
+
+        Args:
+            symbol: Symbol identifier
+            metadata: Optional training metadata
+
+        Returns:
+            True if saved successfully
+        """
+        if not self.is_fitted or self.model is None:
+            logger.warning("Transformer model not fitted, cannot save")
+            return False
+
+        try:
+            from .persistence import get_model_persistence
+
+            persistence = get_model_persistence()
+            persistence.save_transformer(
+                self.model,
+                self.scaler,
+                self.config,
+                symbol,
+                metadata
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save Transformer model: {e}")
+            return False

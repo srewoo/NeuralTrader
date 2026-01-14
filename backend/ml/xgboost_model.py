@@ -378,3 +378,66 @@ class XGBoostPredictor:
             "std_direction_accuracy": float(np.std(direction_scores)),
             "n_splits": n_splits
         }
+
+    def load_pretrained(self, symbol: str = "default") -> bool:
+        """
+        Load pre-trained model weights.
+
+        Args:
+            symbol: Symbol to load (falls back to 'default')
+
+        Returns:
+            True if loaded successfully, False otherwise
+        """
+        try:
+            from .persistence import get_model_persistence
+
+            persistence = get_model_persistence()
+            data = persistence.load_xgboost(symbol)
+
+            if data is None:
+                return False
+
+            self.model = data["model"]
+            self.scaler = data["scaler"]
+            self.feature_names = data["feature_names"]
+            self.is_fitted = True
+
+            logger.info(f"XGBoost loaded pre-trained weights for '{symbol}'")
+            return True
+
+        except Exception as e:
+            logger.warning(f"Failed to load XGBoost pre-trained model: {e}")
+            return False
+
+    def save_trained(self, symbol: str = "default", metadata: Optional[Dict] = None) -> bool:
+        """
+        Save current trained model.
+
+        Args:
+            symbol: Symbol identifier
+            metadata: Optional training metadata
+
+        Returns:
+            True if saved successfully
+        """
+        if not self.is_fitted or self.model is None:
+            logger.warning("XGBoost model not fitted, cannot save")
+            return False
+
+        try:
+            from .persistence import get_model_persistence
+
+            persistence = get_model_persistence()
+            persistence.save_xgboost(
+                self.model,
+                self.scaler,
+                self.feature_names,
+                symbol,
+                metadata
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save XGBoost model: {e}")
+            return False
