@@ -26,6 +26,9 @@ class AnalysisState(TypedDict):
     provider: str
     api_key: str
     data_provider_keys: Dict[str, Any]
+    openai_api_key: str
+    gemini_api_key: str
+    ohlcv_6mo: Any  # 6-month OHLCV DataFrame for chart generation
 
     # Data collected by agents
     stock_data: Dict[str, Any]
@@ -114,7 +117,9 @@ class AnalysisOrchestrator:
         model: str,
         provider: str,
         api_key: str,
-        data_provider_keys: Optional[Dict[str, Any]] = None
+        data_provider_keys: Optional[Dict[str, Any]] = None,
+        openai_api_key: Optional[str] = None,
+        gemini_api_key: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Run the complete analysis workflow
@@ -124,7 +129,9 @@ class AnalysisOrchestrator:
             model: LLM model to use
             provider: Provider (openai/gemini)
             api_key: API key for LLM
-            data_provider_keys: Optional API keys for data providers (Finnhub, Alpaca, FMP)
+            data_provider_keys: Optional API keys for data providers
+            openai_api_key: Optional OpenAI API key for ensemble mode
+            gemini_api_key: Optional Gemini API key for ensemble mode
 
         Returns:
             Complete analysis result with all agent outputs
@@ -139,6 +146,8 @@ class AnalysisOrchestrator:
                 "provider": provider,
                 "api_key": api_key,
                 "data_provider_keys": data_provider_keys or {},
+                "openai_api_key": openai_api_key or "",
+                "gemini_api_key": gemini_api_key or "",
                 "agent_steps": [],
                 "has_errors": False,
                 "last_error": ""
@@ -183,7 +192,10 @@ class AnalysisOrchestrator:
                 "percentile_scores": percentile_scores,
                 "insights": insights,
                 "summary_insight": summary_insight,
-                "has_errors": final_state.get("has_errors", False)
+                "has_errors": final_state.get("has_errors", False),
+                "ensemble_used": final_state.get("analysis_result", {}).get("ensemble_used", False),
+                "ensemble_agreement": final_state.get("analysis_result", {}).get("ensemble_agreement"),
+                "signal_alignment": final_state.get("validation", {}).get("signal_alignment")
             }
             
             logger.info(

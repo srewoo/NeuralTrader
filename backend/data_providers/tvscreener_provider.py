@@ -113,6 +113,22 @@ class TVScreenerProvider(BaseDataProvider):
 
             logger.info(f"TVScreener: {symbol} @ ₹{current_price} ({change_percent:+.2f}%)")
 
+            # Supplement 52-week data from yfinance (TVScreener doesn't provide it reliably)
+            week_52_high = current_price
+            week_52_low = current_price
+            try:
+                import yfinance as yf
+                yf_ticker = yf.Ticker(f"{symbol}.NS")
+                yf_info = yf_ticker.info
+                w52h = yf_info.get('fiftyTwoWeekHigh')
+                w52l = yf_info.get('fiftyTwoWeekLow')
+                if w52h and w52h > 0:
+                    week_52_high = w52h
+                if w52l and w52l > 0:
+                    week_52_low = w52l
+            except Exception:
+                pass  # Keep current_price as fallback
+
             return StockData(
                 symbol=symbol,
                 name=stock_row.get('Description', symbol),
@@ -121,8 +137,8 @@ class TVScreenerProvider(BaseDataProvider):
                 volume=volume,
                 market_cap=market_cap,
                 pe_ratio=pe_ratio,
-                week_52_high=current_price,  # Approximation
-                week_52_low=current_price,    # Approximation
+                week_52_high=week_52_high,
+                week_52_low=week_52_low,
                 provider="TVScreener"
             )
 

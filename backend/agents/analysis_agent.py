@@ -77,6 +77,9 @@ class TechnicalAnalysisAgent(BaseAgent):
                         "Consider adding API keys in Settings for better data availability."
                     )
             
+            # Store OHLCV data in state for downstream use (chart generation)
+            state["ohlcv_6mo"] = hist
+
             # Calculate real technical indicators
             close = hist['Close']
             high = hist['High']

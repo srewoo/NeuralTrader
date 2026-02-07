@@ -3,6 +3,7 @@ NeuralTrader Backend — Focused Stock Analyst for Indian BSE/NSE
 5 features: Dashboard (AI Analysis), AI Picks, Alerts, Settings, Help
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -38,6 +39,13 @@ from market_data.indian_indices import get_indian_indices_data
 # Import Alerts
 from alerts.alert_manager import get_alert_manager, PriceCondition, DeliveryChannel, AlertStatus as AlertStatusEnum
 
+# Import backtesting
+from backtesting.engine import get_backtest_engine
+
+# Import services
+from services.price_poller import get_price_poller
+from services.track_record import get_track_record_service
+
 # Import TVScreener (free Indian stock data)
 from data_providers.tvscreener_provider import (
     get_tvscreener_provider,
@@ -56,8 +64,25 @@ mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'neuraltrader')]
 
+# Lifespan context manager for background services
+@asynccontextmanager
+async def lifespan(app):
+    """Start/stop background services."""
+    # Start price poller
+    poller = get_price_poller(db=db)
+    await poller.start()
+    # Start track record outcome checker
+    track_service = get_track_record_service(db=db)
+    outcome_task = asyncio.create_task(track_service._outcome_check_loop())
+    logger.info("Background services started")
+    yield
+    # Shutdown
+    await poller.stop()
+    outcome_task.cancel()
+    logger.info("Background services stopped")
+
 # Create FastAPI app
-app = FastAPI(title="NeuralTrader", version="2.0")
+app = FastAPI(title="NeuralTrader", version="2.0", lifespan=lifespan)
 
 # CORS middleware
 app.add_middleware(
@@ -564,7 +589,9 @@ async def analyze_stock(request: AnalysisRequest):
             model=request.model,
             provider=request.provider,
             api_key=api_key,
-            data_provider_keys={}
+            data_provider_keys={},
+            openai_api_key=settings.get('openai_api_key', ''),
+            gemini_api_key=settings.get('gemini_api_key', '')
         )
 
         result = {
@@ -588,12 +615,23 @@ async def analyze_stock(request: AnalysisRequest):
             "percentile_scores": analysis_result.get('percentile_scores', {}),
             "insights": analysis_result.get('insights', []),
             "summary_insight": analysis_result.get('summary_insight', ''),
+            "ensemble_used": analysis_result.get('ensemble_used', False),
+            "ensemble_agreement": analysis_result.get('ensemble_agreement'),
+            "signal_alignment": analysis_result.get('signal_alignment'),
             "model_used": f"{request.provider}/{request.model}",
             "created_at": datetime.now(timezone.utc).isoformat()
         }
 
         await db.analysis_history.insert_one(result)
         result.pop('_id', None)
+
+        # Record recommendation for track record
+        try:
+            track_service = get_track_record_service()
+            await track_service.record_recommendation(result)
+        except Exception as e:
+            logger.warning(f"Track record recording failed (non-critical): {e}")
+
         return result
 
     except Exception as e:
@@ -690,7 +728,9 @@ async def generate_ai_recommendations(limit: int = 200, min_confidence: float = 
                     model=model,
                     provider=provider,
                     api_key=api_key,
-                    data_provider_keys={}
+                    data_provider_keys={},
+                    openai_api_key=settings.get('openai_api_key', ''),
+                    gemini_api_key=settings.get('gemini_api_key', '')
                 )
 
                 recommendation = result.get('recommendation', 'HOLD')
@@ -1029,6 +1069,82 @@ async def remove_from_watchlist(symbol: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Stock not in watchlist")
     return {"message": "Stock removed from watchlist"}
+
+
+# ============ BACKTESTING ENDPOINT ============
+
+@api_router.post("/backtest/{symbol}")
+async def run_backtest(symbol: str, period: str = "2y"):
+    """Run backtesting on historical data for a symbol"""
+    try:
+        engine = get_backtest_engine()
+        result = await engine.run_backtest(symbol=symbol, period=period)
+        return result
+    except Exception as e:
+        logger.error(f"Backtest failed for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ REAL-TIME PRICE ENDPOINTS ============
+
+@api_router.get("/prices/stream")
+async def stream_prices(symbols: str):
+    """SSE endpoint for streaming live prices"""
+    try:
+        from sse_starlette.sse import EventSourceResponse
+    except ImportError:
+        raise HTTPException(status_code=501, detail="sse-starlette not installed")
+
+    symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    if not symbol_list:
+        raise HTTPException(status_code=400, detail="No symbols provided")
+
+    poller = get_price_poller()
+    for s in symbol_list:
+        poller.add_symbol(s)
+
+    async def event_generator():
+        while True:
+            data = {s: poller.get_latest_price(s) for s in symbol_list}
+            yield {"event": "price_update", "data": json.dumps(data)}
+            await asyncio.sleep(5)
+
+    return EventSourceResponse(event_generator())
+
+
+@api_router.get("/prices/live/{symbol}")
+async def get_live_price(symbol: str):
+    """Get latest polled price for a symbol"""
+    poller = get_price_poller()
+    poller.add_symbol(symbol)
+    price = poller.get_latest_price(symbol)
+    if price:
+        return price
+    return {"symbol": symbol.upper(), "message": "Not yet polled, will be available shortly"}
+
+
+# ============ TRACK RECORD ENDPOINTS ============
+
+@api_router.get("/track-record/stats")
+async def get_track_record_stats(symbol: Optional[str] = None):
+    """Get AI recommendation accuracy statistics"""
+    try:
+        service = get_track_record_service()
+        return await service.get_stats(symbol)
+    except Exception as e:
+        logger.error(f"Track record stats failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/track-record/recent")
+async def get_recent_track_record(limit: int = 20):
+    """Get recent recommendations with outcomes"""
+    try:
+        service = get_track_record_service()
+        return await service.get_recent_track(limit)
+    except Exception as e:
+        logger.error(f"Track record recent failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============ ROOT ============

@@ -23,7 +23,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import StockChart from "@/components/StockChart";
 import ReasoningLog from "@/components/ReasoningLog";
 import MarketIndices from "@/components/MarketIndices";
-import NewsWidget from "@/components/NewsWidget";
 import { API_URL } from "@/config/api";
 
 export default function Dashboard() {
@@ -321,8 +320,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Market News */}
-          <NewsWidget />
         </div>
 
         {/* Main Content */}

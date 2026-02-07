@@ -31,6 +31,10 @@ ta==0.11.0
 yfinance==0.2.66
 tvscreener==0.1.0
 
+# Charting (visual chart analysis for LLM)
+mplfinance>=0.12.10b0
+matplotlib>=3.8.0
+
 # News & Web
 feedparser==6.0.11
 beautifulsoup4==4.14.3
@@ -46,6 +50,13 @@ python-dotenv==1.2.1
 python-dateutil==2.9.0.post0
 cachetools==6.2.3
 tenacity==9.1.2
+
+# FinBERT Sentiment (optional — falls back to lexicon if not installed)
+torch>=2.0.0
+transformers>=4.30.0
+
+# Real-time price streaming
+sse-starlette>=1.6.0
 
 # Testing
 pytest>=8.2,<9

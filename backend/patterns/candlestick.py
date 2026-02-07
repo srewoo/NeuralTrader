@@ -77,7 +77,25 @@ class CandlestickPatternDetector:
         recent_data['lower_shadow'] = recent_data[['Close', 'Open']].min(axis=1) - recent_data['Low']
         recent_data['is_bullish'] = recent_data['Close'] > recent_data['Open']
         recent_data['range'] = recent_data['High'] - recent_data['Low']
-        
+
+        # Volume confirmation
+        if 'Volume' in recent_data.columns and len(recent_data) >= 20:
+            recent_data['vol_ma_20'] = recent_data['Volume'].rolling(20).mean()
+            recent_data['volume_ratio'] = recent_data['Volume'] / recent_data['vol_ma_20'].replace(0, 1)
+        else:
+            recent_data['volume_ratio'] = 1.0
+
+        # ATR calculation
+        if len(recent_data) >= 14:
+            tr = pd.concat([
+                recent_data['High'] - recent_data['Low'],
+                (recent_data['High'] - recent_data['Close'].shift(1)).abs(),
+                (recent_data['Low'] - recent_data['Close'].shift(1)).abs()
+            ], axis=1).max(axis=1)
+            recent_data['atr_14'] = tr.rolling(14).mean()
+        else:
+            recent_data['atr_14'] = recent_data['range'].rolling(5).mean()
+
         # Detect each pattern type
         for i in range(len(recent_data)):
             date = recent_data.index[i]
@@ -86,8 +104,9 @@ class CandlestickPatternDetector:
             if i >= 0:
                 # Doji
                 if self._is_doji(recent_data.iloc[i]):
+                    prev_c = list(recent_data.iloc[max(0,i-5):i+1]) if i >= 1 else None
                     detected_patterns.append(self._create_pattern_result(
-                        "doji", date, recent_data.iloc[i]
+                        "doji", date, recent_data.iloc[i], prev_c
                     ))
                 
                 # Hammer / Hanging Man
@@ -96,8 +115,9 @@ class CandlestickPatternDetector:
                         pattern_name = "hammer"
                     else:
                         pattern_name = "hanging_man"
+                    prev_c = list(recent_data.iloc[max(0,i-5):i+1]) if i >= 1 else None
                     detected_patterns.append(self._create_pattern_result(
-                        pattern_name, date, recent_data.iloc[i]
+                        pattern_name, date, recent_data.iloc[i], prev_c
                     ))
                 
                 # Inverted Hammer / Shooting Star
@@ -106,14 +126,16 @@ class CandlestickPatternDetector:
                         pattern_name = "inverted_hammer"
                     else:
                         pattern_name = "shooting_star"
+                    prev_c = list(recent_data.iloc[max(0,i-5):i+1]) if i >= 1 else None
                     detected_patterns.append(self._create_pattern_result(
-                        pattern_name, date, recent_data.iloc[i]
+                        pattern_name, date, recent_data.iloc[i], prev_c
                     ))
                 
                 # Spinning Top
                 if self._is_spinning_top(recent_data.iloc[i]):
+                    prev_c = list(recent_data.iloc[max(0,i-5):i+1]) if i >= 1 else None
                     detected_patterns.append(self._create_pattern_result(
-                        "spinning_top", date, recent_data.iloc[i]
+                        "spinning_top", date, recent_data.iloc[i], prev_c
                     ))
             
             # Two candle patterns
@@ -180,7 +202,20 @@ class CandlestickPatternDetector:
                     detected_patterns.append(self._create_pattern_result(
                         "three_black_crows", date, candle3, [candle1, candle2, candle3]
                     ))
-        
+
+            # Five candle patterns
+            if i >= 4:
+                c1 = recent_data.iloc[i-4]
+                c2 = recent_data.iloc[i-3]
+                c3 = recent_data.iloc[i-2]
+                c4 = recent_data.iloc[i-1]
+                c5 = recent_data.iloc[i]
+
+                if self._is_rising_three_methods(c1, c2, c3, c4, c5):
+                    detected_patterns.append(self._create_pattern_result("rising_three_methods", date, c5, [c1, c2, c3, c4, c5]))
+                if self._is_falling_three_methods(c1, c2, c3, c4, c5):
+                    detected_patterns.append(self._create_pattern_result("falling_three_methods", date, c5, [c1, c2, c3, c4, c5]))
+
         return detected_patterns
     
     def get_recent_patterns(
@@ -369,16 +404,73 @@ class CandlestickPatternDetector:
             c3['Open'] < c2['Open']
         )
     
+    def _is_rising_three_methods(self, c1, c2, c3, c4, c5):
+        """Detect Rising Three Methods pattern (5-candle bullish continuation)"""
+        return (c1['is_bullish'] and c1['body'] > c1['range'] * 0.5 and
+                not c2['is_bullish'] and not c3['is_bullish'] and not c4['is_bullish'] and
+                c2['body'] < c1['body'] * 0.5 and c3['body'] < c1['body'] * 0.5 and c4['body'] < c1['body'] * 0.5 and
+                c2['Low'] > c1['Low'] and c3['Low'] > c1['Low'] and c4['Low'] > c1['Low'] and
+                c5['is_bullish'] and c5['Close'] > c1['Close'])
+
+    def _is_falling_three_methods(self, c1, c2, c3, c4, c5):
+        """Detect Falling Three Methods pattern (5-candle bearish continuation)"""
+        return (not c1['is_bullish'] and c1['body'] > c1['range'] * 0.5 and
+                c2['is_bullish'] and c3['is_bullish'] and c4['is_bullish'] and
+                c2['body'] < c1['body'] * 0.5 and c3['body'] < c1['body'] * 0.5 and c4['body'] < c1['body'] * 0.5 and
+                c2['High'] < c1['High'] and c3['High'] < c1['High'] and c4['High'] < c1['High'] and
+                not c5['is_bullish'] and c5['Close'] < c1['Close'])
+
+    def _calculate_strength_score(self, pattern_name, candle, prev_candles=None):
+        """Calculate 0-100 strength score based on pattern quality + volume + trend."""
+        base_scores = {"strong": 70, "medium": 50, "weak": 30}
+        base = base_scores.get(self.PATTERNS[pattern_name]["strength"], 50)
+
+        # Volume confirmation bonus (up to +15)
+        vol_ratio = candle.get('volume_ratio', 1.0) if isinstance(candle, dict) else getattr(candle, 'volume_ratio', 1.0)
+        if vol_ratio > 1.5:
+            base += 15
+        elif vol_ratio > 1.2:
+            base += 10
+        elif vol_ratio < 0.7:
+            base -= 10
+
+        # ATR-relative body size bonus (meaningful candle vs noise)
+        atr = candle.get('atr_14', None) if isinstance(candle, dict) else getattr(candle, 'atr_14', None)
+        body = candle.get('body', 0) if isinstance(candle, dict) else getattr(candle, 'body', 0)
+        if atr and atr > 0:
+            body_atr_ratio = body / atr
+            if body_atr_ratio > 0.8:
+                base += 10  # Strong body relative to ATR
+            elif body_atr_ratio > 0.5:
+                base += 5
+
+        # Trend context bonus (up to +10)
+        pattern_type = self.PATTERNS[pattern_name]["type"]
+        if prev_candles is not None and len(prev_candles) >= 5:
+            # Check if 5-day trend aligns with reversal direction
+            try:
+                closes = [c['Close'] if isinstance(c, dict) else c.Close for c in prev_candles[-5:]]
+                trend_up = closes[-1] > closes[0]
+                if "bullish" in pattern_type and not trend_up:
+                    base += 10  # Bullish reversal in downtrend = stronger
+                elif "bearish" in pattern_type and trend_up:
+                    base += 10  # Bearish reversal in uptrend = stronger
+            except:
+                pass
+
+        return max(0, min(100, base))
+
     def _create_pattern_result(
         self,
         pattern_name: str,
         date: Any,
         candle: pd.Series,
-        candles: Optional[List[pd.Series]] = None
+        prev_candles: Optional[List[pd.Series]] = None
     ) -> Dict[str, Any]:
         """Create pattern detection result"""
         pattern_info = self.PATTERNS.get(pattern_name, {})
         price = float(candle['Close'])
+        strength_score = self._calculate_strength_score(pattern_name, candle, prev_candles)
 
         # Format date and time for display
         date_str = str(date)
@@ -422,6 +514,7 @@ class CandlestickPatternDetector:
             "low": float(candle['Low']),
             "close": float(candle['Close']),
             "description": self._get_pattern_description(pattern_name),
+            "strength_score": strength_score,
             "implication": implication,
             "display": f"{pattern_name.replace('_', ' ').title()}\n{date_str} - ₹{price:,.2f}"
         }

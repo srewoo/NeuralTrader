@@ -128,7 +128,126 @@ class ValidatorAgent(BaseAgent):
                     "SELL recommendation but RSI indicates oversold (<30)"
                 )
                 validation_results["quality_score"] -= 10
-            
+
+            # 4b. MACD alignment check
+            macd = indicators.get("macd")
+            macd_signal_val = indicators.get("macd_signal")
+            if macd is not None and macd_signal_val is not None:
+                if recommendation == "BUY" and macd < macd_signal_val:
+                    validation_results["warnings"].append(
+                        f"BUY recommendation but MACD ({macd:.2f}) is below signal line ({macd_signal_val:.2f}) — bearish momentum"
+                    )
+                    validation_results["quality_score"] -= 8
+                elif recommendation == "SELL" and macd > macd_signal_val:
+                    validation_results["warnings"].append(
+                        f"SELL recommendation but MACD ({macd:.2f}) is above signal line ({macd_signal_val:.2f}) — bullish momentum"
+                    )
+                    validation_results["quality_score"] -= 8
+
+            # 4c. Trend alignment check (SMA20 and SMA50)
+            sma_20 = indicators.get("sma_20")
+            sma_50 = indicators.get("sma_50")
+            current_price_val = indicators.get("current_price", stock_data.get("current_price"))
+            if sma_20 and sma_50 and current_price_val:
+                if recommendation == "BUY" and current_price_val < sma_20 and current_price_val < sma_50:
+                    validation_results["warnings"].append(
+                        f"BUY recommendation but price (₹{current_price_val:.2f}) is below both SMA20 (₹{sma_20:.2f}) and SMA50 (₹{sma_50:.2f}) — bearish trend"
+                    )
+                    validation_results["quality_score"] -= 10
+                elif recommendation == "SELL" and current_price_val > sma_20 and current_price_val > sma_50:
+                    validation_results["warnings"].append(
+                        f"SELL recommendation but price (₹{current_price_val:.2f}) is above both SMA20 (₹{sma_20:.2f}) and SMA50 (₹{sma_50:.2f}) — bullish trend"
+                    )
+                    validation_results["quality_score"] -= 10
+
+            # 4d. Volume confirmation check
+            volume_ratio = indicators.get("volume_ratio")
+            if volume_ratio is not None and volume_ratio < 0.5:
+                validation_results["suggestions"].append(
+                    f"Low volume ratio ({volume_ratio:.2f}x avg) — recommendation may lack conviction"
+                )
+                validation_results["quality_score"] -= 5
+
+            # 4e. Stochastic alignment check
+            stochastic_k = indicators.get("stochastic_k")
+            if stochastic_k is not None:
+                if recommendation == "BUY" and stochastic_k > 80:
+                    validation_results["warnings"].append(
+                        f"BUY recommendation but Stochastic K ({stochastic_k:.1f}) indicates overbought (>80)"
+                    )
+                    validation_results["quality_score"] -= 8
+                elif recommendation == "SELL" and stochastic_k < 20:
+                    validation_results["warnings"].append(
+                        f"SELL recommendation but Stochastic K ({stochastic_k:.1f}) indicates oversold (<20)"
+                    )
+                    validation_results["quality_score"] -= 8
+
+            # 4f. Comprehensive signal alignment scoring
+            alignment_count = 0
+            total_checks = 0
+
+            # RSI alignment
+            if rsi is not None:
+                total_checks += 1
+                if recommendation == "BUY" and rsi < 70:
+                    alignment_count += 1
+                elif recommendation == "SELL" and rsi > 30:
+                    alignment_count += 1
+                elif recommendation == "HOLD":
+                    alignment_count += 1
+
+            # MACD alignment
+            if macd is not None and macd_signal_val is not None:
+                total_checks += 1
+                if recommendation == "BUY" and macd > macd_signal_val:
+                    alignment_count += 1
+                elif recommendation == "SELL" and macd < macd_signal_val:
+                    alignment_count += 1
+                elif recommendation == "HOLD":
+                    alignment_count += 1
+
+            # Trend alignment
+            if sma_20 and sma_50 and current_price_val:
+                total_checks += 1
+                if recommendation == "BUY" and (current_price_val > sma_20 or current_price_val > sma_50):
+                    alignment_count += 1
+                elif recommendation == "SELL" and (current_price_val < sma_20 or current_price_val < sma_50):
+                    alignment_count += 1
+                elif recommendation == "HOLD":
+                    alignment_count += 1
+
+            # Stochastic alignment
+            if stochastic_k is not None:
+                total_checks += 1
+                if recommendation == "BUY" and stochastic_k < 80:
+                    alignment_count += 1
+                elif recommendation == "SELL" and stochastic_k > 20:
+                    alignment_count += 1
+                elif recommendation == "HOLD":
+                    alignment_count += 1
+
+            # Volume alignment
+            if volume_ratio is not None:
+                total_checks += 1
+                if volume_ratio >= 0.7:
+                    alignment_count += 1
+
+            # Calculate alignment ratio
+            if total_checks >= 3:
+                alignment_ratio = alignment_count / total_checks
+                if alignment_ratio < 0.6:
+                    validation_results["warnings"].append(
+                        f"Low signal alignment: only {alignment_count}/{total_checks} indicators support {recommendation} — high contradiction risk"
+                    )
+                    validation_results["quality_score"] -= 10
+
+                # Store for confidence recalibration
+                validation_results["signal_alignment"] = {
+                    "aligned": alignment_count,
+                    "total": total_checks,
+                    "ratio": round(alignment_ratio, 2)
+                }
+
             # 5. Validate reasoning quality
             reasoning = analysis_result.get("reasoning", "")
             if len(reasoning) < 100:
@@ -160,6 +279,9 @@ class ValidatorAgent(BaseAgent):
                     )
                     validation_results["quality_score"] -= 5
             
+            # Floor quality score at 0
+            validation_results["quality_score"] = max(0, validation_results["quality_score"])
+
             # Final quality assessment
             if validation_results["quality_score"] >= 90:
                 quality_rating = "excellent"
@@ -175,7 +297,27 @@ class ValidatorAgent(BaseAgent):
             # Update state
             state["validation"] = validation_results
             state["quality_score"] = validation_results["quality_score"]
-            
+
+            # Confidence recalibration based on signal alignment
+            alignment_info = validation_results.get("signal_alignment")
+            if alignment_info:
+                current_confidence = analysis_result.get("confidence", 50)
+                alignment_ratio = alignment_info["ratio"]
+
+                if alignment_ratio < 0.5:
+                    # Very low alignment — cap confidence
+                    if current_confidence > 60:
+                        analysis_result["confidence"] = 60
+                        analysis_result["confidence_capped"] = True
+                        analysis_result["confidence_cap_reason"] = f"Low signal alignment ({alignment_info['aligned']}/{alignment_info['total']})"
+                        state["confidence"] = 60
+                elif alignment_ratio >= 0.8 and current_confidence < 80:
+                    # Strong alignment — modest boost
+                    boosted = min(current_confidence + 5, 85)
+                    analysis_result["confidence"] = boosted
+                    analysis_result["confidence_boosted"] = True
+                    state["confidence"] = boosted
+
             # Add any critical warnings to analysis result
             if validation_results["warnings"]:
                 if "validation_warnings" not in analysis_result:

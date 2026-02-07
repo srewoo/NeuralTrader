@@ -38,7 +38,14 @@ class DeepReasoningAgent(BaseAgent):
             model = state.get("model", "gpt-4.1")
             provider = state.get("provider", "openai")
             api_key = state.get("api_key")
-            
+
+            # Extract both provider API keys for potential ensemble analysis
+            # The orchestrator may pass openai_api_key and/or gemini_api_key
+            if provider == "openai" and api_key and not state.get("openai_api_key"):
+                state["openai_api_key"] = api_key
+            elif provider == "gemini" and api_key and not state.get("gemini_api_key"):
+                state["gemini_api_key"] = api_key
+
             if not api_key:
                 raise ValueError("API key not provided")
             
@@ -59,35 +66,139 @@ class DeepReasoningAgent(BaseAgent):
             discovered_patterns = state.get("discovered_patterns", [])
             historical_events = state.get("historical_events", [])
 
+            # Fetch recent news for context
+            news_context = []
+            news_sentiment = {}
+            try:
+                from news.web_search import search_stock_news
+                from news.sentiment import get_sentiment_analyzer
+
+                company_name = stock_data.get('name', '')
+                news_results = await search_stock_news(
+                    symbol=symbol,
+                    company_name=company_name,
+                    max_results=8,
+                    days_back=7
+                )
+                news_context = news_results
+
+                # Analyze sentiment of news
+                if news_results:
+                    analyzer = get_sentiment_analyzer()
+                    articles = [{"title": n["title"], "content": n.get("snippet", "")} for n in news_results]
+                    news_sentiment = analyzer.get_aggregate_sentiment(articles)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"News search failed (non-critical): {e}")
+
+            # Get recent candlestick patterns
+            candlestick_patterns = []
+            try:
+                from patterns.candlestick import get_pattern_detector
+                import yfinance as yf
+
+                # Get recent OHLCV data for pattern detection
+                ticker = yf.Ticker(f"{symbol}.NS")
+                hist = ticker.history(period="1mo")
+
+                if not hist.empty:
+                    detector = get_pattern_detector()
+                    pattern_result = detector.detect_patterns(hist)
+                    candlestick_patterns = pattern_result.get("patterns", [])
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Pattern detection failed (non-critical): {e}")
+
+            # Generate candlestick chart images for visual LLM analysis
+            chart_images = []
+            try:
+                from analysis.chart_generator import CandlestickChartGenerator
+                chart_gen = CandlestickChartGenerator()
+
+                # Daily chart from 1-month data (already fetched above as `hist`)
+                if 'hist' in dir() and not hist.empty:
+                    daily_chart = chart_gen.generate_daily_chart(hist, symbol, indicators)
+                    if daily_chart:
+                        chart_images.append(daily_chart)
+
+                # Weekly chart from 6-month data (passed through state from analysis_agent)
+                ohlcv_6mo = state.get("ohlcv_6mo")
+                if ohlcv_6mo is not None and not ohlcv_6mo.empty:
+                    weekly_chart = chart_gen.generate_weekly_chart(ohlcv_6mo, symbol, indicators)
+                    if weekly_chart:
+                        chart_images.append(weekly_chart)
+
+                # 4-hour chart from intraday data
+                try:
+                    from data_providers.provider_manager import get_provider_manager
+                    api_keys = state.get("data_provider_keys", {})
+                    provider_mgr = get_provider_manager(api_keys if api_keys else None)
+                    intraday_hist = await provider_mgr.get_historical_data(symbol, period="5d", interval="1h")
+                    if intraday_hist is not None and len(intraday_hist) >= 10:
+                        chart_4h = chart_gen.generate_4h_chart(intraday_hist, symbol, indicators)
+                        if chart_4h:
+                            chart_images.append(chart_4h)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"4hr chart generation failed (non-critical): {e}")
+
+                if chart_images:
+                    self.log_execution(f"Generated {len(chart_images)} chart image(s) for visual analysis")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Chart generation failed (non-critical): {e}")
+
             # Build comprehensive prompt with RAG context and percentile scores
             prompt = self._build_analysis_prompt(
                 symbol, stock_data, indicators, signals, percentile_scores, rag_context,
-                discovered_patterns, historical_events
+                discovered_patterns, historical_events,
+                news_context=news_context, news_sentiment=news_sentiment,
+                candlestick_patterns=candlestick_patterns,
+                has_chart_images=len(chart_images) > 0
             )
-            
+
             # Call LLM with chain-of-thought prompting (REAL API CALL)
-            analysis_result = await self._call_llm(
-                prompt, model, provider, api_key
-            )
+            # Include chart images for multimodal analysis if available
+            try:
+                analysis_result = await self._call_llm(
+                    prompt, model, provider, api_key,
+                    images=chart_images if chart_images else None
+                )
+            except Exception as e:
+                # Retry without images if multimodal call fails
+                if chart_images:
+                    self.log_execution("Multimodal LLM call failed, retrying text-only", "warning")
+                    analysis_result = await self._call_llm(
+                        prompt, model, provider, api_key, images=None
+                    )
+                else:
+                    raise
             
             # Parse and validate result
-            if isinstance(analysis_result, str):
+            analysis_result = self._parse_llm_response(analysis_result)
+
+            # Check for ensemble opportunity
+            secondary_provider = "gemini" if provider == "openai" else "openai"
+            secondary_key = state.get(f"{secondary_provider}_api_key")
+            secondary_model = "gemini-2.0-flash" if secondary_provider == "gemini" else "gpt-4o-mini"
+
+            ensemble_used = False
+            if secondary_key:
                 try:
-                    analysis_result = json.loads(analysis_result)
-                except json.JSONDecodeError:
-                    # Try to extract JSON from markdown code blocks
-                    import re
-                    json_match = re.search(r'```json\s*(\{.*?\})\s*```', analysis_result, re.DOTALL)
-                    if json_match:
-                        analysis_result = json.loads(json_match.group(1))
-                    else:
-                        # Try to find any JSON object
-                        json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', analysis_result, re.DOTALL)
-                        if json_match:
-                            analysis_result = json.loads(json_match.group(0))
-                        else:
-                            raise ValueError("Could not parse LLM response as JSON")
-            
+                    secondary_result_raw = await self._call_llm(
+                        prompt, secondary_model, secondary_provider, secondary_key,
+                        images=chart_images if chart_images else None
+                    )
+                    # Parse secondary result
+                    secondary_result = self._parse_llm_response(secondary_result_raw)
+
+                    if secondary_result:
+                        ensemble_used = True
+                        analysis_result = self._merge_ensemble_results(analysis_result, secondary_result)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Secondary model failed (using primary only): {e}")
+
             # Validate required fields
             required_fields = ["recommendation", "confidence", "reasoning"]
             for field in required_fields:
@@ -119,6 +230,9 @@ class DeepReasoningAgent(BaseAgent):
             # Add model information
             analysis_result["model_used"] = model
             analysis_result["provider"] = provider
+            if ensemble_used:
+                analysis_result["ensemble_used"] = True
+                analysis_result["models_used"] = [model, secondary_model]
             
             # Update state
             state["analysis_result"] = analysis_result
@@ -156,7 +270,11 @@ class DeepReasoningAgent(BaseAgent):
         percentile_scores: Dict[str, Any],
         rag_context: str,
         discovered_patterns: list = None,
-        historical_events: list = None
+        historical_events: list = None,
+        news_context: list = None,
+        news_sentiment: dict = None,
+        candlestick_patterns: list = None,
+        has_chart_images: bool = False
     ) -> str:
         """
         Build comprehensive analysis prompt with chain-of-thought structure
@@ -171,10 +289,16 @@ class DeepReasoningAgent(BaseAgent):
             rag_context: RAG context
             discovered_patterns: Auto-discovered trading patterns
             historical_events: Historical news event impacts
+            news_context: Recent news articles for the stock
+            news_sentiment: Aggregate sentiment analysis of news
+            candlestick_patterns: Detected candlestick patterns
 
         Returns:
             Formatted prompt
         """
+        news_context = news_context or []
+        news_sentiment = news_sentiment or {}
+        candlestick_patterns = candlestick_patterns or []
         discovered_patterns = discovered_patterns or []
         historical_events = historical_events or []
         # Extract extended features for enhanced analysis
@@ -351,6 +475,69 @@ For example, RSI=35 might seem neutral, but if it's in the 10th percentile histo
                 prompt += f"- Details: {event.get('content', '')[:200]}...\n\n"
             prompt += "IMPORTANT: Consider if similar events might occur soon and how the stock historically reacted to such catalysts.\n"
 
+        # Add candlestick patterns section if available
+        if candlestick_patterns:
+            prompt += "\n\n=== RECENT CANDLESTICK PATTERNS (Last 30 Days) ===\n"
+            for i, pattern in enumerate(candlestick_patterns, 1):
+                pattern_name = pattern.get("name", "Unknown")
+                pattern_date = pattern.get("date", "N/A")
+                pattern_price = pattern.get("price", "N/A")
+                pattern_signal = pattern.get("signal", "N/A")
+                strength_score = pattern.get("strength_score", None)
+                implication = pattern.get("implication", "N/A")
+                strength_str = f", Strength: {strength_score}/100" if strength_score is not None else ""
+                prompt += f"{i}. {pattern_name} — Date: {pattern_date}, Price: ₹{pattern_price}, Signal: {pattern_signal}{strength_str}\n"
+                prompt += f"   Implication: {implication}\n"
+            prompt += "\nIMPORTANT: Factor these recent candlestick patterns into your technical analysis and recommendation.\n"
+
+        # Add news sentiment section if available
+        if news_context:
+            prompt += "\n\n=== RECENT NEWS SENTIMENT ===\n"
+            if news_sentiment:
+                agg_score = news_sentiment.get("score", "N/A")
+                positive = news_sentiment.get("positive", 0)
+                neutral = news_sentiment.get("neutral", 0)
+                negative = news_sentiment.get("negative", 0)
+                prompt += f"Aggregate Score: {agg_score}, Distribution: {positive} positive / {neutral} neutral / {negative} negative\n"
+            prompt += "\nTop Headlines:\n"
+            for i, article in enumerate(news_context[:8], 1):
+                title = article.get("title", "N/A")
+                source = article.get("source", "Unknown")
+                sentiment_score = article.get("sentiment", "N/A")
+                prompt += f"{i}. {title} ({source}) — Sentiment: {sentiment_score}\n"
+            prompt += "\nIMPORTANT: Factor the news sentiment and recent headlines into your analysis. Positive news flow supports bullish thesis; negative news increases risk.\n"
+
+        # Add visual chart analysis instructions if chart images are provided
+        if has_chart_images:
+            prompt += """
+
+=== VISUAL CHART ANALYSIS (IMAGES ATTACHED) ===
+Candlestick chart images are attached. This is your PRIMARY source for pattern recognition.
+
+DAILY CHART (1-Month) - Image 1:
+1. Identify candlestick patterns visible in the last 5-10 trading sessions
+2. Assess short-term trend direction from candlestick progression and body sizes
+3. Note price position relative to the Bollinger Bands (dashed gray lines) and SMAs (colored lines: blue=SMA20, red=SMA50)
+4. Identify any gaps, wicks rejecting levels, or key support/resistance zones
+5. Evaluate volume bars at the bottom — is volume confirming or diverging from price movement?
+
+WEEKLY CHART (6-Month) - Image 2 (if present):
+1. Identify the broader trend (uptrend channel, downtrend, consolidation range)
+2. Spot chart patterns: head & shoulders, triangles, wedges, channels, double tops/bottoms, cup & handle
+3. Identify major horizontal support and resistance zones
+4. Note any trend line breaks or significant trend changes
+5. Assess whether current price is at a historically significant level
+
+4-HOUR CHART (5 Days) - Image 3 (if present):
+1. Identify intraday support and resistance levels
+2. Spot short-term momentum shifts and micro-patterns
+3. Assess entry/exit timing precision for swing trades
+4. Note any divergences between 4hr and daily timeframes
+5. Evaluate volume patterns during market hours
+
+IMPORTANT: Your visual analysis is the PRIMARY method for chart pattern identification. The rule-based patterns listed above are SUPPLEMENTARY. If you see patterns in the chart that were not detected algorithmically, INCLUDE them. If the chart contradicts the algorithmic detection, TRUST THE CHART.
+"""
+
         prompt += """
 
 === ANALYSIS INSTRUCTIONS ===
@@ -388,8 +575,10 @@ CRITICAL ANALYSIS FRAMEWORK:
    - Bollinger Band width for volatility compression/expansion
    - Determine appropriate position sizing and stop-loss width
 
-6. Pattern Recognition & Historical Context:
-   - Identify any chart patterns from RAG knowledge base
+6. Pattern Recognition & Visual Chart Analysis:
+   - Analyze the attached chart images for visual patterns (if provided)
+   - Identify chart formations: trendlines, channels, H&S, triangles, wedges, double tops/bottoms
+   - Cross-reference visual patterns with algorithmic detections
    - Look for similar setups in the same stock or sector peers
    - Consider seasonal patterns or event-driven catalysts
 
@@ -446,79 +635,215 @@ CRITICAL REQUIREMENTS:
 7. Make recommendations actionable with clear entry/exit levels accounting for volatility"""
         
         return prompt
-    
+
+    def _parse_llm_response(self, raw_response) -> Dict[str, Any]:
+        """
+        Parse and extract JSON from an LLM response string.
+
+        Args:
+            raw_response: Raw string response from the LLM
+
+        Returns:
+            Parsed dictionary from the JSON response
+        """
+        if isinstance(raw_response, dict):
+            return raw_response
+
+        if isinstance(raw_response, str):
+            try:
+                return json.loads(raw_response)
+            except json.JSONDecodeError:
+                import re
+                # Try to extract JSON from markdown code blocks
+                json_match = re.search(r'```json\s*(\{.*?\})\s*```', raw_response, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group(1))
+                else:
+                    # Try to find any JSON object
+                    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', raw_response, re.DOTALL)
+                    if json_match:
+                        return json.loads(json_match.group(0))
+                    else:
+                        raise ValueError("Could not parse LLM response as JSON")
+
+        raise ValueError(f"Unexpected response type: {type(raw_response)}")
+
+    def _merge_ensemble_results(
+        self, primary: Dict[str, Any], secondary: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Merge results from two LLM providers using weighted averaging.
+
+        Primary model gets 60% weight, secondary gets 40%.
+        Direction agreement adds confidence bonus; disagreement applies penalty.
+
+        Args:
+            primary: Parsed result from the primary LLM
+            secondary: Parsed result from the secondary LLM
+
+        Returns:
+            Merged analysis result
+        """
+        merged = dict(primary)
+
+        # Determine direction agreement
+        primary_rec = primary.get("recommendation", "HOLD")
+        secondary_rec = secondary.get("recommendation", "HOLD")
+        agreement = primary_rec == secondary_rec
+
+        # Confidence: 60/40 weighted average with agreement bonus/penalty
+        primary_conf = primary.get("confidence", 50)
+        secondary_conf = secondary.get("confidence", 50)
+        blended_confidence = int(primary_conf * 0.6 + secondary_conf * 0.4)
+
+        if agreement:
+            blended_confidence = min(100, blended_confidence + 5)
+        else:
+            blended_confidence = max(0, blended_confidence - 10)
+
+        merged["confidence"] = blended_confidence
+
+        # Use primary recommendation (with penalty already applied to confidence if disagreement)
+        merged["recommendation"] = primary_rec
+
+        # Merge and deduplicate risks
+        primary_risks = primary.get("key_risks", [])
+        secondary_risks = secondary.get("key_risks", [])
+        seen_risks = set()
+        merged_risks = []
+        for risk in primary_risks + secondary_risks:
+            risk_lower = risk.lower().strip()
+            if risk_lower not in seen_risks:
+                seen_risks.add(risk_lower)
+                merged_risks.append(risk)
+        merged["key_risks"] = merged_risks
+
+        # Merge and deduplicate opportunities
+        primary_opps = primary.get("key_opportunities", [])
+        secondary_opps = secondary.get("key_opportunities", [])
+        seen_opps = set()
+        merged_opps = []
+        for opp in primary_opps + secondary_opps:
+            opp_lower = opp.lower().strip()
+            if opp_lower not in seen_opps:
+                seen_opps.add(opp_lower)
+                merged_opps.append(opp)
+        merged["key_opportunities"] = merged_opps
+
+        # Add ensemble metadata
+        merged["ensemble_used"] = True
+        merged["ensemble_agreement"] = agreement
+
+        return merged
+
     async def _call_llm(
         self,
         prompt: str,
         model: str,
         provider: str,
-        api_key: str
+        api_key: str,
+        images: list = None
     ) -> Dict[str, Any]:
         """
-        Call LLM API for analysis (REAL API CALL)
-        
+        Call LLM API for analysis (REAL API CALL).
+        Supports multimodal inputs (text + chart images).
+
         Args:
             prompt: Analysis prompt
             model: Model name
             provider: Provider (openai/gemini)
             api_key: API key
-            
+            images: Optional list of PNG image bytes for visual analysis
+
         Returns:
             Analysis result
         """
+        import base64
+
         system_message = "You are an expert stock analyst. Always respond with valid JSON matching the requested format exactly."
-        
+
         if provider == "openai":
             import openai
             client = openai.AsyncOpenAI(api_key=api_key)
 
-            # OpenAI reasoning models (o1, o3 series) don't support temperature or system messages
             model_lower = model.lower()
             is_reasoning_model = any(x in model_lower for x in ['o1', 'o3'])
 
+            # Build content — multimodal if images provided
+            if images:
+                content_parts = [{"type": "text", "text": prompt}]
+                for img_bytes in images:
+                    b64 = base64.b64encode(img_bytes).decode('utf-8')
+                    content_parts.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{b64}",
+                            "detail": "high"
+                        }
+                    })
+                user_content = content_parts
+            else:
+                user_content = prompt
+
             if is_reasoning_model:
-                # Reasoning models: no temperature, no system message, no response_format
+                # Reasoning models: no temperature, no system message
+                if images:
+                    # Prepend system message as text part
+                    user_content = [{"type": "text", "text": system_message + "\n\n"}] + content_parts
+                else:
+                    user_content = f"{system_message}\n\n{prompt}"
+
                 completion = await client.chat.completions.create(
                     model=model,
                     messages=[
-                        {"role": "user", "content": f"{system_message}\n\n{prompt}"}
+                        {"role": "user", "content": user_content}
                     ]
                 )
             else:
-                # Standard models: include temperature and optional JSON mode
                 completion = await client.chat.completions.create(
                     model=model,
                     messages=[
                         {"role": "system", "content": system_message},
-                        {"role": "user", "content": prompt}
+                        {"role": "user", "content": user_content}
                     ],
                     temperature=0.7,
                     response_format={"type": "json_object"} if "gpt-4" in model_lower else None
                 )
 
             return completion.choices[0].message.content
-            
+
         elif provider == "gemini":
             from google import genai
             from google.genai import types
-            
+
             client = genai.Client(api_key=api_key)
-            
+
+            # Build content parts — multimodal if images provided
+            parts = [types.Part(text=prompt)]
+            if images:
+                for img_bytes in images:
+                    parts.append(
+                        types.Part(
+                            inline_data=types.Blob(
+                                mime_type="image/png",
+                                data=img_bytes
+                            )
+                        )
+                    )
+
             completion = await asyncio.to_thread(
                 client.models.generate_content,
                 model=model,
-                contents=types.Content(
-                    parts=[types.Part(text=prompt)]
-                ),
+                contents=types.Content(parts=parts),
                 config=types.GenerateContentConfig(
                     temperature=0.7,
                     system_instruction=system_message,
                     response_mime_type="application/json"
                 )
             )
-            
+
             return completion.text
-        
+
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 

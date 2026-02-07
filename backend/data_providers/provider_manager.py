@@ -21,10 +21,39 @@ class DataProviderManager:
     def __init__(self, api_keys: Optional[Dict[str, Any]] = None):
         self.providers: List[BaseDataProvider] = []
 
+        # TVScreener (free, primary for Indian stocks)
+        try:
+            from .tvscreener_provider import TVScreenerProvider
+            tv = TVScreenerProvider()
+            self.providers.append(tv)
+            logger.info("TVScreener added as primary provider")
+        except Exception as e:
+            logger.warning(f"TVScreener unavailable: {e}")
+
         # YFinance (always available, no API key needed)
         yfinance = YFinanceProvider()
         self.providers.append(yfinance)
-        logger.info(f"Initialized {len(self.providers)} data providers (yfinance)")
+        provider_names = ', '.join(p.name for p in self.providers)
+        logger.info(f"Initialized {len(self.providers)} data providers ({provider_names})")
+
+    def _validate_quote(self, quote) -> bool:
+        """Validate quote data for quality issues."""
+        if not quote:
+            return False
+        price = getattr(quote, 'current_price', None)
+        if price is None or price <= 0:
+            return False
+        # NaN check
+        if price != price:
+            return False
+        # Extreme value check
+        prev = getattr(quote, 'previous_close', None)
+        if prev and prev > 0:
+            ratio = price / prev
+            if ratio > 5 or ratio < 0.2:
+                logger.warning(f"Extreme price change for {getattr(quote, 'symbol', '?')}: {ratio:.2f}x")
+                return False
+        return True
 
     async def get_quote(self, symbol: str) -> Optional[StockData]:
         """Get quote with automatic fallback across providers"""
@@ -32,9 +61,12 @@ class DataProviderManager:
             try:
                 logger.info(f"Trying {provider.name} for quote: {symbol}")
                 quote = await provider.get_quote(symbol)
-                if quote:
+                if quote and self._validate_quote(quote):
                     logger.info(f"Successfully fetched quote from {provider.name}")
                     return quote
+                elif quote:
+                    logger.warning(f"{provider.name} returned invalid data, trying next")
+                    continue
             except Exception as e:
                 logger.warning(f"{provider.name} failed for {symbol}: {e}")
                 continue
