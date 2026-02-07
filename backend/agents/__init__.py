@@ -6,7 +6,6 @@ Uses LangGraph for orchestration and state management
 from .orchestrator import AnalysisOrchestrator, AnalysisState
 from .data_agent import DataCollectionAgent
 from .analysis_agent import TechnicalAnalysisAgent
-from .knowledge_agent import RAGKnowledgeAgent
 from .reasoning_agent import DeepReasoningAgent
 from .validator_agent import ValidatorAgent
 
@@ -15,8 +14,6 @@ __all__ = [
     'AnalysisState',
     'DataCollectionAgent',
     'TechnicalAnalysisAgent',
-    'RAGKnowledgeAgent',
     'DeepReasoningAgent',
     'ValidatorAgent'
 ]
-

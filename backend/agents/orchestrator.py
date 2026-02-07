@@ -9,7 +9,6 @@ import operator
 import logging
 from .data_agent import DataCollectionAgent
 from .analysis_agent import TechnicalAnalysisAgent
-from .knowledge_agent import RAGKnowledgeAgent
 from .reasoning_agent import DeepReasoningAgent
 from .validator_agent import ValidatorAgent
 from .insight_generator import InsightGenerator
@@ -33,12 +32,6 @@ class AnalysisState(TypedDict):
     technical_indicators: Dict[str, Any]
     technical_signals: Dict[str, Any]
     percentile_scores: Dict[str, Any]
-    rag_context: str
-    rag_results: list
-    similar_patterns: list
-    strategy_recommendations: list
-    discovered_patterns: list  # NEW: Auto-discovered trading patterns
-    historical_events: list  # NEW: Historical news event impacts
     analysis_result: Dict[str, Any]
     validation: Dict[str, Any]
     insights: list
@@ -66,7 +59,6 @@ class AnalysisOrchestrator:
         self.db = db
         self.data_agent = DataCollectionAgent()
         self.analysis_agent = TechnicalAnalysisAgent()
-        self.knowledge_agent = RAGKnowledgeAgent(db=db)
         self.reasoning_agent = DeepReasoningAgent()
         self.validator_agent = ValidatorAgent()
         self.insight_generator = InsightGenerator()
@@ -88,15 +80,13 @@ class AnalysisOrchestrator:
         # Add agent nodes
         workflow.add_node("collect_data", self._data_node)
         workflow.add_node("analyze_technical", self._analysis_node)
-        workflow.add_node("retrieve_knowledge", self._knowledge_node)
         workflow.add_node("reason_deeply", self._reasoning_node)
         workflow.add_node("validate", self._validator_node)
-        
+
         # Define workflow edges (sequential execution)
         workflow.set_entry_point("collect_data")
         workflow.add_edge("collect_data", "analyze_technical")
-        workflow.add_edge("analyze_technical", "retrieve_knowledge")
-        workflow.add_edge("retrieve_knowledge", "reason_deeply")
+        workflow.add_edge("analyze_technical", "reason_deeply")
         workflow.add_edge("reason_deeply", "validate")
         workflow.add_edge("validate", END)
         
@@ -109,10 +99,6 @@ class AnalysisOrchestrator:
     async def _analysis_node(self, state: AnalysisState) -> AnalysisState:
         """Technical analysis node"""
         return await self.analysis_agent.execute(state)
-    
-    async def _knowledge_node(self, state: AnalysisState) -> AnalysisState:
-        """Knowledge retrieval node"""
-        return await self.knowledge_agent.execute(state)
     
     async def _reasoning_node(self, state: AnalysisState) -> AnalysisState:
         """Deep reasoning node"""
@@ -197,8 +183,6 @@ class AnalysisOrchestrator:
                 "percentile_scores": percentile_scores,
                 "insights": insights,
                 "summary_insight": summary_insight,
-                "rag_patterns_found": len(final_state.get("rag_results", [])),
-                "similar_patterns_count": len(final_state.get("similar_patterns", [])),
                 "has_errors": final_state.get("has_errors", False)
             }
             

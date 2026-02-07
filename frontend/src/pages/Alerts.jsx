@@ -7,17 +7,11 @@ import {
   Plus,
   Trash2,
   TrendingUp,
-  TrendingDown,
-  Activity,
-  Newspaper,
-  DollarSign,
   Loader2,
   Mail,
   MessageSquare,
-  Webhook as WebhookIcon,
   CheckCircle,
   XCircle,
-  Clock,
   Search
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,19 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { API_URL } from "@/config/api";
-
-const ALERT_TYPES = {
-  PRICE: "Price Alert",
-  PATTERN: "Pattern Alert",
-  PORTFOLIO: "Portfolio Alert"
-};
 
 const PRICE_CONDITIONS = [
   { value: "ABOVE", label: "Above" },
@@ -64,114 +46,59 @@ const PRICE_CONDITIONS = [
   { value: "PERCENT_CHANGE_BELOW", label: "% Change Below" }
 ];
 
-const CANDLESTICK_PATTERNS = [
-  "HAMMER",
-  "INVERTED_HAMMER",
-  "BULLISH_ENGULFING",
-  "BEARISH_ENGULFING",
-  "MORNING_STAR",
-  "EVENING_STAR",
-  "DOJI",
-  "SHOOTING_STAR"
-];
-
-const PORTFOLIO_METRICS = [
-  { value: "drawdown", label: "Drawdown %" },
-  { value: "total_pnl", label: "Total P&L" },
-  { value: "total_return_pct", label: "Total Return %" }
-];
-
 export default function Alerts() {
   const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
-  const [activeTab, setActiveTab] = useState("price");
 
   // Price alert form
-  const [priceAlertForm, setPriceAlertForm] = useState({
+  const [formData, setFormData] = useState({
     symbol: "",
     condition: "CROSSES_ABOVE",
     targetPrice: "",
     percentChange: "",
     telegram: true,
-    email: false,
-    slack: false,
-    whatsapp: false,
-    webhook: false
-  });
-
-  // Pattern alert form
-  const [patternAlertForm, setPatternAlertForm] = useState({
-    symbol: "",
-    patterns: [],
-    telegram: true,
-    email: false,
-    slack: false,
-    whatsapp: false,
-    webhook: false
-  });
-
-  // Portfolio alert form
-  const [portfolioAlertForm, setPortfolioAlertForm] = useState({
-    metric: "drawdown",
-    threshold: "",
-    condition: "above",
-    telegram: true,
-    email: false,
-    slack: false,
-    whatsapp: false,
-    webhook: false
+    email: false
   });
 
   // Stock search autocomplete state
   const [stockSearchResults, setStockSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
-  const [showPatternDropdown, setShowPatternDropdown] = useState(false);
-  const priceSearchRef = useRef(null);
-  const patternSearchRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
   // Debounced stock search
-  const searchStocks = useCallback(async (query, formType) => {
+  const searchStocks = useCallback(async (query) => {
     if (!query || query.length < 1) {
       setStockSearchResults([]);
       return;
     }
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounce search
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         const response = await axios.get(`${API_URL}/stocks/search?q=${query}`);
         setStockSearchResults(response.data);
-        if (formType === 'price') {
-          setShowPriceDropdown(true);
-        } else if (formType === 'pattern') {
-          setShowPatternDropdown(true);
-        }
+        setShowDropdown(true);
       } catch (error) {
         console.error("Stock search failed:", error);
         setStockSearchResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
   }, []);
 
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (priceSearchRef.current && !priceSearchRef.current.contains(event.target)) {
-        setShowPriceDropdown(false);
-      }
-      if (patternSearchRef.current && !patternSearchRef.current.contains(event.target)) {
-        setShowPatternDropdown(false);
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
       }
     };
 
@@ -195,123 +122,44 @@ export default function Alerts() {
     }
   };
 
-  const getDeliveryChannels = (form) => {
+  const getDeliveryChannels = () => {
     const channels = [];
-    if (form.telegram) channels.push("TELEGRAM");
-    if (form.email) channels.push("EMAIL");
-    if (form.slack) channels.push("SLACK");
-    if (form.whatsapp) channels.push("WHATSAPP");
-    if (form.webhook) channels.push("WEBHOOK");
+    if (formData.telegram) channels.push("TELEGRAM");
+    if (formData.email) channels.push("EMAIL");
     return channels;
   };
 
-  const handleCreatePriceAlert = async (e) => {
+  const handleCreateAlert = async (e) => {
     e.preventDefault();
     setIsCreating(true);
 
     try {
-      const isPercentCondition = priceAlertForm.condition.includes("PERCENT");
+      const isPercentCondition = formData.condition.includes("PERCENT");
 
       const alertData = {
         user_id: "default",
-        symbol: priceAlertForm.symbol.toUpperCase(),
-        condition: priceAlertForm.condition,
-        target_price: isPercentCondition ? 0 : parseFloat(priceAlertForm.targetPrice),
-        delivery_channels: getDeliveryChannels(priceAlertForm),
-        percent_change: priceAlertForm.percentChange ? parseFloat(priceAlertForm.percentChange) : null
+        symbol: formData.symbol.toUpperCase(),
+        condition: formData.condition,
+        target_price: isPercentCondition ? 0 : parseFloat(formData.targetPrice),
+        delivery_channels: getDeliveryChannels(),
+        percent_change: formData.percentChange ? parseFloat(formData.percentChange) : null
       };
 
       await axios.post(`${API_URL}/alerts/price`, alertData);
       toast.success("Price alert created successfully!");
 
-      // Reset form
-      setPriceAlertForm({
+      setFormData({
         symbol: "",
         condition: "CROSSES_ABOVE",
         targetPrice: "",
         percentChange: "",
         telegram: true,
-        email: false,
-        slack: false,
-        whatsapp: false,
-        webhook: false
+        email: false
       });
 
       fetchAlerts();
     } catch (error) {
       console.error("Error creating price alert:", error);
-      toast.error(error.response?.data?.detail || "Failed to create alert");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleCreatePatternAlert = async (e) => {
-    e.preventDefault();
-    setIsCreating(true);
-
-    try {
-      const alertData = {
-        user_id: "default",
-        symbol: patternAlertForm.symbol.toUpperCase(),
-        pattern_types: patternAlertForm.patterns,
-        delivery_channels: getDeliveryChannels(patternAlertForm)
-      };
-
-      await axios.post(`${API_URL}/alerts/pattern`, alertData);
-      toast.success("Pattern alert created successfully!");
-
-      // Reset form
-      setPatternAlertForm({
-        symbol: "",
-        patterns: [],
-        telegram: true,
-        email: false,
-        slack: false,
-        whatsapp: false,
-        webhook: false
-      });
-
-      fetchAlerts();
-    } catch (error) {
-      console.error("Error creating pattern alert:", error);
-      toast.error(error.response?.data?.detail || "Failed to create alert");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleCreatePortfolioAlert = async (e) => {
-    e.preventDefault();
-    setIsCreating(true);
-
-    try {
-      const alertData = {
-        user_id: "default",
-        metric: portfolioAlertForm.metric,
-        threshold: parseFloat(portfolioAlertForm.threshold),
-        condition: portfolioAlertForm.condition,
-        delivery_channels: getDeliveryChannels(portfolioAlertForm)
-      };
-
-      await axios.post(`${API_URL}/alerts/portfolio`, alertData);
-      toast.success("Portfolio alert created successfully!");
-
-      // Reset form
-      setPortfolioAlertForm({
-        metric: "drawdown",
-        threshold: "",
-        condition: "above",
-        telegram: true,
-        email: false,
-        slack: false,
-        whatsapp: false,
-        webhook: false
-      });
-
-      fetchAlerts();
-    } catch (error) {
-      console.error("Error creating portfolio alert:", error);
       toast.error(error.response?.data?.detail || "Failed to create alert");
     } finally {
       setIsCreating(false);
@@ -331,15 +179,6 @@ export default function Alerts() {
       console.error("Error deleting alert:", error);
       toast.error("Failed to delete alert");
     }
-  };
-
-  const togglePattern = (pattern) => {
-    setPatternAlertForm(prev => ({
-      ...prev,
-      patterns: prev.patterns.includes(pattern)
-        ? prev.patterns.filter(p => p !== pattern)
-        : [...prev.patterns, pattern]
-    }));
   };
 
   const formatDateTime = (timestamp) => {
@@ -370,17 +209,6 @@ export default function Alerts() {
     );
   };
 
-  const getAlertIcon = (alertType) => {
-    const icons = {
-      PRICE: <TrendingUp className="w-4 h-4" />,
-      PATTERN: <Activity className="w-4 h-4" />,
-      NEWS: <Newspaper className="w-4 h-4" />,
-      PORTFOLIO: <DollarSign className="w-4 h-4" />,
-      TECHNICAL: <Activity className="w-4 h-4" />
-    };
-    return icons[alertType] || <Bell className="w-4 h-4" />;
-  };
-
   const getDeliveryChannelIcons = (channels) => {
     return (
       <div className="flex flex-wrap items-center gap-2">
@@ -394,24 +222,6 @@ export default function Alerts() {
           <span className="flex items-center gap-1 text-xs text-primary">
             <Mail className="w-3 h-3" />
             Email
-          </span>
-        )}
-        {channels.includes("SLACK") && (
-          <span className="flex items-center gap-1 text-xs text-purple-500">
-            <MessageSquare className="w-3 h-3" />
-            Slack
-          </span>
-        )}
-        {channels.includes("WHATSAPP") && (
-          <span className="flex items-center gap-1 text-xs text-green-400">
-            <MessageSquare className="w-3 h-3" />
-            WhatsApp
-          </span>
-        )}
-        {channels.includes("WEBHOOK") && (
-          <span className="flex items-center gap-1 text-xs text-ai-accent">
-            <WebhookIcon className="w-3 h-3" />
-            Webhook
           </span>
         )}
       </div>
@@ -440,512 +250,174 @@ export default function Alerts() {
           </div>
           <div>
             <h1 className="text-2xl font-heading font-bold text-text-primary">Alert Management</h1>
-            <p className="text-text-secondary">Create and manage price, pattern, and portfolio alerts</p>
+            <p className="text-text-secondary">Create and manage price alerts with Telegram and Email notifications</p>
           </div>
         </div>
 
-        {/* Create Alert Form */}
+        {/* Create Price Alert Form */}
         <Card className="card-surface">
           <CardHeader>
             <CardTitle className="text-lg font-heading flex items-center gap-2">
               <Plus className="w-5 h-5 text-success" />
-              Create New Alert
+              Create Price Alert
             </CardTitle>
             <CardDescription>
-              Configure alerts for real-time notifications via Telegram, Email, Slack, WhatsApp, or Webhook
+              Configure alerts for real-time notifications via Telegram or Email
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="price">Price Alert</TabsTrigger>
-                <TabsTrigger value="pattern">Pattern Alert</TabsTrigger>
-                <TabsTrigger value="portfolio">Portfolio Alert</TabsTrigger>
-              </TabsList>
-
-              {/* Price Alert Form */}
-              <TabsContent value="price" className="space-y-4 mt-4">
-                <form onSubmit={handleCreatePriceAlert} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2" ref={priceSearchRef}>
-                      <Label htmlFor="price-symbol">Symbol</Label>
-                      <div className="relative">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                          <Input
-                            id="price-symbol"
-                            type="text"
-                            placeholder="Search stocks... (e.g., SBI, RELIANCE)"
-                            value={priceAlertForm.symbol}
-                            onChange={(e) => {
-                              const value = e.target.value.toUpperCase();
-                              setPriceAlertForm({ ...priceAlertForm, symbol: value });
-                              searchStocks(value, 'price');
-                            }}
-                            onFocus={() => {
-                              if (priceAlertForm.symbol) {
-                                searchStocks(priceAlertForm.symbol, 'price');
-                              }
-                            }}
-                            required
-                            className="pl-10 bg-surface-highlight border-[#1F1F1F]"
-                            autoComplete="off"
-                          />
-                          {isSearching && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
-                          )}
-                        </div>
-                        {/* Autocomplete Dropdown */}
-                        {showPriceDropdown && stockSearchResults.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-surface-highlight border border-[#1F1F1F] rounded-md shadow-lg max-h-60 overflow-auto">
-                            {stockSearchResults.map((stock) => (
-                              <button
-                                key={stock.symbol}
-                                type="button"
-                                className="w-full px-4 py-2 text-left hover:bg-primary/10 flex items-center justify-between"
-                                onClick={() => {
-                                  setPriceAlertForm({ ...priceAlertForm, symbol: stock.symbol });
-                                  setShowPriceDropdown(false);
-                                  setStockSearchResults([]);
-                                }}
-                              >
-                                <div>
-                                  <span className="font-medium text-text-primary">{stock.symbol}</span>
-                                  <span className="ml-2 text-sm text-text-secondary">{stock.name}</span>
-                                </div>
-                                <span className="text-xs text-text-secondary">{stock.exchange}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="price-condition">Condition</Label>
-                      <Select
-                        value={priceAlertForm.condition}
-                        onValueChange={(value) => setPriceAlertForm({ ...priceAlertForm, condition: value })}
-                      >
-                        <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRICE_CONDITIONS.map(cond => (
-                            <SelectItem key={cond.value} value={cond.value}>
-                              {cond.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {priceAlertForm.condition.includes("PERCENT") ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="percent-change">Percent Change (%)</Label>
-                        <Input
-                          id="percent-change"
-                          type="number"
-                          step="0.01"
-                          placeholder="5.0"
-                          value={priceAlertForm.percentChange}
-                          onChange={(e) => setPriceAlertForm({ ...priceAlertForm, percentChange: e.target.value, targetPrice: "0" })}
-                          required
-                          className="bg-surface-highlight border-[#1F1F1F]"
-                        />
-                        <p className="text-xs text-text-secondary">Alert when price changes by this percentage</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label htmlFor="target-price">Target Price</Label>
-                        <Input
-                          id="target-price"
-                          type="number"
-                          step="0.01"
-                          placeholder="2500.00"
-                          value={priceAlertForm.targetPrice}
-                          onChange={(e) => setPriceAlertForm({ ...priceAlertForm, targetPrice: e.target.value })}
-                          required
-                          className="bg-surface-highlight border-[#1F1F1F]"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Delivery Channels</Label>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="price-telegram"
-                          checked={priceAlertForm.telegram}
-                          onCheckedChange={(checked) => setPriceAlertForm({ ...priceAlertForm, telegram: checked })}
-                        />
-                        <Label htmlFor="price-telegram" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          Telegram
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="price-email"
-                          checked={priceAlertForm.email}
-                          onCheckedChange={(checked) => setPriceAlertForm({ ...priceAlertForm, email: checked })}
-                        />
-                        <Label htmlFor="price-email" className="flex items-center gap-2 cursor-pointer">
-                          <Mail className="w-4 h-4 text-primary" />
-                          Email
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="price-slack"
-                          checked={priceAlertForm.slack}
-                          onCheckedChange={(checked) => setPriceAlertForm({ ...priceAlertForm, slack: checked })}
-                        />
-                        <Label htmlFor="price-slack" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-purple-500" />
-                          Slack
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="price-whatsapp"
-                          checked={priceAlertForm.whatsapp}
-                          onCheckedChange={(checked) => setPriceAlertForm({ ...priceAlertForm, whatsapp: checked })}
-                        />
-                        <Label htmlFor="price-whatsapp" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          WhatsApp
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="price-webhook"
-                          checked={priceAlertForm.webhook}
-                          onCheckedChange={(checked) => setPriceAlertForm({ ...priceAlertForm, webhook: checked })}
-                        />
-                        <Label htmlFor="price-webhook" className="flex items-center gap-2 cursor-pointer">
-                          <WebhookIcon className="w-4 h-4 text-ai-accent" />
-                          Webhook
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button type="submit" disabled={isCreating} className="btn-primary">
-                    {isCreating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Price Alert
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Pattern Alert Form */}
-              <TabsContent value="pattern" className="space-y-4 mt-4">
-                <form onSubmit={handleCreatePatternAlert} className="space-y-4">
-                  <div className="space-y-2" ref={patternSearchRef}>
-                    <Label htmlFor="pattern-symbol">Symbol</Label>
+            <form onSubmit={handleCreateAlert} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2" ref={searchRef}>
+                  <Label htmlFor="price-symbol">Symbol</Label>
+                  <div className="relative">
                     <div className="relative">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                        <Input
-                          id="pattern-symbol"
-                          type="text"
-                          placeholder="Search stocks... (e.g., SBI, RELIANCE)"
-                          value={patternAlertForm.symbol}
-                          onChange={(e) => {
-                            const value = e.target.value.toUpperCase();
-                            setPatternAlertForm({ ...patternAlertForm, symbol: value });
-                            searchStocks(value, 'pattern');
-                          }}
-                          onFocus={() => {
-                            if (patternAlertForm.symbol) {
-                              searchStocks(patternAlertForm.symbol, 'pattern');
-                            }
-                          }}
-                          required
-                          className="pl-10 bg-surface-highlight border-[#1F1F1F]"
-                          autoComplete="off"
-                        />
-                        {isSearching && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
-                        )}
-                      </div>
-                      {/* Autocomplete Dropdown */}
-                      {showPatternDropdown && stockSearchResults.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-surface-highlight border border-[#1F1F1F] rounded-md shadow-lg max-h-60 overflow-auto">
-                          {stockSearchResults.map((stock) => (
-                            <button
-                              key={stock.symbol}
-                              type="button"
-                              className="w-full px-4 py-2 text-left hover:bg-primary/10 flex items-center justify-between"
-                              onClick={() => {
-                                setPatternAlertForm({ ...patternAlertForm, symbol: stock.symbol });
-                                setShowPatternDropdown(false);
-                                setStockSearchResults([]);
-                              }}
-                            >
-                              <div>
-                                <span className="font-medium text-text-primary">{stock.symbol}</span>
-                                <span className="ml-2 text-sm text-text-secondary">{stock.name}</span>
-                              </div>
-                              <span className="text-xs text-text-secondary">{stock.exchange}</span>
-                            </button>
-                          ))}
-                        </div>
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                      <Input
+                        id="price-symbol"
+                        type="text"
+                        placeholder="Search stocks... (e.g., SBI, RELIANCE)"
+                        value={formData.symbol}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase();
+                          setFormData({ ...formData, symbol: value });
+                          searchStocks(value);
+                        }}
+                        onFocus={() => {
+                          if (formData.symbol) {
+                            searchStocks(formData.symbol);
+                          }
+                        }}
+                        required
+                        className="pl-10 bg-surface-highlight border-[#1F1F1F]"
+                        autoComplete="off"
+                      />
+                      {isSearching && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-secondary" />
                       )}
                     </div>
+                    {/* Autocomplete Dropdown */}
+                    {showDropdown && stockSearchResults.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-surface-highlight border border-[#1F1F1F] rounded-md shadow-lg max-h-60 overflow-auto">
+                        {stockSearchResults.map((stock) => (
+                          <button
+                            key={stock.symbol}
+                            type="button"
+                            className="w-full px-4 py-2 text-left hover:bg-primary/10 flex items-center justify-between"
+                            onClick={() => {
+                              setFormData({ ...formData, symbol: stock.symbol });
+                              setShowDropdown(false);
+                              setStockSearchResults([]);
+                            }}
+                          >
+                            <div>
+                              <span className="font-medium text-text-primary">{stock.symbol}</span>
+                              <span className="ml-2 text-sm text-text-secondary">{stock.name}</span>
+                            </div>
+                            <span className="text-xs text-text-secondary">{stock.exchange}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Candlestick Patterns (select multiple)</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {CANDLESTICK_PATTERNS.map(pattern => (
-                        <div key={pattern} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`pattern-${pattern}`}
-                            checked={patternAlertForm.patterns.includes(pattern)}
-                            onCheckedChange={() => togglePattern(pattern)}
-                          />
-                          <Label htmlFor={`pattern-${pattern}`} className="text-sm cursor-pointer">
-                            {pattern.replace(/_/g, ' ')}
-                          </Label>
-                        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price-condition">Condition</Label>
+                  <Select
+                    value={formData.condition}
+                    onValueChange={(value) => setFormData({ ...formData, condition: value })}
+                  >
+                    <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRICE_CONDITIONS.map(cond => (
+                        <SelectItem key={cond.value} value={cond.value}>
+                          {cond.label}
+                        </SelectItem>
                       ))}
-                    </div>
-                  </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.condition.includes("PERCENT") ? (
                   <div className="space-y-2">
-                    <Label>Delivery Channels</Label>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pattern-telegram"
-                          checked={patternAlertForm.telegram}
-                          onCheckedChange={(checked) => setPatternAlertForm({ ...patternAlertForm, telegram: checked })}
-                        />
-                        <Label htmlFor="pattern-telegram" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          Telegram
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pattern-email"
-                          checked={patternAlertForm.email}
-                          onCheckedChange={(checked) => setPatternAlertForm({ ...patternAlertForm, email: checked })}
-                        />
-                        <Label htmlFor="pattern-email" className="flex items-center gap-2 cursor-pointer">
-                          <Mail className="w-4 h-4 text-primary" />
-                          Email
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pattern-slack"
-                          checked={patternAlertForm.slack}
-                          onCheckedChange={(checked) => setPatternAlertForm({ ...patternAlertForm, slack: checked })}
-                        />
-                        <Label htmlFor="pattern-slack" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-purple-500" />
-                          Slack
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pattern-whatsapp"
-                          checked={patternAlertForm.whatsapp}
-                          onCheckedChange={(checked) => setPatternAlertForm({ ...patternAlertForm, whatsapp: checked })}
-                        />
-                        <Label htmlFor="pattern-whatsapp" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          WhatsApp
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pattern-webhook"
-                          checked={patternAlertForm.webhook}
-                          onCheckedChange={(checked) => setPatternAlertForm({ ...patternAlertForm, webhook: checked })}
-                        />
-                        <Label htmlFor="pattern-webhook" className="flex items-center gap-2 cursor-pointer">
-                          <WebhookIcon className="w-4 h-4 text-ai-accent" />
-                          Webhook
-                        </Label>
-                      </div>
-                    </div>
+                    <Label htmlFor="percent-change">Percent Change (%)</Label>
+                    <Input
+                      id="percent-change"
+                      type="number"
+                      step="0.01"
+                      placeholder="5.0"
+                      value={formData.percentChange}
+                      onChange={(e) => setFormData({ ...formData, percentChange: e.target.value, targetPrice: "0" })}
+                      required
+                      className="bg-surface-highlight border-[#1F1F1F]"
+                    />
+                    <p className="text-xs text-text-secondary">Alert when price changes by this percentage</p>
                   </div>
-
-                  <Button type="submit" disabled={isCreating || patternAlertForm.patterns.length === 0} className="btn-primary">
-                    {isCreating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Pattern Alert
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Portfolio Alert Form */}
-              <TabsContent value="portfolio" className="space-y-4 mt-4">
-                <form onSubmit={handleCreatePortfolioAlert} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="portfolio-metric">Metric</Label>
-                      <Select
-                        value={portfolioAlertForm.metric}
-                        onValueChange={(value) => setPortfolioAlertForm({ ...portfolioAlertForm, metric: value })}
-                      >
-                        <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PORTFOLIO_METRICS.map(metric => (
-                            <SelectItem key={metric.value} value={metric.value}>
-                              {metric.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="portfolio-condition">Condition</Label>
-                      <Select
-                        value={portfolioAlertForm.condition}
-                        onValueChange={(value) => setPortfolioAlertForm({ ...portfolioAlertForm, condition: value })}
-                      >
-                        <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="above">Above</SelectItem>
-                          <SelectItem value="below">Below</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="portfolio-threshold">Threshold</Label>
-                      <Input
-                        id="portfolio-threshold"
-                        type="number"
-                        step="0.01"
-                        placeholder="5.0"
-                        value={portfolioAlertForm.threshold}
-                        onChange={(e) => setPortfolioAlertForm({ ...portfolioAlertForm, threshold: e.target.value })}
-                        required
-                        className="bg-surface-highlight border-[#1F1F1F]"
-                      />
-                    </div>
-                  </div>
-
+                ) : (
                   <div className="space-y-2">
-                    <Label>Delivery Channels</Label>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="portfolio-telegram"
-                          checked={portfolioAlertForm.telegram}
-                          onCheckedChange={(checked) => setPortfolioAlertForm({ ...portfolioAlertForm, telegram: checked })}
-                        />
-                        <Label htmlFor="portfolio-telegram" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          Telegram
-                        </Label>
-                      </div>
+                    <Label htmlFor="target-price">Target Price</Label>
+                    <Input
+                      id="target-price"
+                      type="number"
+                      step="0.01"
+                      placeholder="2500.00"
+                      value={formData.targetPrice}
+                      onChange={(e) => setFormData({ ...formData, targetPrice: e.target.value })}
+                      required
+                      className="bg-surface-highlight border-[#1F1F1F]"
+                    />
+                  </div>
+                )}
+              </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="portfolio-email"
-                          checked={portfolioAlertForm.email}
-                          onCheckedChange={(checked) => setPortfolioAlertForm({ ...portfolioAlertForm, email: checked })}
-                        />
-                        <Label htmlFor="portfolio-email" className="flex items-center gap-2 cursor-pointer">
-                          <Mail className="w-4 h-4 text-primary" />
-                          Email
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="portfolio-slack"
-                          checked={portfolioAlertForm.slack}
-                          onCheckedChange={(checked) => setPortfolioAlertForm({ ...portfolioAlertForm, slack: checked })}
-                        />
-                        <Label htmlFor="portfolio-slack" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-purple-500" />
-                          Slack
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="portfolio-whatsapp"
-                          checked={portfolioAlertForm.whatsapp}
-                          onCheckedChange={(checked) => setPortfolioAlertForm({ ...portfolioAlertForm, whatsapp: checked })}
-                        />
-                        <Label htmlFor="portfolio-whatsapp" className="flex items-center gap-2 cursor-pointer">
-                          <MessageSquare className="w-4 h-4 text-success" />
-                          WhatsApp
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="portfolio-webhook"
-                          checked={portfolioAlertForm.webhook}
-                          onCheckedChange={(checked) => setPortfolioAlertForm({ ...portfolioAlertForm, webhook: checked })}
-                        />
-                        <Label htmlFor="portfolio-webhook" className="flex items-center gap-2 cursor-pointer">
-                          <WebhookIcon className="w-4 h-4 text-ai-accent" />
-                          Webhook
-                        </Label>
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <Label>Delivery Channels</Label>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="price-telegram"
+                      checked={formData.telegram}
+                      onCheckedChange={(checked) => setFormData({ ...formData, telegram: checked })}
+                    />
+                    <Label htmlFor="price-telegram" className="flex items-center gap-2 cursor-pointer">
+                      <MessageSquare className="w-4 h-4 text-success" />
+                      Telegram
+                    </Label>
                   </div>
 
-                  <Button type="submit" disabled={isCreating} className="btn-primary">
-                    {isCreating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Portfolio Alert
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="price-email"
+                      checked={formData.email}
+                      onCheckedChange={(checked) => setFormData({ ...formData, email: checked })}
+                    />
+                    <Label htmlFor="price-email" className="flex items-center gap-2 cursor-pointer">
+                      <Mail className="w-4 h-4 text-primary" />
+                      Email
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isCreating} className="btn-primary">
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Price Alert
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
@@ -977,8 +449,8 @@ export default function Alerts() {
                     <TableRow key={alert.alert_id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getAlertIcon(alert.alert_type)}
-                          <span className="text-sm">{ALERT_TYPES[alert.alert_type] || alert.alert_type}</span>
+                          <TrendingUp className="w-4 h-4" />
+                          <span className="text-sm">Price Alert</span>
                         </div>
                       </TableCell>
                       <TableCell className="max-w-xs">

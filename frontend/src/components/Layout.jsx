@@ -3,16 +3,11 @@ import { motion } from "framer-motion";
 import {
   TrendingUp,
   Settings,
-  History,
   BarChart3,
-  Zap,
-  LineChart,
   Brain,
   HelpCircle,
-  Wallet,
   Bell,
-  Filter,
-  Target
+  Zap
 } from "lucide-react";
 
 export const Layout = () => {
@@ -20,13 +15,8 @@ export const Layout = () => {
 
   const navItems = [
     { path: "/", icon: BarChart3, label: "Dashboard" },
-    { path: "/ai-recommends", icon: Brain, label: "AI Picks" },
-    { path: "/screener", icon: Filter, label: "Screener" },
-    { path: "/paper-trading", icon: Wallet, label: "Paper Trading" },
+    { path: "/ai-picks", icon: Brain, label: "AI Picks" },
     { path: "/alerts", icon: Bell, label: "Alerts" },
-    { path: "/performance", icon: Target, label: "Performance" },
-    { path: "/history", icon: History, label: "History" },
-    { path: "/backtesting", icon: LineChart, label: "Backtest" },
     { path: "/settings", icon: Settings, label: "Settings" },
     { path: "/help", icon: HelpCircle, label: "Help" },
   ];

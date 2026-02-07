@@ -82,14 +82,6 @@ force_kill "uvicorn server:app" "Backend API (uvicorn)"
 force_kill "uvicorn.*server:app" "Backend API (uvicorn)"
 force_kill_port 8005 "Backend API"
 
-# Force kill Celery Worker
-force_kill "celery.*worker" "Celery Worker"
-force_kill "celery -A celery_app worker" "Celery Worker"
-
-# Force kill Celery Beat
-force_kill "celery.*beat" "Celery Beat Scheduler"
-force_kill "celery -A celery_app beat" "Celery Beat Scheduler"
-
 echo ""
 
 # ============================================
@@ -108,29 +100,6 @@ force_kill "node.*NeuralTrader/frontend" "Frontend Node processes"
 echo ""
 
 # ============================================
-# DATABASE / CACHE SERVICES
-# ============================================
-echo -e "${YELLOW}💾 Stopping Database/Cache Services...${NC}"
-
-# Force kill Redis (only if started by this app, not Homebrew service)
-# Check if Redis was started by our start.sh (has PID file)
-if [ -f "logs/redis.pid" ]; then
-    REDIS_PID=$(cat logs/redis.pid 2>/dev/null)
-    if [ ! -z "$REDIS_PID" ]; then
-        kill -9 $REDIS_PID 2>/dev/null && echo -e "${GREEN}✅ Force killed Redis (PID: $REDIS_PID)${NC}"
-    fi
-    rm -f logs/redis.pid
-fi
-
-# Also kill redis-server if running standalone (not Homebrew managed)
-# Note: We don't kill Homebrew Redis service - only standalone redis-server
-if ! brew services list 2>/dev/null | grep -q "redis.*started"; then
-    force_kill "redis-server" "Redis Server (standalone)"
-fi
-
-echo ""
-
-# ============================================
 # CLEANUP PID FILES (with stale PID detection)
 # ============================================
 echo -e "${YELLOW}🧹 Cleaning up PID files...${NC}"
@@ -138,8 +107,6 @@ echo -e "${YELLOW}🧹 Cleaning up PID files...${NC}"
 # Try to kill from PID files first (handles stale PIDs gracefully)
 kill_from_pidfile "logs/backend.pid" "Backend API"
 kill_from_pidfile "logs/frontend.pid" "Frontend"
-kill_from_pidfile "logs/celery_worker.pid" "Celery Worker"
-kill_from_pidfile "logs/celery_beat.pid" "Celery Beat"
 
 # Clean up any remaining stale PID files
 for pidfile in logs/*.pid; do
@@ -184,33 +151,6 @@ else
     echo -e "${GREEN}✅ Frontend: Stopped${NC}"
 fi
 
-# Check Celery Worker
-if pgrep -f "celery.*worker" > /dev/null 2>&1; then
-    echo -e "${RED}❌ Celery Worker still running${NC}"
-    ALL_STOPPED=false
-else
-    echo -e "${GREEN}✅ Celery Worker: Stopped${NC}"
-fi
-
-# Check Celery Beat
-if pgrep -f "celery.*beat" > /dev/null 2>&1; then
-    echo -e "${RED}❌ Celery Beat still running${NC}"
-    ALL_STOPPED=false
-else
-    echo -e "${GREEN}✅ Celery Beat: Stopped${NC}"
-fi
-
-# Check Redis (just report status, don't treat Homebrew Redis as error)
-if redis-cli ping > /dev/null 2>&1; then
-    if brew services list 2>/dev/null | grep -q "redis.*started"; then
-        echo -e "${YELLOW}ℹ️  Redis: Running (Homebrew service - not stopped)${NC}"
-    else
-        echo -e "${GREEN}✅ Redis: Running (standalone)${NC}"
-    fi
-else
-    echo -e "${GREEN}✅ Redis: Stopped${NC}"
-fi
-
 echo ""
 
 if [ "$ALL_STOPPED" = true ]; then
@@ -224,7 +164,6 @@ else
     echo ""
     echo -e "${YELLOW}Nuclear option (kill everything):${NC}"
     echo -e "   ${RED}lsof -ti:8005,3005 | xargs kill -9${NC}"
-    echo -e "   ${RED}pkill -9 -f 'celery'${NC}"
     echo ""
 fi
 

@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { 
-  getStoredSettings, 
-  saveStoredSettings, 
-  mergeWithDefaults 
+import {
+  getStoredSettings,
+  saveStoredSettings,
+  mergeWithDefaults
 } from "@/utils/settingsStorage";
 import { API_URL } from "@/config/api";
 import {
@@ -19,9 +19,6 @@ import {
   Sparkles,
   Bell,
   Mail,
-  Webhook,
-  MessageSquare,
-  TrendingUp
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,15 +52,6 @@ export default function Settings() {
     openai_api_key: "",
     gemini_api_key: "",
     anthropic_api_key: "",
-    finnhub_api_key: "",
-    alpaca_api_key: "",
-    alpaca_api_secret: "",
-    fmp_api_key: "",
-    iex_api_key: "",
-    polygon_api_key: "",
-    twelve_data_api_key: "",
-    newsapi_key: "",
-    alphavantage_api_key: "",
     telegram_bot_token: "",
     telegram_chat_id: "",
     smtp_host: "",
@@ -71,20 +59,6 @@ export default function Settings() {
     smtp_user: "",
     smtp_password: "",
     smtp_from_email: "",
-    webhook_url: "",
-    slack_webhook_url: "",
-    twilio_account_sid: "",
-    twilio_auth_token: "",
-    twilio_whatsapp_number: "",
-    user_whatsapp_number: "",
-    // Indian Broker API Keys
-    angelone_api_key: "",
-    angelone_client_id: "",
-    angelone_password: "",
-    angelone_totp_secret: "",
-    zerodha_api_key: "",
-    zerodha_api_secret: "",
-    use_tvscreener: true,
     selected_model: "gpt-4.1",
     selected_provider: "openai",
   });
@@ -94,15 +68,6 @@ export default function Settings() {
     openai_api_key: data?.openai_api_key || "",
     gemini_api_key: data?.gemini_api_key || "",
     anthropic_api_key: data?.anthropic_api_key || "",
-    finnhub_api_key: data?.finnhub_api_key || "",
-    alpaca_api_key: data?.alpaca_api_key || "",
-    alpaca_api_secret: data?.alpaca_api_secret || "",
-    fmp_api_key: data?.fmp_api_key || "",
-    iex_api_key: data?.iex_api_key || "",
-    polygon_api_key: data?.polygon_api_key || "",
-    twelve_data_api_key: data?.twelve_data_api_key || "",
-    newsapi_key: data?.newsapi_key || "",
-    alphavantage_api_key: data?.alphavantage_api_key || "",
     telegram_bot_token: data?.telegram_bot_token || "",
     telegram_chat_id: data?.telegram_chat_id || "",
     smtp_host: data?.smtp_host || "",
@@ -110,43 +75,15 @@ export default function Settings() {
     smtp_user: data?.smtp_user || "",
     smtp_password: data?.smtp_password || "",
     smtp_from_email: data?.smtp_from_email || "",
-    webhook_url: data?.webhook_url || "",
-    slack_webhook_url: data?.slack_webhook_url || "",
-    twilio_account_sid: data?.twilio_account_sid || "",
-    twilio_auth_token: data?.twilio_auth_token || "",
-    twilio_whatsapp_number: data?.twilio_whatsapp_number || "",
-    user_whatsapp_number: data?.user_whatsapp_number || "",
-    // Indian Broker API Keys
-    angelone_api_key: data?.angelone_api_key || "",
-    angelone_client_id: data?.angelone_client_id || "",
-    angelone_password: data?.angelone_password || "",
-    angelone_totp_secret: data?.angelone_totp_secret || "",
-    zerodha_api_key: data?.zerodha_api_key || "",
-    zerodha_api_secret: data?.zerodha_api_secret || "",
-    use_tvscreener: data?.use_tvscreener !== undefined ? data.use_tvscreener : true,
     selected_model: data?.selected_model || "gpt-4.1",
     selected_provider: data?.selected_provider || "openai",
   });
+
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [showAnthropicKey, setShowAnthropicKey] = useState(false);
-  const [showFinnhubKey, setShowFinnhubKey] = useState(false);
-  const [showAlpacaKey, setShowAlpacaKey] = useState(false);
-  const [showAlpacaSecret, setShowAlpacaSecret] = useState(false);
-  const [showFMPKey, setShowFMPKey] = useState(false);
-  const [showIEXKey, setShowIEXKey] = useState(false);
-  const [showPolygonKey, setShowPolygonKey] = useState(false);
-  const [showTwelveDataKey, setShowTwelveDataKey] = useState(false);
-  const [showNewsAPIKey, setShowNewsAPIKey] = useState(false);
-  const [showAlphaVantageKey, setShowAlphaVantageKey] = useState(false);
   const [showTelegramToken, setShowTelegramToken] = useState(false);
   const [showSMTPPassword, setShowSMTPPassword] = useState(false);
-  const [showTwilioAuthToken, setShowTwilioAuthToken] = useState(false);
-  const [showAngelOneKey, setShowAngelOneKey] = useState(false);
-  const [showAngelOnePassword, setShowAngelOnePassword] = useState(false);
-  const [showAngelOneTotp, setShowAngelOneTotp] = useState(false);
-  const [showZerodhaKey, setShowZerodhaKey] = useState(false);
-  const [showZerodhaSecret, setShowZerodhaSecret] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -188,8 +125,8 @@ export default function Settings() {
 
   const handleProviderChange = (provider) => {
     const defaultModel = MODELS[provider][0].value;
-    setSettings(prev => ({ 
-      ...prev, 
+    setSettings(prev => ({
+      ...prev,
       selected_provider: provider,
       selected_model: defaultModel
     }));
@@ -235,12 +172,102 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* API Keys Section */}
+        {/* Section 1: LLM Provider & Model Selection */}
+        <Card className="card-surface">
+          <CardHeader>
+            <CardTitle className="text-lg font-heading flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-ai-accent" />
+              LLM Provider & Model
+            </CardTitle>
+            <CardDescription>
+              Choose your preferred AI provider and model for stock analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Provider Selection */}
+            <div className="space-y-2">
+              <Label className="text-text-primary">AI Provider</Label>
+              <Select
+                value={settings.selected_provider}
+                onValueChange={handleProviderChange}
+              >
+                <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]" data-testid="provider-select">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="gemini">Google Gemini</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Model Selection */}
+            <div className="space-y-2">
+              <Label className="text-text-primary">Model</Label>
+              <Select
+                value={settings.selected_model}
+                onValueChange={(value) => handleChange("selected_model", value)}
+              >
+                <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]" data-testid="model-select">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODELS[settings.selected_provider]?.map((model) => (
+                    <SelectItem key={model.value} value={model.value}>
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Provider Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className={`p-4 rounded-lg border ${
+                settings.selected_provider === "openai"
+                  ? "bg-primary/5 border-primary/20"
+                  : "bg-surface-highlight border-[#1F1F1F]"
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {settings.selected_provider === "openai" && settings.openai_api_key ? (
+                    <CheckCircle className="w-4 h-4 text-success" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-text-secondary" />
+                  )}
+                  <span className="font-medium text-text-primary">OpenAI</span>
+                </div>
+                <p className="text-xs text-text-secondary">
+                  GPT-4.1 for deep analysis, o3-mini for fast thinking
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border ${
+                settings.selected_provider === "gemini"
+                  ? "bg-primary/5 border-primary/20"
+                  : "bg-surface-highlight border-[#1F1F1F]"
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {settings.selected_provider === "gemini" && settings.gemini_api_key ? (
+                    <CheckCircle className="w-4 h-4 text-success" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-text-secondary" />
+                  )}
+                  <span className="font-medium text-text-primary">Gemini</span>
+                </div>
+                <p className="text-xs text-text-secondary">
+                  Flash models for fast, cost-effective analysis
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 2: AI API Keys */}
         <Card className="card-surface">
           <CardHeader>
             <CardTitle className="text-lg font-heading flex items-center gap-2">
               <Key className="w-5 h-5 text-ai-accent" />
-              API Keys
+              AI API Keys
             </CardTitle>
             <CardDescription>
               Enter your API keys to enable AI analysis. Your keys are stored securely and never shared.
@@ -270,9 +297,9 @@ export default function Settings() {
               </div>
               <p className="text-xs text-text-secondary">
                 Get your API key from{" "}
-                <a 
-                  href="https://platform.openai.com/api-keys" 
-                  target="_blank" 
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
@@ -345,547 +372,21 @@ export default function Settings() {
                 >
                   console.anthropic.com
                 </a>
-                {" "}• For ensemble analysis
+                {" "}-- For ensemble analysis
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Data Provider API Keys Section */}
-        <Card className="card-surface">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading flex items-center gap-2">
-              <Key className="w-5 h-5 text-success" />
-              Data Provider API Keys (Optional)
-            </CardTitle>
-            <CardDescription>
-              Add API keys for better data reliability and higher rate limits. All providers have free tiers!
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Finnhub Key */}
-            <div className="space-y-2">
-              <Label htmlFor="finnhub-key" className="text-text-primary flex items-center gap-2">
-                Finnhub API Key
-                <span className="text-xs text-success font-normal">(60 calls/min free)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="finnhub-key"
-                  type={showFinnhubKey ? "text" : "password"}
-                  value={settings.finnhub_api_key}
-                  onChange={(e) => handleChange("finnhub_api_key", e.target.value)}
-                  placeholder="Optional - adds Finnhub as data source"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowFinnhubKey(!showFinnhubKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showFinnhubKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://finnhub.io/register"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  finnhub.io
-                </a>
-                {" "}• Best for Indian stocks, real-time quotes
-              </p>
-            </div>
-
-            {/* Alpaca Keys */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <Label className="text-text-primary">
-                  Alpaca API (200 calls/min free)
-                </Label>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="alpaca-key" className="text-sm text-text-secondary">API Key</Label>
-                <div className="relative">
-                  <Input
-                    id="alpaca-key"
-                    type={showAlpacaKey ? "text" : "password"}
-                    value={settings.alpaca_api_key}
-                    onChange={(e) => handleChange("alpaca_api_key", e.target.value)}
-                    placeholder="Optional - requires both key and secret"
-                    className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAlpacaKey(!showAlpacaKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                  >
-                    {showAlpacaKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="alpaca-secret" className="text-sm text-text-secondary">API Secret</Label>
-                <div className="relative">
-                  <Input
-                    id="alpaca-secret"
-                    type={showAlpacaSecret ? "text" : "password"}
-                    value={settings.alpaca_api_secret}
-                    onChange={(e) => handleChange("alpaca_api_secret", e.target.value)}
-                    placeholder="Optional - requires both key and secret"
-                    className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAlpacaSecret(!showAlpacaSecret)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                  >
-                    {showAlpacaSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Get free API credentials from{" "}
-                <a
-                  href="https://alpaca.markets/docs/api-references/market-data-api/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  alpaca.markets
-                </a>
-                {" "}• Best for US stocks
-              </p>
-            </div>
-
-            {/* FMP Key */}
-            <div className="space-y-2">
-              <Label htmlFor="fmp-key" className="text-text-primary flex items-center gap-2">
-                Financial Modeling Prep API Key
-                <span className="text-xs text-success font-normal">(250 calls/day free)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="fmp-key"
-                  type={showFMPKey ? "text" : "password"}
-                  value={settings.fmp_api_key}
-                  onChange={(e) => handleChange("fmp_api_key", e.target.value)}
-                  placeholder="Optional - adds FMP as data source"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowFMPKey(!showFMPKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showFMPKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://site.financialmodelingprep.com/developer/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  financialmodelingprep.com
-                </a>
-                {" "}• Best for fundamentals and US stocks
-              </p>
-            </div>
-
-            {/* IEX Cloud Key */}
-            <div className="space-y-2">
-              <Label htmlFor="iex-key" className="text-text-primary flex items-center gap-2">
-                IEX Cloud API Key
-                <span className="text-xs text-warning font-normal">(May be down)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="iex-key"
-                  type={showIEXKey ? "text" : "password"}
-                  value={settings.iex_api_key}
-                  onChange={(e) => handleChange("iex_api_key", e.target.value)}
-                  placeholder="Optional - may be unavailable"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowIEXKey(!showIEXKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showIEXKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get API key from{" "}
-                <a
-                  href="https://iexcloud.io/console/tokens"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  iexcloud.io
-                </a>
-                {" "}• Note: Service may be experiencing issues
-              </p>
-            </div>
-
-            {/* Polygon.io Key */}
-            <div className="space-y-2">
-              <Label htmlFor="polygon-key" className="text-text-primary flex items-center gap-2">
-                Polygon.io API Key
-                <span className="text-xs text-success font-normal">(5 calls/min free)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="polygon-key"
-                  type={showPolygonKey ? "text" : "password"}
-                  value={settings.polygon_api_key}
-                  onChange={(e) => handleChange("polygon_api_key", e.target.value)}
-                  placeholder="Optional - EOD data, 2 years history"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPolygonKey(!showPolygonKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showPolygonKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://polygon.io/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  polygon.io
-                </a>
-                {" "}• End-of-day data, no credit card required
-              </p>
-            </div>
-
-            {/* Twelve Data Key */}
-            <div className="space-y-2">
-              <Label htmlFor="twelve-data-key" className="text-text-primary flex items-center gap-2">
-                Twelve Data API Key
-                <span className="text-xs text-success font-normal">(8 calls/min, 800/day free) ⭐</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="twelve-data-key"
-                  type={showTwelveDataKey ? "text" : "password"}
-                  value={settings.twelve_data_api_key}
-                  onChange={(e) => handleChange("twelve_data_api_key", e.target.value)}
-                  placeholder="Recommended - real-time data, best free tier"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowTwelveDataKey(!showTwelveDataKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showTwelveDataKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://twelvedata.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  twelvedata.com
-                </a>
-                {" "}• Real-time quotes ~170ms, stocks/forex/crypto
-              </p>
-            </div>
-
-            {/* NewsAPI Key */}
-            <div className="space-y-2">
-              <Label htmlFor="newsapi-key" className="text-text-primary flex items-center gap-2">
-                NewsAPI Key
-                <span className="text-xs text-success font-normal">(100 calls/day free)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="newsapi-key"
-                  type={showNewsAPIKey ? "text" : "password"}
-                  value={settings.newsapi_key}
-                  onChange={(e) => handleChange("newsapi_key", e.target.value)}
-                  placeholder="Optional - for news sentiment analysis"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewsAPIKey(!showNewsAPIKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showNewsAPIKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://newsapi.org/register"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  newsapi.org
-                </a>
-                {" "}• Financial news headlines and sentiment
-              </p>
-            </div>
-
-            {/* AlphaVantage Key */}
-            <div className="space-y-2">
-              <Label htmlFor="alphavantage-key" className="text-text-primary flex items-center gap-2">
-                Alpha Vantage API Key
-                <span className="text-xs text-success font-normal">(25 calls/day free)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="alphavantage-key"
-                  type={showAlphaVantageKey ? "text" : "password"}
-                  value={settings.alphavantage_api_key}
-                  onChange={(e) => handleChange("alphavantage_api_key", e.target.value)}
-                  placeholder="Optional - news + market data"
-                  className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAlphaVantageKey(!showAlphaVantageKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showAlphaVantageKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Get free API key from{" "}
-                <a
-                  href="https://www.alphavantage.co/support/#api-key"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  alphavantage.co
-                </a>
-                {" "}• News sentiment + technical indicators
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Indian Broker API Keys Section */}
-        <Card className="card-surface">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-orange-500" />
-              Indian Broker API Keys
-            </CardTitle>
-            <CardDescription>
-              Connect to Indian brokers for real-time NSE/BSE market data and trading
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Angel One / Angel Broking */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-orange-500/20 flex items-center justify-center">
-                  <span className="text-xs font-bold text-orange-500">A1</span>
-                </div>
-                <Label className="text-text-primary">
-                  Angel One (Smart API)
-                </Label>
-                <span className="text-xs text-success font-normal">(Free for data)</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="angelone-api-key" className="text-sm text-text-secondary">API Key</Label>
-                  <div className="relative">
-                    <Input
-                      id="angelone-api-key"
-                      type={showAngelOneKey ? "text" : "password"}
-                      value={settings.angelone_api_key}
-                      onChange={(e) => handleChange("angelone_api_key", e.target.value)}
-                      placeholder="Your Angel One API Key"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowAngelOneKey(!showAngelOneKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showAngelOneKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="angelone-client-id" className="text-sm text-text-secondary">Client ID</Label>
-                  <Input
-                    id="angelone-client-id"
-                    type="text"
-                    value={settings.angelone_client_id}
-                    onChange={(e) => handleChange("angelone_client_id", e.target.value)}
-                    placeholder="Your Client ID (e.g., S12345678)"
-                    className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="angelone-password" className="text-sm text-text-secondary">Password/PIN</Label>
-                  <div className="relative">
-                    <Input
-                      id="angelone-password"
-                      type={showAngelOnePassword ? "text" : "password"}
-                      value={settings.angelone_password}
-                      onChange={(e) => handleChange("angelone_password", e.target.value)}
-                      placeholder="Your trading password/PIN"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowAngelOnePassword(!showAngelOnePassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showAngelOnePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="angelone-totp" className="text-sm text-text-secondary">TOTP Secret</Label>
-                  <div className="relative">
-                    <Input
-                      id="angelone-totp"
-                      type={showAngelOneTotp ? "text" : "password"}
-                      value={settings.angelone_totp_secret}
-                      onChange={(e) => handleChange("angelone_totp_secret", e.target.value)}
-                      placeholder="Base32 TOTP secret from authenticator"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowAngelOneTotp(!showAngelOneTotp)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showAngelOneTotp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Get API credentials from{" "}
-                <a
-                  href="https://smartapi.angelbroking.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  smartapi.angelbroking.com
-                </a>
-                {" "}• Provides real-time NSE/BSE data, historical prices, and order placement
-              </p>
-            </div>
-
-            {/* Zerodha Kite */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-red-500/20 flex items-center justify-center">
-                  <span className="text-xs font-bold text-red-500">Z</span>
-                </div>
-                <Label className="text-text-primary">
-                  Zerodha Kite Connect
-                </Label>
-                <span className="text-xs text-warning font-normal">(₹2000/month)</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="zerodha-api-key" className="text-sm text-text-secondary">API Key</Label>
-                  <div className="relative">
-                    <Input
-                      id="zerodha-api-key"
-                      type={showZerodhaKey ? "text" : "password"}
-                      value={settings.zerodha_api_key}
-                      onChange={(e) => handleChange("zerodha_api_key", e.target.value)}
-                      placeholder="Your Zerodha API Key"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowZerodhaKey(!showZerodhaKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showZerodhaKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="zerodha-api-secret" className="text-sm text-text-secondary">API Secret</Label>
-                  <div className="relative">
-                    <Input
-                      id="zerodha-api-secret"
-                      type={showZerodhaSecret ? "text" : "password"}
-                      value={settings.zerodha_api_secret}
-                      onChange={(e) => handleChange("zerodha_api_secret", e.target.value)}
-                      placeholder="Your Zerodha API Secret"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowZerodhaSecret(!showZerodhaSecret)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showZerodhaSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Get API credentials from{" "}
-                <a
-                  href="https://kite.trade/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  kite.trade
-                </a>
-                {" "}• Premium API with WebSocket streaming and order execution
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Alert & Notification Settings */}
+        {/* Section 3: Notification Settings */}
         <Card className="card-surface">
           <CardHeader>
             <CardTitle className="text-lg font-heading flex items-center gap-2">
               <Bell className="w-5 h-5 text-warning" />
-              Alert & Notification Settings
+              Notification Settings
             </CardTitle>
             <CardDescription>
-              Configure Telegram bot, email SMTP, and webhook for real-time alerts
+              Configure Telegram bot and email SMTP for real-time alerts
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -932,9 +433,9 @@ export default function Settings() {
               </div>
 
               <p className="text-xs text-text-secondary">
-                1. Create bot with @BotFather → /newbot<br/>
+                1. Create bot with @BotFather on Telegram, send /newbot<br/>
                 2. Get your Chat ID from @userinfobot<br/>
-                3. Start conversation with your bot
+                3. Start a conversation with your bot before sending alerts
               </p>
             </div>
 
@@ -1030,239 +531,6 @@ export default function Settings() {
                 </a>
               </p>
             </div>
-
-            {/* Slack Settings */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-purple-500" />
-                <Label className="text-text-primary">
-                  Slack Webhook (FREE - Recommended for Teams)
-                </Label>
-              </div>
-
-              <div className="space-y-2">
-                <Input
-                  id="slack-webhook"
-                  type="url"
-                  value={settings.slack_webhook_url}
-                  onChange={(e) => handleChange("slack_webhook_url", e.target.value)}
-                  placeholder="https://hooks.slack.com/services/..."
-                  className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <p className="text-xs text-text-secondary">
-                  1. Go to{" "}
-                  <a
-                    href="https://api.slack.com/messaging/webhooks"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    api.slack.com/messaging/webhooks
-                  </a>
-                  <br />
-                  2. Create app → Enable Incoming Webhooks<br />
-                  3. Add webhook to your channel → Copy URL
-                </p>
-              </div>
-            </div>
-
-            {/* WhatsApp Settings */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-success" />
-                <Label className="text-text-primary">
-                  WhatsApp via Twilio ($15 free trial)
-                </Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="twilio-sid" className="text-sm text-text-secondary">Account SID</Label>
-                  <Input
-                    id="twilio-sid"
-                    type="text"
-                    value={settings.twilio_account_sid}
-                    onChange={(e) => handleChange("twilio_account_sid", e.target.value)}
-                    placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="twilio-token" className="text-sm text-text-secondary">Auth Token</Label>
-                  <div className="relative">
-                    <Input
-                      id="twilio-token"
-                      type={showTwilioAuthToken ? "text" : "password"}
-                      value={settings.twilio_auth_token}
-                      onChange={(e) => handleChange("twilio_auth_token", e.target.value)}
-                      placeholder="Your auth token"
-                      className="pr-12 bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowTwilioAuthToken(!showTwilioAuthToken)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                    >
-                      {showTwilioAuthToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="twilio-whatsapp" className="text-sm text-text-secondary">Twilio WhatsApp Number</Label>
-                  <Input
-                    id="twilio-whatsapp"
-                    type="text"
-                    value={settings.twilio_whatsapp_number}
-                    onChange={(e) => handleChange("twilio_whatsapp_number", e.target.value)}
-                    placeholder="whatsapp:+14155238886"
-                    className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="user-whatsapp" className="text-sm text-text-secondary">Your WhatsApp Number</Label>
-                  <Input
-                    id="user-whatsapp"
-                    type="text"
-                    value={settings.user_whatsapp_number}
-                    onChange={(e) => handleChange("user_whatsapp_number", e.target.value)}
-                    placeholder="whatsapp:+919876543210"
-                    className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                  />
-                </div>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Sign up at{" "}
-                <a
-                  href="https://www.twilio.com/try-twilio"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  twilio.com/try-twilio
-                </a>
-                {" "}→ Get $15 free credit → Go to WhatsApp Sandbox → Join sandbox → Get credentials
-              </p>
-            </div>
-
-            {/* Webhook Settings */}
-            <div className="space-y-4 p-4 rounded-lg bg-surface-highlight/50 border border-[#1F1F1F]">
-              <div className="flex items-center gap-2">
-                <Webhook className="w-4 h-4 text-ai-accent" />
-                <Label className="text-text-primary">
-                  Webhook URL (For Custom Integrations)
-                </Label>
-              </div>
-
-              <div className="space-y-2">
-                <Input
-                  id="webhook-url"
-                  type="url"
-                  value={settings.webhook_url}
-                  onChange={(e) => handleChange("webhook_url", e.target.value)}
-                  placeholder="https://your-webhook-endpoint.com/alerts"
-                  className="bg-surface-highlight border-[#1F1F1F] text-text-primary"
-                />
-                <p className="text-xs text-text-secondary">
-                  Alerts will be sent as POST requests to this URL
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Model Selection */}
-        <Card className="card-surface">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-ai-accent" />
-              Default Model
-            </CardTitle>
-            <CardDescription>
-              Choose your preferred AI model for stock analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Provider Selection */}
-            <div className="space-y-2">
-              <Label className="text-text-primary">AI Provider</Label>
-              <Select 
-                value={settings.selected_provider} 
-                onValueChange={handleProviderChange}
-              >
-                <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]" data-testid="provider-select">
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="openai">OpenAI</SelectItem>
-                  <SelectItem value="gemini">Google Gemini</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Model Selection */}
-            <div className="space-y-2">
-              <Label className="text-text-primary">Model</Label>
-              <Select 
-                value={settings.selected_model} 
-                onValueChange={(value) => handleChange("selected_model", value)}
-              >
-                <SelectTrigger className="bg-surface-highlight border-[#1F1F1F]" data-testid="model-select">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODELS[settings.selected_provider]?.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Model Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className={`p-4 rounded-lg border ${
-                settings.selected_provider === "openai" 
-                  ? "bg-primary/5 border-primary/20" 
-                  : "bg-surface-highlight border-[#1F1F1F]"
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {settings.selected_provider === "openai" && settings.openai_api_key ? (
-                    <CheckCircle className="w-4 h-4 text-success" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-text-secondary" />
-                  )}
-                  <span className="font-medium text-text-primary">OpenAI</span>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  GPT-4.1 for deep analysis, o3-mini for fast thinking
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-lg border ${
-                settings.selected_provider === "gemini" 
-                  ? "bg-primary/5 border-primary/20" 
-                  : "bg-surface-highlight border-[#1F1F1F]"
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {settings.selected_provider === "gemini" && settings.gemini_api_key ? (
-                    <CheckCircle className="w-4 h-4 text-success" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-text-secondary" />
-                  )}
-                  <span className="font-medium text-text-primary">Gemini</span>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  Flash models for fast, cost-effective analysis
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -1285,7 +553,7 @@ export default function Settings() {
           </Button>
         </div>
 
-        {/* Info Note */}
+        {/* Multi-Agent Info Note */}
         <Card className="card-surface border-ai-accent/20">
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
@@ -1295,9 +563,10 @@ export default function Settings() {
               <div>
                 <p className="text-sm font-medium text-text-primary">Multi-Agent AI System</p>
                 <p className="text-xs text-text-secondary mt-1">
-                  NeuralTrader uses a sophisticated multi-agent workflow including Data Collection, 
-                  Technical Analysis, RAG Knowledge Retrieval, Deep Reasoning, and Validation agents 
-                  to provide comprehensive trading recommendations.
+                  NeuralTrader uses a streamlined multi-agent pipeline: Data Collection gathers
+                  market data, Technical Analysis computes indicators and patterns, Deep Reasoning
+                  synthesizes insights with advanced LLM capabilities, and Validation cross-checks
+                  the final recommendation for consistency and risk assessment.
                 </p>
               </div>
             </div>

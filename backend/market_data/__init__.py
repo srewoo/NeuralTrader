@@ -1,21 +1,10 @@
 """
 Market Data Module
-Provides access to market-wide data including:
-- FII/DII flows
-- Bulk and Block deals
-- Market breadth
+Provides access to Indian market indices data (Nifty, Sensex, etc.)
 """
 
-from .fii_dii_tracker import (
-    FIIDIITracker,
-    BulkBlockDealsTracker,
-    get_fii_dii_tracker,
-    get_bulk_block_tracker
-)
+from .indian_indices import get_indian_indices_data
 
 __all__ = [
-    'FIIDIITracker',
-    'BulkBlockDealsTracker',
-    'get_fii_dii_tracker',
-    'get_bulk_block_tracker'
+    'get_indian_indices_data'
 ]
